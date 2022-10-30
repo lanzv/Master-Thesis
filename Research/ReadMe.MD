@@ -122,13 +122,34 @@
     - ToDo
 1. [2009 - Bayesian Unsupervised Word Segmentation with Nested Pitman-Yor Language Modeling](./related_works/word_segmentation/2009_Bayesian_Unsupervised_Word_Segmentation_with_Nested_Pitman-Yor_Language_Modeling.pdf)
     - ToDo
-1. [2009 - A Bayesian framework for word segmentation: Exploring the effects of context](./related_works/word_segmentation/2009_A_Bayesian_framework_for_word_segmentation_Exploring_the_effects_of_context.pdf)
+    - Using here Bayesian language model based on the Pitman-Yor process (Generalization of the Dirichlet process)
+    - Pitman-Yor is stochastic process generating distribution G similar to some previous distribution $G_{0}$
+      - $G_{0}$ is called *base measure*
+      - we can imagine base measure $G_{1}$ as a unigram distribution
+      - than we can imagine $G_{2}$ as a bigram distribution given the first word *v*.
+      - Than we can generate $G_{2}$ from $G_{1}$ ... $G_{2} \sim PY (G_{1}, d, \theta)$
+      - We can do the same with trigram
+      - We will get tree representations of n-grams
+      - This process is extended Chinese Restaurant process to compute p(w|h) probabilities
+    - Nested Pitman-Yor Language model
+      - Specifing priors $G_{0}$
+      - It is character based tree strucutre, based on the Chinese Restaurant process
+      - Considering probabilities of prefixes and sufixes of words
+    - Inference
+      - apply ***Blocked Gibbs sampling*** to get some init tables/probs
+      - apply ***Forward Filtering*** to precompute probabilities $\alpha[t][k]$ (in bigram case) of a string $c_{1}, ..., c_{t}$ with the final $k$ characters being a word (segmentations before the final $k$ characters are marginalized  using some recursive calculation)
+      - apply ***Backward Sampling*** .. start at the end of the sentence and dynamically find the best boundary of the last word, after that the prelast word, after that the word before that previous word, etc...
+      - apply ***Poisson correction*** to work better with long words
+    - Finally two models are used, bigram and trigram based
+      - MSR dataset accuracy score NPY(2) 80.2
+      - MSR dataset accuracy score NPY(3) 80.7
+2. [2009 - A Bayesian framework for word segmentation: Exploring the effects of context](./related_works/word_segmentation/2009_A_Bayesian_framework_for_word_segmentation_Exploring_the_effects_of_context.pdf)
     - Pitman-Yor, Gibs sampling, n-gram, bi-gram, chinese restaurant issue, two stage framework (generator and adapter)
     - [YouTube presentation 1:19:48](https://www.youtube.com/watch?v=3zY1xL0h16U&t=2582s&ab_channel=MicrosoftResearch)
     - ToDo 
-1. [2014 - A Joint Model for Unsupervised Chinese Word Segmentation](./related_works/word_segmentation/2014_A_Joint_model_for_Unsupervised_Chinese_Word_Segmentation.pdf)
+3. [2014 - A Joint Model for Unsupervised Chinese Word Segmentation](./related_works/word_segmentation/2014_A_Joint_model_for_Unsupervised_Chinese_Word_Segmentation.pdf)
     - ToDo
-1. [2022 - Unsupervised Word Segmentation with BERT Oriented Probing and Transformation](./related_works/word_segmentation/2022_Unsupervised_Word_Segmentation_with_BERT_Oriented_Probing_and_Transformation.pdf)
+4. [2022 - Unsupervised Word Segmentation with BERT Oriented Probing and Transformation](./related_works/word_segmentation/2022_Unsupervised_Word_Segmentation_with_BERT_Oriented_Probing_and_Transformation.pdf)
     - ToDo
 
 ### Melody segmentation
