@@ -121,7 +121,6 @@
 1. [2006 - Contxtual Dependencies in Unsupervised Word Segmentation](./related_works/word_segmentation/2006_Contextual_Dependencies_in_Unsupervised_Word_Segmentation.pdf)
     - ToDo
 1. [2009 - Bayesian Unsupervised Word Segmentation with Nested Pitman-Yor Language Modeling](./related_works/word_segmentation/2009_Bayesian_Unsupervised_Word_Segmentation_with_Nested_Pitman-Yor_Language_Modeling.pdf)
-    - ToDo
     - Using here Bayesian language model based on the Pitman-Yor process (Generalization of the Dirichlet process)
     - Pitman-Yor is stochastic process generating distribution G similar to some previous distribution $G_{0}$
       - $G_{0}$ is called *base measure*
@@ -150,7 +149,28 @@
 3. [2014 - A Joint Model for Unsupervised Chinese Word Segmentation](./related_works/word_segmentation/2014_A_Joint_model_for_Unsupervised_Chinese_Word_Segmentation.pdf)
     - ToDo
 4. [2022 - Unsupervised Word Segmentation with BERT Oriented Probing and Transformation](./related_works/word_segmentation/2022_Unsupervised_Word_Segmentation_with_BERT_Oriented_Probing_and_Transformation.pdf)
-    - ToDo
+    - The final model consists of three parts
+      - **Generative module**
+        - suggests the plausible word boundaries by **probing** BERT
+        - lets say we have the input sequence, sentence for instance
+        - lets mask one by one of tokens, so when we mask ith token, we will get at that ith postion by BERT its representation $H_{i}$
+        - We will get all these representations for all tokens
+        - After that we will do the same, but now we mask each successive pair of tokens i, j.
+        - The representation given by BERT at ith position is $H_{i,j}$, the representation at jth position is $H_{j, i}$
+        - If twho token $x_{i}$ and $x_{j}$ are close enough, they should be part of one word
+        - lets define distance $d = \frac{(|H_{i,j} - H_{i}| + |H_{j, i} - H_{j}|)}{2}$, and if the distnace $d$ is lower then some trehshold, than it is one word, otherwise we segment them
+      - **Discriminative module**
+        - **transforms** the implicit boundary information into explicit sequence labels
+        - starts with segmentation by Generative module, which is not good for large words
+        - fine-tuning BERT to predict *Beginning* and *Inside* lables
+        - additional output layer peojcting the previous representation into **BI** labels
+        - only considering words with really high confidence
+      - **Evaluation module**
+        - estimates the performance of the model in an unsupervise manner
+        - training Generative module from the Discriminative module based on loss $||d-treshold||^{2}$
+        - training Discriminative module using MLM (Masked-Language Modeling)
+    - **State-of-the-art** at MSR dataset
+      - MSR dataset accuracy score 83.0
 
 ### Melody segmentation
 1. [2003 - Unsupervised Learning of Melodic Segmentation a Memory-Based Approach](./related_works/melody_segmentation/2003_Unsupervised_Learning_of_Melodic_Segmentation_A_Memory-Based_Approach.pdf)
