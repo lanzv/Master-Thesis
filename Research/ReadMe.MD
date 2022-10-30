@@ -51,7 +51,42 @@
 ### Topic Segmentation
 
 1. [2008 - Bayesian Unsupervised Topic Segmentation](./related_works/topic_segmentation/2008_Bayesian_Unsupervised_Topic_Segmentation.pdf)
-   - ToDo
+   - **BayesSeg**
+     - Expected value of **posterior** distribution is multinomial distribution $\hat{\Theta}_{j}$ ... (for all models)
+       - **$\hat{\Theta}_{i, j} = \frac{n_{j, i} + \Theta_{0}}{\sum^{W}_{i}n_{j, i} + W \cdot \Theta_{0}}$**, where $n_{j, i} =\sum_{t:z_{t} = j}m_{t, i}$
+       - where $m_{t, i}$ is count of words *i* in sentence *t*, and the *W* is set of vocabulary words indices
+     - Therefore for the language model
+       - $\hat{\Theta^{j}}$ we have $p(\{x_{t}:z_{t} = j\} | \hat{\Theta}_{j}) = \prod_{t:z_{t} = j} \prod_{i \in x_{t}} \hat{\Theta}_{j, i} = \prod_{t:z_{t} = j} \prod^{W}_{i} \hat{\Theta}^{m_{t, i}}_{j, i} = \prod^{W}_{i} \hat{\Theta}^{n_{j, i}}_{j, i}$
+       - the $x_{t}$ stands for sentence $t$
+     - We would like to consider all models
+       - $\rightarrow p(X|z, \Theta_{0}) = \prod_{j}^{k} \prod_{t:z_{t} = j} p(x_{t} | \Theta_{0}) = \prod^{K}_{j} \int d \Theta_{j} \prod_{t:z_{t} = j} p(x_{t}|\Theta_{j}) p(\Theta_{j} | \Theta_{0}) = \prod^{K}_{j} p_{dcm}(\{x_{t}:z_{t} = j\} | \Theta_{0})$
+       - .. we call it marginalizing the language model
+       - $p_{dcm}(\{x_{t}:z_{t} = j\} | \Theta_{0}) = \frac{\Gamma(W\cdot \Theta_{0})}{\Gamma(N_{j} + W \Theta_{0})} \cdot \prod^{K}_{i} \frac{\Gamma(n_{i, j} + W \Theta_{0})}{\Gamma(\Theta_{0})}$
+     - HOW TO GET $\Theta_{0}$
+       -  prior $\Theta_{0}$ is computed via gradient-based search in Viterbi EM framework
+          -  E-Step ... estimating $z$ .. $p(x, z|\Theta_{0}) = p(X|z, \Theta_{0}) \cdot p(z)$
+          -  M-step ... maximize $p(\Theta_{0}, X, \hat{z})$ .. $p(X|\Theta_{0}, \hat{z})\cdot p(\Theta_{0})$
+     - Finally, we optimize objective function
+       - $p(X, z |\Theta_{0}) = p(X|z, \Theta_{0}) \cdot p(z)$
+       - $p(z)$... uniform distribution over **VALID** segmentations
+       - $p(X|z, \Theta_{0})$ ... marginilized models ...
+       - Lets omptimize it! **DYNAMIC PROGRAMMING**
+         - $\Beta(t)$... value of the objective function for the optimal segmentation up to sentence $t$
+         - $b(t', t)=p(\{x_{t'} ... x_{t} \} | z_{t'...t} = j\})$ ... contribution to the objective function from single segment between sentences $t'$ and $t$
+         - Maximum value given by recurrence $\Beta(t) = max_{t'<t} \Beta(t')b(t'+1, t)$, $\Beta(0) = 1$
+         - Table of size $T$, finding optimal solution dynamically
+   - **BayesSeg - Cue**
+     - extending *K* models by one new $\phi$
+     - cannot use here the marginization
+     - Using **Metropolis-Hastings** algorithm (kind of sampling, similar to Gibbs Sampling - Markov Chain), optimize
+       - $p(X|z, \Theta, \phi) = \prod_{t:z_{t} \neq z_{t-1}} \prod_{i\in x^{(l)}_{t}} \phi_{i} \prod_{i\in \tilde{x}} \Theta_{z_{t, i}} \times \prod_{t:z_{t} = z_{t-1}} \prod_{i\in x_{t}} \Theta_{z_{t}, i}$
+     - Proposal distribution to speed up convergence .. Basic and Linguistic one
+     - Priors get from MOnte Carlo Expectation-Maximization
+     - Good approach only in case that there are clear boundary words
+   -  Still State of the art on the ICSI dataset, better than Facebook's 2022 BERT approach
+      -  Pk score is 0.258
+      -  WindowDiff score is 0.312
+      -  Both scores measured comparing of two sentence topics at bounderies of sliding window through all sentences
 1. [2013 - Topic Segmentation with a Structured Topic Model](./related_works/topic_segmentation/2013_Topic_Segmentation_with_a_Structured_Topic_Model.pdf) 
    - ToDo
 1. [2021 - Improving Unsupervised Dialogue Topic Segmentation with Utterance-pair Coherence scoring](./related_works/topic_segmentation/2021_Improving_Unsupervised_Dialogue_Topic_segmentation_with_Utterance-pair_Coherence_Scoring.pdf)
