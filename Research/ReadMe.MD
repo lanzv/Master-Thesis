@@ -33,7 +33,7 @@
     - Pitman-Yor assumes duplicate tables of CRP
     - Kneser-Ney assumes one table with a dish (word) per restaurant
     - [Gibbs Sampling](https://www.youtube.com/watch?v=7LB1VHp4tLE&ab_channel=ritvikmath) of the seating assignments is required (kind of Markov Chain Monte Carlo algorithm -> gives us sequence of observations)
-1. [Naive Baise](./theoretical_background/2006_Naive_Bayes_classifiers.pdf)
+1. [Naive Bayes](./theoretical_background/2006_Naive_Bayes_classifiers.pdf)
     - Naive Baise Classifier
     - Get counts of classes from dataset ~ P(cl1)...
     - Compute probability distribution of features, in case of Gaussian NB compute Gaussian curve with its Mean and Standard Deviations
