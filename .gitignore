@@ -1,0 +1,14 @@
+# General
+.vscode
+env
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+.texpadtmp
+
+# Cantus Corpus
+.dataset/
+
+# Others
+tmp/
+*.zip
