@@ -41,6 +41,26 @@
     - The class with highest probability wins
     - [YouTube NB Summarization](https://www.youtube.com/watch?v=O2L2Uv9pdDA&ab_channel=StatQuestwithJoshStarmer)
     - [YouTube Gaussian NB Summarization](https://www.youtube.com/watch?v=H3EjCKtlVog&ab_channel=StatQuestwithJoshStarmer)
+1. [Latent Dirichlet Allocation](./theoretical_background/2003_Latent_Dirichlet_Allocation.pdf)
+    - Task: improve tf-idf, etc.. to make data dimension lower, with less data, but with more relevant data, train the SVC classifier or whatever else
+    - The task is used for topics and words
+       - We get set of documents
+       - Each document has its topic
+       - Each document has exactly *N* words (all documents have same lenght - but there are techniques to avoid this constraints)
+    - Dirichlet distribution combined with Multionimal
+      - Dirichlet: triangle with 3 topics (or more and then the dimension of the triangle increases), for alpha<1, which means if the document is closer to corner, then it is more likely for the document to be writen in the specific topic/word (the one assigned to the corner)
+      - Multinomial: Put probabilisitic distribution of topics/words into space, randomly choose the point, then we go with the topic/word assigned to the point
+    - We try to maximize probability of generating topics of all documents correctly
+      - We set parameters of dirichlets distribution (both - word and topics).
+      - We get probability distribution of the document to be in specific topics (for each topic the prob based on dirichlet).
+      - We get probability distribution of each topic to be mapped to specific words (for each word the prob based on dirichlet).
+      - Apply multinomial distribution on both
+    - Training: several options ... Laplace approximation, variational inference or Markov chain Monte Carlo (.. Gibbs Sampling)
+      - trying to say how much are words mapped to specific topics and how much are topics mapped to specific documents
+      - start with random distribution and iterate over all words and assign to each the most probable one (based on all other words in document and all the same words over all documents)
+    - Final Step: those the most relevant for each document take and use them for training
+    - [YouTube Intuition LDA](https://www.youtube.com/watch?v=T05t-SqKArY&ab_channel=Serrano.Academy)
+    - [YouTube Intuition Gibbs Sampling](https://www.youtube.com/watch?v=BaM1uiCpj_E&ab_channel=Serrano.Academy)
   
 ### Gregorian Chants
 1. [Gregorian Chants](./related_works/HILEY__David_Gregorian_Chant.pdf)
