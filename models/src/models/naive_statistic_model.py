@@ -20,8 +20,8 @@ class NaiveStatisticModel:
         self.vocabulary = set()
 
 
-    def predict_segments(self, chants, iterations = 100,
-                        epsilon = 0.05, mu = 5, sigma = 2, print_each = 5):
+    def predict_segments(self, chants, iterations = 5,
+                        epsilon = 0.05, mu = 5, sigma = 2, print_each = 1):
         # Do init segmentation, generate model's dictionaries (segment_unigrams, ...)
         init_segmentation = self.__gaus_rand_segments(chants, mu, sigma)
         # Update data structures
@@ -114,7 +114,7 @@ class NaiveStatisticModel:
         return rand_segments
 
     # -------------------------------- training ------------------------------
-    def __train_iteration(self, segmented_chants, epsilon, limit = 10):
+    def __train_iteration(self, segmented_chants, epsilon, limit = 5):
         new_segmented_chants = []
         for chant_id, segments in enumerate(segmented_chants):
             self.__ignore_chant(chant_segments = segments, chant_id = chant_id)
