@@ -12,52 +12,86 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import accuracy_score
 from sklearn.feature_selection import SelectFromModel
+from pandas import DataFrame
+from src.utils.plotters import plot_melody_mode_frequencies
 
 logging.getLogger().setLevel(logging.INFO)
 
 def list2string(segmented_chants):
+    """
+    ["aaa", "bbb", "ccc"] -> ["aaa bbb ccc"]
+    """
     string_segmentations = []
     for chant_segments in segmented_chants:
         string_segmentations.append(' '.join(chant_segments))
     return string_segmentations
 
-def bacor_eval(train_segmented_chants, train_modes,
-               test_segmented_chants, test_modes, seed = 0, max_features = 100):
-    model = _BacorModel()
-    # set seed
-    np.random.seed(seed)
 
-    # prepare data
-    train_data = list2string(train_segmented_chants)
-    test_data = list2string(test_segmented_chants)
+def get_topmelodies_frequency(train_segmented_chants, train_modes,
+                            test_segmented_chants, test_modes,
+                            top_melodies: list, ignore_segments: bool = False):
+    top_melodies = set(top_melodies)
+    melody_frequencies = {}
+    used_modes = set()
+    # collect training data
+    for segments, mode in zip(train_segmented_chants, train_modes):
+        if ignore_segments:
+            chant = ''.join(segments)
+            for melody in top_melodies:
+                if melody in chant:
+                    if not melody in melody_frequencies:
+                        melody_frequencies[melody] = {}
+                    if not mode in melody_frequencies[melody]:
+                        melody_frequencies[melody][mode] = 0
+                    melody_frequencies[melody][mode] += 1
+                    used_modes.add(mode)
+        else:
+            for segment in segments:
+                if segment in top_melodies:
+                    if not segment in melody_frequencies:
+                        melody_frequencies[segment] = {}
+                    if not mode in melody_frequencies[segment]:
+                        melody_frequencies[segment][mode] = 0
+                    melody_frequencies[segment][mode] += 1
+                    used_modes.add(mode)
 
-    # train
-    train_pred, test_pred = model.run(X_train = train_data, y_train = train_modes,
-                                       X_test = test_data, y_test = test_modes)
-    logging.info("The SVC model was trained with {} training data and {} testing data."
-        .format(len(train_modes), len(test_modes)))
-
-    # evaluate
-    scores = model.evaluate(train_pred, train_modes, test_pred, test_modes)
-    logging.info("Train scores \n\t Precision: {} \n\t Recall: {} \n\t F1: {} \n\t Accuracy: {}"
-        .format(scores["train"]["precision"],
-              scores["train"]["recall"],
-              scores["train"]["f1"],
-              scores["train"]["accuracy"]))
-    logging.info("Test scores \n\t Precision: {} \n\t Recall: {} \n\t F1: {} \n\t Accuracy: {}"
-        .format(scores["test"]["precision"],
-                scores["test"]["recall"],
-                scores["test"]["f1"],
-                scores["test"]["accuracy"]))
-
-    # feature selection
-    important_melodies = model.feature_selection(train_data, max_features = max_features)
-    logging.info("Top selected melodies: {}"
-        .format(important_melodies))
-
-    return scores, important_melodies
+    # collect test data
+    for segments, mode in zip(test_segmented_chants, test_modes):
+        if ignore_segments:
+            chant = ''.join(segments)
+            for melody in top_melodies:
+                if melody in chant:
+                    if not melody in melody_frequencies:
+                        melody_frequencies[melody] = {}
+                    if not mode in melody_frequencies[melody]:
+                        melody_frequencies[melody][mode] = 0
+                    melody_frequencies[melody][mode] += 1
+                    used_modes.add(mode)
+        else:
+            for segment in segments:
+                if segment in top_melodies:
+                    if not segment in melody_frequencies:
+                        melody_frequencies[segment] = {}
+                    if not mode in melody_frequencies[segment]:
+                        melody_frequencies[segment][mode] = 0
+                    melody_frequencies[segment][mode] += 1
+                    used_modes.add(mode)
 
 
+
+    # Create DataFrame
+    index = list(used_modes)
+    columns = []
+    frequency_matrix = np.zeros((len(index), len(top_melodies)))
+    for i, melody in enumerate(melody_frequencies):
+        columns.append(melody)
+        for j, mode in enumerate(index):
+            if mode in melody_frequencies[melody]:
+              frequency_matrix[j, i] = melody_frequencies[melody][mode]
+
+    df = DataFrame(frequency_matrix, index=index, columns=columns)
+
+    return df
 
 
 class _BacorModel:
@@ -189,3 +223,49 @@ class _BacorModel:
             token_pattern=r'[^ ]+')
         vectorizer = TfidfVectorizer(**tfidf_params)
         return vectorizer
+
+
+
+
+def bacor_eval(train_segmented_chants, train_modes,
+               test_segmented_chants, test_modes, seed = 0, max_features = 100):
+    model = _BacorModel()
+    # set seed
+    np.random.seed(seed)
+
+    # prepare data
+    train_data = list2string(train_segmented_chants)
+    test_data = list2string(test_segmented_chants)
+
+    # train
+    train_pred, test_pred = model.run(X_train = train_data, y_train = train_modes,
+                                       X_test = test_data, y_test = test_modes)
+    logging.info("The SVC model was trained with {} training data and {} testing data."
+        .format(len(train_modes), len(test_modes)))
+
+    # evaluate
+    scores = model.evaluate(train_pred, train_modes, test_pred, test_modes)
+    logging.info("Train scores \n\t Precision: {} \n\t Recall: {} \n\t F1: {} \n\t Accuracy: {}"
+        .format(scores["train"]["precision"],
+              scores["train"]["recall"],
+              scores["train"]["f1"],
+              scores["train"]["accuracy"]))
+    logging.info("Test scores \n\t Precision: {} \n\t Recall: {} \n\t F1: {} \n\t Accuracy: {}"
+        .format(scores["test"]["precision"],
+                scores["test"]["recall"],
+                scores["test"]["f1"],
+                scores["test"]["accuracy"]))
+
+    # feature selection
+    important_melodies = model.feature_selection(train_data, max_features = max_features)
+    logging.info("Top selected melodies: {}"
+        .format(important_melodies))
+
+    # plot melody-mode frequencies
+    melody_mode_frequencies = get_topmelodies_frequency(
+        train_segmented_chants, train_modes, test_segmented_chants, test_modes,
+        important_melodies
+    )
+    plot_melody_mode_frequencies(melody_mode_frequencies)
+
+    return scores, important_melodies, melody_mode_frequencies, model.model
