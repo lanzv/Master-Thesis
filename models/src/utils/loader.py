@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import logging
-logging.getLogger().setLevel(logging.INFO)
 
 def load_chants(test_chants_file = "test-chants.csv",
                 train_chants_file = "train-chants.csv",

@@ -26,13 +26,13 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
     print()
     print("\t\t bacor accuracy and f1")
     print("\t\t\t accuracy: {:.2f}%".format(bacor["test"]["accuracy"]*100))
-    print("\t\t\t f1: {:.2f} %".format(bacor["test"]["f1"]*100))
+    print("\t\t\t f1: {:.2f}%".format(bacor["test"]["f1"]*100))
     print()
     print("\t\t Melody Justified With Words")
-    print("\t\t\t mjww: {:.2f} % of segments".format(mjww*100))
+    print("\t\t\t mjww: {:.2f}% of segments".format(mjww*100))
     print()
     print("\t\t Weighted Top Mode Frequency")
-    print("\t\t\t wtmf: {:.2f} % of melodies".format(wtmf*100))
+    print("\t\t\t wtmf: {:.2f}% of melodies".format(wtmf*100))
     print()
     print("\t\t Weighted Unique Final Pitch Count")
     print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(wufpc))
@@ -42,3 +42,33 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
     plot_melody_mode_frequencies(melody_mode_frequencies)
 
     return bacor, mjww, wtmf, wufpc, important_melodies, melody_mode_frequencies, trained_model
+
+
+def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159):
+    X_train, y_train = final_segmentation[:train_len], modes[:train_len]
+    X_test, y_test = final_segmentation[train_len:], modes[train_len:]
+    assert len(X_test) == test_len and len(y_test) == test_len
+
+    # bacor score
+    scores, important_melodies, melody_mode_frequencies, trained_model = bacor_score(
+        X_train, y_train, X_test, y_test, max_features = 100
+    )
+
+
+    # print scores
+    print("Top selected melodies: {}".format(important_melodies))
+    plot_melody_mode_frequencies(melody_mode_frequencies)
+
+    print("Train scores \n\t Precision: {:.2f}% \n\t Recall: {:.2f}% \n\t F1: {:.2f}% \n\t Accuracy: {:.2f}%"
+        .format(scores["train"]["precision"]*100,
+              scores["train"]["recall"]*100,
+              scores["train"]["f1"]*100,
+              scores["train"]["accuracy"]*100))
+    print("Test scores \n\t Precision: {:.2f}% \n\t Recall: {:.2f}% \n\t F1: {:.2f}% \n\t Accuracy: {:.2f}%"
+        .format(scores["test"]["precision"]*100,
+                scores["test"]["recall"]*100,
+                scores["test"]["f1"]*100,
+                scores["test"]["accuracy"]*100))
+
+
+    return scores, important_melodies, melody_mode_frequencies, trained_model

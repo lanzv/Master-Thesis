@@ -1,8 +1,5 @@
 import numpy as np
-import logging
 from pandas import DataFrame
-
-logging.getLogger().setLevel(logging.INFO)
 
 def list2string(segmented_chants):
     """
