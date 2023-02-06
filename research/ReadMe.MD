@@ -213,5 +213,32 @@
 
 
 
+## Example Source Codes
+
+### Topic Model based project
+ - [Pitman-Yor Process](https://github.com/vchahun/vpyp)
+   - Implementation of a topic model (LDA with a Pitman-Yor prior instead of a Dirichlet prior)
+   - python 2.7
+ - [Topic Segmentation](https://github.com/ldulcic/text-segmentation)
+   - based on the LDA topic model
+   - implementation of TextTiling Algorithm described in [this paper](https://aclanthology.org/W12-3307.pdf) (2012)
+
+### Bayesian
+ - [Bayesian Unsupervised Topic Segmentation](https://github.com/jacobeisenstein/bayes-seg)
+   - original source code of its paper
+   - Java
+   - There is a [python code](https://github.com/rohitmanral/Bayesian-Unsupervised-Topic-Segmentation_Replica) of the paper, not original, hard to say if its complete or not
+
+### BERT
+ - [Unsupervised Topic Segmentation of Meetings with BERT Embeddings](https://github.com/gdamaskinos/unsupervised_topic_segmentation)
+   - original implementation of the original paper
+   - python (pytorch)
+   - based on huggingface pretrained roberta model
+   - [Reimplementation](https://github.com/Feodoros/Unsupervised-Topic-Segmentation-of-Meetings) and comparision with other approaches
+ - [Unsupervised Chinese Word Segmentation with BERT Oriented Probing and Transformation](https://github.com/QbethQ/Unsupervised_CWS_BOPT)
+   - some kind of [repository copy](https://github.com/liweitj47/BERT_unsupervised_word_segmentation) or the not final version.
+   - original implementation of the original paper
+   - python (pytorch)
+   - based on huggingface pretrained roberta model
 
 ## Ideas
