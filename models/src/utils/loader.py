@@ -31,3 +31,10 @@ def prepare_dataset():
         y.append(str(mode))
 
     return np.array(X), np.array(y)
+
+def load_word_segmentations():
+    _, pitch_repr = load_chants()
+    word_segmentation = []
+    for segments in pitch_repr["words"]:
+        word_segmentation.append(segments.split(' '))
+    return word_segmentation
