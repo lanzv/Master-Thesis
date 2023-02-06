@@ -4,7 +4,7 @@ import numpy as np
 
 def tmf_score(segmented_chants, modes):
     """
-    Top Mode Frequency score
+    Weighted Top Mode Frequency score
 
     Average of top mode frequencies of all melodies.
     """
@@ -21,13 +21,16 @@ def tmf_score(segmented_chants, modes):
             used_modes.add(mode)
 
     # compute score
-    all_frequencies = []
+    top_frequencies_sum = 0
+    all_counts = 0
     for melody in melody_frequencies:
         # pick normalized top melody frequency
-        frequency_sum = 0
+        count_sum = 0
         for mode in melody_frequencies[melody]:
-            frequency_sum += melody_frequencies[melody][mode]
+            count_sum += melody_frequencies[melody][mode]
         max_mode = max(melody_frequencies[melody], key=melody_frequencies[melody].get)
-        all_frequencies.append(melody_frequencies[melody][max_mode]/frequency_sum)
+        top_frequencies_sum += melody_frequencies[melody][max_mode]
+        all_counts += count_sum
 
-    return np.average(np.array(all_frequencies))
+
+    return top_frequencies_sum/all_counts

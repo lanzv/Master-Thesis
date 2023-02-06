@@ -9,7 +9,7 @@ def mjww_score(segmented_chants):
     total_segments = 0
     correct_segments = 0
     words = load_word_segmentations()
-    for chant_segments, word_segmentation in zip(segmented_chants, [words[0]]):
+    for chant_segments, word_segmentation in zip(segmented_chants, words):
         word_indices = set()
         i = 0
         for word in word_segmentation:
