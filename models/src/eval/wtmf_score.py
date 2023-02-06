@@ -1,8 +1,4 @@
-import numpy as np
-
-
-
-def tmf_score(segmented_chants, modes):
+def wtmf_score(segmented_chants, modes):
     """
     Weighted Top Mode Frequency score
 

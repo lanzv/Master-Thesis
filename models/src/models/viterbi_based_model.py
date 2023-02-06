@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from collections import defaultdict
+import logging
 
 class ViterbiBasedModel:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
@@ -46,10 +47,10 @@ class ViterbiBasedModel:
 
     def __generate_vocabulary(self, chants):
         self.vocabulary = set()
-        for i, chant_str in enumerate(chants):
+        for chant_str in chants:
             self.recursion = 0
             self.__update_vocab(chant_str=chant_str, char_id = 0)
-        print("Vocabulary was generated with size of {}".format(len(self.vocabulary)))
+        logging.info("Vocabulary was generated with size of {}".format(len(self.vocabulary)))
 
     def __update_vocab(self,chant_str: str, char_id: int):
         for char_id, c in enumerate(chant_str):

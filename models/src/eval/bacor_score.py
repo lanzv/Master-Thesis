@@ -12,7 +12,6 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import accuracy_score
 from sklearn.feature_selection import SelectFromModel
-from src.utils.plotters import plot_melody_mode_frequencies
 from src.utils.eval_helpers import list2string, get_topmelodies_frequency
 
 class _BacorModel:
@@ -66,9 +65,9 @@ class _BacorModel:
     def feature_selection(self, X_data, max_features = None):
         selector = SelectFromModel(estimator=self.model.steps[1][1], prefit = True, max_features = max_features)
         X_vectorized = self.model.steps[0][1].transform(X_data)
-        print(X_vectorized.shape)
+        logging.info("Features shape: {}".format(X_vectorized.shape))
         X_new = selector.transform(X_vectorized)
-        print(X_new.shape)
+        logging.info("Selected features shape: {}".format(X_new.shape))
         chants = self.model.steps[0][1].inverse_transform(X_new)
         melodies = set()
         for chant in chants:
@@ -166,27 +165,14 @@ def bacor_score(train_segmented_chants, train_modes,
 
     # evaluate
     scores = model.evaluate(train_pred, train_modes, test_pred, test_modes)
-    logging.info("Train scores \n\t Precision: {} \n\t Recall: {} \n\t F1: {} \n\t Accuracy: {}"
-        .format(scores["train"]["precision"],
-              scores["train"]["recall"],
-              scores["train"]["f1"],
-              scores["train"]["accuracy"]))
-    logging.info("Test scores \n\t Precision: {} \n\t Recall: {} \n\t F1: {} \n\t Accuracy: {}"
-        .format(scores["test"]["precision"],
-                scores["test"]["recall"],
-                scores["test"]["f1"],
-                scores["test"]["accuracy"]))
 
     # feature selection
     important_melodies = model.feature_selection(train_data, max_features = max_features)
-    logging.info("Top selected melodies: {}"
-        .format(important_melodies))
 
     # plot melody-mode frequencies
     melody_mode_frequencies = get_topmelodies_frequency(
         train_segmented_chants, train_modes, test_segmented_chants, test_modes,
         important_melodies
     )
-    plot_melody_mode_frequencies(melody_mode_frequencies)
 
     return scores, important_melodies, melody_mode_frequencies, model.model
