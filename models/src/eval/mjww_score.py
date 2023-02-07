@@ -22,4 +22,4 @@ def mjww_score(segmented_chants):
                 correct_segments += 1
         total_segments += len(chant_segments)
 
-        return correct_segments/total_segments
+    return correct_segments/total_segments
