@@ -4,14 +4,14 @@ from src.eval.wufpc_score import wufpc_score
 from src.eval.wtmf_score import wtmf_score
 from src.utils.plotters import plot_melody_mode_frequencies
 
-def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159):
+def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159, max_features = 100):
     X_train, y_train = final_segmentation[:train_len], modes[:train_len]
     X_test, y_test = final_segmentation[train_len:], modes[train_len:]
     assert len(X_test) == test_len and len(y_test) == test_len
 
     # bacor score
     bacor, important_melodies, melody_mode_frequencies, trained_model = bacor_score(
-        X_train, y_train, X_test, y_test, max_features = 100
+        X_train, y_train, X_test, y_test, max_features = max_features
     )
     # Melody Justified With Words score
     mjww = mjww_score(final_segmentation)
@@ -44,14 +44,14 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
     return bacor, mjww, wtmf, wufpc, important_melodies, melody_mode_frequencies, trained_model
 
 
-def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159):
+def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159, max_features = 100):
     X_train, y_train = final_segmentation[:train_len], modes[:train_len]
     X_test, y_test = final_segmentation[train_len:], modes[train_len:]
     assert len(X_test) == test_len and len(y_test) == test_len
 
     # bacor score
     scores, important_melodies, melody_mode_frequencies, trained_model = bacor_score(
-        X_train, y_train, X_test, y_test, max_features = 100
+        X_train, y_train, X_test, y_test, max_features = max_features
     )
 
 
