@@ -3,7 +3,7 @@ from pandas import DataFrame
 
 def list2string(segmented_chants):
     """
-    ["aaa", "bbb", "ccc"] -> ["aaa bbb ccc"]
+    [["aaa", "bbb", "ccc"]] -> ["aaa bbb ccc"]
     """
     string_segmentations = []
     for chant_segments in segmented_chants:

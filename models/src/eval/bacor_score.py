@@ -11,8 +11,8 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import accuracy_score
-from sklearn.feature_selection import SelectFromModel
 from src.utils.eval_helpers import list2string, get_topmelodies_frequency
+from src.eval.feature_extractions import features_by_additativ_approach, features_from_model
 
 class _BacorModel:
     def run(self, X_train, y_train, X_test, y_test,
@@ -61,19 +61,6 @@ class _BacorModel:
             recall = recall_score(test_gold, test_pred, average='weighted'),
         )
         return scores
-
-    def feature_selection(self, X_data, max_features = None):
-        selector = SelectFromModel(estimator=self.model.steps[1][1], prefit = True, max_features = max_features)
-        X_vectorized = self.model.steps[0][1].transform(X_data)
-        logging.info("Features shape: {}".format(X_vectorized.shape))
-        X_new = selector.transform(X_vectorized)
-        logging.info("Selected features shape: {}".format(X_new.shape))
-        chants = self.model.steps[0][1].inverse_transform(X_new)
-        melodies = set()
-        for chant in chants:
-             for melody in chant:
-                melodies.add(melody)
-        return list(melodies)
 
 
     # ------------------------- Training methods -------------------------
@@ -148,7 +135,9 @@ class _BacorModel:
 
 
 def bacor_score(train_segmented_chants, train_modes,
-               test_segmented_chants, test_modes, seed = 0, max_features = 100):
+               test_segmented_chants, test_modes, seed = 0,
+               max_features_from_model = 100,
+               max_features_additative = 100):
     model = _BacorModel()
     # set seed
     np.random.seed(seed)
@@ -167,12 +156,32 @@ def bacor_score(train_segmented_chants, train_modes,
     scores = model.evaluate(train_pred, train_modes, test_pred, test_modes)
 
     # feature selection
-    important_melodies = model.feature_selection(train_data, max_features = max_features)
+    top_melodies_from_model = features_from_model(
+        train_data, train_modes, max_features = max_features_from_model)
+    top_melodies_additative = features_by_additativ_approach(
+        train_data, train_modes, test_data, test_modes, max_features = max_features_additative)
 
-    # plot melody-mode frequencies
-    melody_mode_frequencies = get_topmelodies_frequency(
+    # get melody-mode frequencies
+    melody_mode_frequencies_from_model = get_topmelodies_frequency(
         train_segmented_chants, train_modes, test_segmented_chants, test_modes,
-        important_melodies
+        top_melodies_from_model
+    )
+    melody_mode_frequencies_additative = get_topmelodies_frequency(
+        train_segmented_chants, train_modes, test_segmented_chants, test_modes,
+        top_melodies_additative
     )
 
-    return scores, important_melodies, melody_mode_frequencies, model.model
+    selected_features = {
+        "from_model": {
+            "top_melodies": top_melodies_from_model,
+            "melody_mode_frequencies": melody_mode_frequencies_from_model
+        },
+        "additative": {
+            "top_melodies": top_melodies_additative,
+            "melody_mode_frequencies": melody_mode_frequencies_additative
+        }
+    }
+        
+
+
+    return scores, selected_features, model.model
