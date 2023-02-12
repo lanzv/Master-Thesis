@@ -14,14 +14,14 @@ def list2string(segmented_chants):
 def get_topmelodies_frequency(train_segmented_chants, train_modes,
                             test_segmented_chants, test_modes,
                             top_melodies: list, ignore_segments: bool = False):
-    top_melodies = set(top_melodies)
+    top_melodies_set = set(top_melodies)
     melody_frequencies = {}
     used_modes = set()
     # collect training data
     for segments, mode in zip(train_segmented_chants, train_modes):
         if ignore_segments:
             chant = ''.join(segments)
-            for melody in top_melodies:
+            for melody in top_melodies_set:
                 if melody in chant:
                     if not melody in melody_frequencies:
                         melody_frequencies[melody] = {}
@@ -31,7 +31,7 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                     used_modes.add(mode)
         else:
             for segment in segments:
-                if segment in top_melodies:
+                if segment in top_melodies_set:
                     if not segment in melody_frequencies:
                         melody_frequencies[segment] = {}
                     if not mode in melody_frequencies[segment]:
@@ -43,7 +43,7 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
     for segments, mode in zip(test_segmented_chants, test_modes):
         if ignore_segments:
             chant = ''.join(segments)
-            for melody in top_melodies:
+            for melody in top_melodies_set:
                 if melody in chant:
                     if not melody in melody_frequencies:
                         melody_frequencies[melody] = {}
@@ -53,7 +53,7 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                     used_modes.add(mode)
         else:
             for segment in segments:
-                if segment in top_melodies:
+                if segment in top_melodies_set:
                     if not segment in melody_frequencies:
                         melody_frequencies[segment] = {}
                     if not mode in melody_frequencies[segment]:
@@ -67,11 +67,15 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
     index = list(used_modes)
     columns = []
     frequency_matrix = np.zeros((len(index), len(top_melodies)))
-    for i, melody in enumerate(melody_frequencies):
-        columns.append(melody)
-        for j, mode in enumerate(index):
+    for i, melody in enumerate(top_melodies):
+        for mode in index:
             if mode in melody_frequencies[melody]:
-              frequency_matrix[j, i] = melody_frequencies[melody][mode]
+                frequency_matrix[int(mode), i] = melody_frequencies[melody][mode]
+            # store counts
+            columns.append(melody + "(" + int(np.sum(frequency_matrix[:, i])) + ")")
+            # normalize to sum up over modes to 1
+            frequency_matrix[:, i] = frequency_matrix[:, i]/np.sum(frequency_matrix[:, i])
+
 
     df = DataFrame(frequency_matrix, index=index, columns=columns)
 

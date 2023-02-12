@@ -32,16 +32,17 @@ Tabulated results of experiments could be seen in the [RESULTS file](./RESULTS.M
 
 ## Models
 
-### Overlapping n-grams
+### Overlapping n-grams (characters)
  - ***!Not A Correct Segmentation!*** - just for the analysis purpose
  - overlapping n grams of all chants parametrized by parameter n for n-gram
  - [source code](./models/src/models/overlapping_ngrams.py)
 
-### Viterbi Based Model
- - gibbs sampling with init gaussian random solution
+### Unigram Model
+ - optimizing new segmentation by choosing the most probable segmentation regarding the unigram distribution considering all data
+ - gibbs sampling with init gaussian random solution or init word segmentation solution
  - viterbi predicting new chant segmentation
- - parametrized min size and max size of segments, alpha of laplacian sampling, number of iterations, gaussian parameters, seed
- - [source code](./models/src/models/viterbi_based_model.py)
+ - parametrized min size and max size of segments, alpha of laplacian sampling, number of iterations, gaussian parameters, seed, mode of initial segmentation
+ - [source code](./models/src/models/unigram_model.py.py)
 
 
 
