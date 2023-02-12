@@ -16,7 +16,6 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                             top_melodies: list, ignore_segments: bool = False):
     top_melodies_set = set(top_melodies)
     melody_frequencies = {}
-    used_modes = set()
     # collect training data
     for segments, mode in zip(train_segmented_chants, train_modes):
         if ignore_segments:
@@ -28,7 +27,6 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                     if not mode in melody_frequencies[melody]:
                         melody_frequencies[melody][mode] = 0
                     melody_frequencies[melody][mode] += 1
-                    used_modes.add(mode)
         else:
             for segment in segments:
                 if segment in top_melodies_set:
@@ -37,7 +35,6 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                     if not mode in melody_frequencies[segment]:
                         melody_frequencies[segment][mode] = 0
                     melody_frequencies[segment][mode] += 1
-                    used_modes.add(mode)
 
     # collect test data
     for segments, mode in zip(test_segmented_chants, test_modes):
@@ -50,7 +47,6 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                     if not mode in melody_frequencies[melody]:
                         melody_frequencies[melody][mode] = 0
                     melody_frequencies[melody][mode] += 1
-                    used_modes.add(mode)
         else:
             for segment in segments:
                 if segment in top_melodies_set:
@@ -59,22 +55,21 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                     if not mode in melody_frequencies[segment]:
                         melody_frequencies[segment][mode] = 0
                     melody_frequencies[segment][mode] += 1
-                    used_modes.add(mode)
 
 
 
     # Create DataFrame
-    index = list(used_modes)
+    index = ["1", "2", "3", "4", "5", "6", "7", "8"]
     columns = []
     frequency_matrix = np.zeros((len(index), len(top_melodies)))
     for i, melody in enumerate(top_melodies):
-        for mode in index:
+        for j, mode in enumerate(index):
             if mode in melody_frequencies[melody]:
-                frequency_matrix[int(mode), i] = melody_frequencies[melody][mode]
-            # store counts
-            columns.append(melody + "(" + int(np.sum(frequency_matrix[:, i])) + ")")
-            # normalize to sum up over modes to 1
-            frequency_matrix[:, i] = frequency_matrix[:, i]/np.sum(frequency_matrix[:, i])
+                frequency_matrix[j, i] = melody_frequencies[melody][mode]
+        # store counts
+        columns.append(melody + "(" + str(int(np.sum(frequency_matrix[:, i]))) + ")")
+        # normalize to sum up over modes to 1
+        frequency_matrix[:, i] = frequency_matrix[:, i]/np.sum(frequency_matrix[:, i])
 
 
     df = DataFrame(frequency_matrix, index=index, columns=columns)

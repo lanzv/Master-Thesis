@@ -40,7 +40,7 @@ def __get_bacor_model():
         ('clf', LinearSVC(**svc_params)),
     ])
 
-def features_from_model(X_train, y_train, max_features = None):
+def features_from_model(X_train, y_train, X_test, y_test, max_features = None):
     bacor_model = __get_bacor_model()
 
     if max_features != None:
@@ -66,6 +66,31 @@ def features_from_model(X_train, y_train, max_features = None):
     else:
         top_melodies = sorted(melodies, key=melodies.get, reverse=True)[:int(max_features/10)]
     logging.info("From model approach Train data - First feature occurences: {} , Last feature occurences: {}".format(melodies[top_melodies[0]], melodies[top_melodies[-1]]))
+
+
+    # Prepare reduced datasets
+    X_train_new, X_test_new = [], []
+    for chant in X_train:
+        new_chant = []
+        for segment in chant.split():
+            if segment in selected_features:
+                new_chant.append(segment)
+        X_train_new.append(new_chant)
+    for chant in X_test:
+        new_chant = []
+        for segment in chant.split():
+            if segment in selected_features:
+                new_chant.append(segment)
+        X_test_new.append(new_chant)
+
+    # Evaluate bacor_model on reduced features
+    train_data, test_data = list2string(X_train_new), list2string(X_test_new)
+    bacor_model = __get_bacor_model()
+    bacor_model.fit(train_data, y_train)
+    predictions = bacor_model.predict(test_data)
+    logging.info("From model approach - reduced accuracy: {:.2f}%, reduced f1: {:.2f}%".format(
+        accuracy_score(y_test, predictions)*100, f1_score(y_test, predictions, average='weighted')*100
+    ))
     return top_melodies
 
 

@@ -137,7 +137,8 @@ class _BacorModel:
 def bacor_score(train_segmented_chants, train_modes,
                test_segmented_chants, test_modes, seed = 0,
                max_features_from_model = 100,
-               max_features_additative = 100):
+               max_features_additative = 100,
+               include_additative = True):
     model = _BacorModel()
     # set seed
     np.random.seed(seed)
@@ -157,30 +158,33 @@ def bacor_score(train_segmented_chants, train_modes,
 
     # feature selection
     top_melodies_from_model = features_from_model(
-        train_data, train_modes, max_features = max_features_from_model)
-    top_melodies_additative = features_by_additativ_approach(
         train_data, train_modes, test_data, test_modes, max_features = max_features_additative)
+    if include_additative:
+        top_melodies_additative = features_by_additativ_approach(
+            train_data, train_modes, test_data, test_modes, max_features = max_features_additative)
 
     # get melody-mode frequencies
     melody_mode_frequencies_from_model = get_topmelodies_frequency(
         train_segmented_chants, train_modes, test_segmented_chants, test_modes,
         top_melodies_from_model
     )
-    melody_mode_frequencies_additative = get_topmelodies_frequency(
-        train_segmented_chants, train_modes, test_segmented_chants, test_modes,
-        top_melodies_additative
-    )
+    if include_additative:
+        melody_mode_frequencies_additative = get_topmelodies_frequency(
+            train_segmented_chants, train_modes, test_segmented_chants, test_modes,
+            top_melodies_additative
+        )
 
     selected_features = {
         "from_model": {
             "top_melodies": top_melodies_from_model,
             "melody_mode_frequencies": melody_mode_frequencies_from_model
-        },
-        "additative": {
+        }
+    }
+    if include_additative:
+        selected_features["additative"] = {
             "top_melodies": top_melodies_additative,
             "melody_mode_frequencies": melody_mode_frequencies_additative
         }
-    }
         
 
 

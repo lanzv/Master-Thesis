@@ -5,7 +5,7 @@ from src.eval.wtmf_score import wtmf_score
 from src.utils.plotters import plot_melody_mode_frequencies
 
 def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159,
-        max_features_from_model = 100, max_features_additative = 100):
+        max_features_from_model = 100, max_features_additative = 100, include_additative = True):
     X_train, y_train = final_segmentation[:train_len], modes[:train_len]
     X_test, y_test = final_segmentation[train_len:], modes[train_len:]
     assert len(X_test) == test_len and len(y_test) == test_len
@@ -14,7 +14,8 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
     bacor, selected_features, trained_model = bacor_score(
         X_train, y_train, X_test, y_test,
         max_features_from_model = max_features_from_model,
-        max_features_additative = max_features_additative
+        max_features_additative = max_features_additative,
+        include_additative = include_additative
     )
     # Melody Justified With Words score
     mjww = mjww_score(final_segmentation)
@@ -43,15 +44,16 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
 
     print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
     plot_melody_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
-    print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
-    plot_melody_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
+    if include_additative:
+        print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
+        plot_melody_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
 
 
     return bacor, mjww, wtmf, wufpc, selected_features, trained_model
 
 
 def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159,
-        max_features_from_model = 100, max_features_additative = 100):
+        max_features_from_model = 100, max_features_additative = 100, include_additative = True):
     X_train, y_train = final_segmentation[:train_len], modes[:train_len]
     X_test, y_test = final_segmentation[train_len:], modes[train_len:]
     assert len(X_test) == test_len and len(y_test) == test_len
@@ -60,14 +62,16 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
     scores, selected_features, trained_model = bacor_score(
         X_train, y_train, X_test, y_test,
         max_features_from_model = max_features_from_model,
-        max_features_additative = max_features_additative
+        max_features_additative = max_features_additative,
+        include_additative = include_additative
     )
 
     # print scores
     print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
     plot_melody_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
-    print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
-    plot_melody_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
+    if include_additative:
+        print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
+        plot_melody_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
 
     print("Train scores \n\t Precision: {:.2f}% \n\t Recall: {:.2f}% \n\t F1: {:.2f}% \n\t Accuracy: {:.2f}%"
         .format(scores["train"]["precision"]*100,
