@@ -2,8 +2,9 @@ import random
 import numpy as np
 from collections import defaultdict
 import logging
+from src.utils.loader import load_word_segmentations
 
-class ViterbiBasedModel:
+class UnigramModel:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
         random.seed(seed)
         np.random.seed(seed)
@@ -12,12 +13,17 @@ class ViterbiBasedModel:
         self.__init_model()
 
 
-    def predict_segments(self, chants, iterations = 5, mu = 5, sigma = 2,
+    def predict_segments(self, chants, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
                          alpha = 1, k_best = 15, print_each = 1):
         self.__init_model()
         self.__generate_vocabulary(chants)
         # Do init segmentation, generate model's dictionaries (segment_unigrams, ...)
-        init_segmentation = self.__gaus_rand_segments(chants, mu, sigma)
+        if init_mode == 'gaussian':
+            init_segmentation = self.__gaus_rand_segments(chants, mu, sigma)
+        elif init_mode == 'words':
+            init_segmentation = self.__word_segments()
+        else:
+            raise ValueError("Init mode argument could be only words or gaussian, not {}".format(init_segmentation))
         # Update data structures
         self.chant_count = len(chants)
         chant_segmentation = init_segmentation
@@ -124,9 +130,28 @@ class ViterbiBasedModel:
             rand_segments.append(new_chant_segments)
         return rand_segments
 
+    def __word_segments(self):
+        word_segments = load_word_segmentations()
+        for chant_id, chant in enumerate(word_segments):
+            for segment in chant:
+                # Update segment_unigrams
+                if segment in self.segment_unigrams:
+                    self.segment_unigrams[segment] += 1
+                else:
+                    self.segment_unigrams[segment] = 1
+                # Update total_segments count
+                self.total_segments += 1
+                # Update segment_inverted_index
+                if segment in self.segment_inverted_index:
+                    self.segment_inverted_index[segment].add(chant_id)
+                else:
+                    self.segment_inverted_index[segment] = {chant_id}
+        return word_segments
+
     # -------------------------------- training ------------------------------
     def __train_iteration(self, segmented_chants, k_best: int, alpha: float):
         new_segmented_chants = []
+        # Gibbs Sampling
         for chant_id, segments in enumerate(segmented_chants):
             self.__ignore_chant(chant_segments = segments, chant_id=chant_id)
             new_segments = self.__get_optimized_chant(chant_segments=segments,
