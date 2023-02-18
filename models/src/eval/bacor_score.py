@@ -11,7 +11,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import accuracy_score
-from src.utils.eval_helpers import list2string, get_topmelodies_frequency
+from src.utils.eval_helpers import list2string, get_topmelodies_frequency, get_bacor_model
 from src.eval.feature_extractions import features_by_additativ_approach, features_from_model
 
 class _BacorModel:
@@ -21,20 +21,11 @@ class _BacorModel:
         test_data, test_targets = X_test, y_test
 
         # Linear SVC
-        svc_params = {
-            'penalty': 'l2',
-            'loss': 'squared_hinge',
-            'multi_class': 'ovr',
-            'random_state': np.random.randint(100)
-        }
         tuned_params = {
             'clf__C': loguniform(1e-3, 1e4),
             'clf__dual': [True, False]
         }
-        self.model = Pipeline([
-            ('vect', self.__get_vectorizer()),
-            ('clf', LinearSVC(**svc_params)),
-        ])
+        self.model = get_bacor_model()
 
         # Train the model
         return self.__train_model(
@@ -111,28 +102,6 @@ class _BacorModel:
         self.model.set_params(**best.params)
 
         return cv_results
-
-    def __get_vectorizer(self):
-        """Get the standard tfidf-vectorizer"""
-        tfidf_params = dict(
-            # Defaults
-            strip_accents=None,
-            stop_words=None,
-            ngram_range=(1,1),
-            max_df=1.0,
-            min_df=1,
-            max_features=5000,
-            use_idf=True,
-            smooth_idf=True,
-            sublinear_tf=False,
-            lowercase=False,
-            analyzer='word',
-            token_pattern=r'[^ ]+')
-        vectorizer = TfidfVectorizer(**tfidf_params)
-        return vectorizer
-
-
-
 
 def bacor_score(train_segmented_chants, train_modes,
                test_segmented_chants, test_modes, seed = 0,

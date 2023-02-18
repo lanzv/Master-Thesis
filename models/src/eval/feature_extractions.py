@@ -1,47 +1,16 @@
 
 from sklearn.feature_selection import SelectFromModel
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.svm import LinearSVC
-from sklearn.pipeline import Pipeline
 import logging
-import numpy as np
 from sklearn.feature_selection import SequentialFeatureSelector
-from src.utils.eval_helpers import list2string
+from src.utils.eval_helpers import list2string, get_bacor_model
 from sklearn.metrics import f1_score, accuracy_score
 import pandas as pd
 
 # BACOR feature selection functions
 # model is a pipeline of TFIDF vectorizer and SVC linear classifier)
 
-def __get_bacor_model():
-    "The model is not tuned, bacor's model is"
-    tfidf_params = dict(
-        # Defaults
-        strip_accents=None,
-        stop_words=None,
-        ngram_range=(1,1),
-        max_df=1.0,
-        min_df=1,
-        max_features=5000,
-        use_idf=True,
-        smooth_idf=True,
-        sublinear_tf=False,
-        lowercase=False,
-        analyzer='word',
-        token_pattern=r'[^ ]+')
-    svc_params = {
-        'penalty': 'l2',
-        'loss': 'squared_hinge',
-        'multi_class': 'ovr',
-        'random_state': np.random.randint(100)
-    }
-    return Pipeline([
-        ('vect', TfidfVectorizer(**tfidf_params)),
-        ('clf', LinearSVC(**svc_params)),
-    ])
-
 def features_from_model(X_train, y_train, X_test, y_test, max_features = None):
-    bacor_model = __get_bacor_model()
+    bacor_model = get_bacor_model()
 
     if max_features != None:
         max_features *= 10
@@ -85,7 +54,7 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None):
 
     # Evaluate bacor_model on reduced features
     train_data, test_data = list2string(X_train_new), list2string(X_test_new)
-    bacor_model = __get_bacor_model()
+    bacor_model = get_bacor_model()
     bacor_model.fit(train_data, y_train)
     predictions = bacor_model.predict(test_data)
     logging.info("From model approach - reduced accuracy: {:.2f}%, reduced f1: {:.2f}%".format(
@@ -96,7 +65,7 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None):
 
 def features_by_additativ_approach(X_train, y_train, X_test, y_test, max_features = "auto"):
     # Define bacor model without tuning
-    bacor_model = __get_bacor_model()
+    bacor_model = get_bacor_model()
 
     # Init and fit feature selector
     X_vectorized = bacor_model.steps[0][1].fit_transform(X_train)
@@ -137,7 +106,7 @@ def features_by_additativ_approach(X_train, y_train, X_test, y_test, max_feature
 
     # Evaluate bacor_model on reduced features
     train_data, test_data = list2string(X_train_new), list2string(X_test_new)
-    bacor_model = __get_bacor_model()
+    bacor_model = get_bacor_model()
     bacor_model.fit(train_data, y_train)
     predictions = bacor_model.predict(test_data)
     logging.info("Additative approach - reduced accuracy: {:.2f}%, reduced f1: {:.2f}%".format(

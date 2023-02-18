@@ -3,6 +3,8 @@ import numpy as np
 from collections import defaultdict
 import logging
 from src.utils.loader import load_word_segmentations
+from src.eval.pipelines import single_iteration_pipeline
+from src.utils.plotters import plot_line_chart
 
 class UnigramModel:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
@@ -13,7 +15,7 @@ class UnigramModel:
         self.__init_model()
 
 
-    def predict_segments(self, chants, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
+    def predict_segments(self, chants, modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
                          alpha = 1, k_best = 15, print_each = 1):
         self.__init_model()
         self.__generate_vocabulary(chants)
@@ -28,14 +30,42 @@ class UnigramModel:
         self.chant_count = len(chants)
         chant_segmentation = init_segmentation
         for i in range(iterations):
-            chant_segmentation = self.__train_iteration(chant_segmentation, k_best = k_best, alpha = alpha)
             if i%print_each == 0:
-                print("{}. Iteration".format(i))
-                top25_melodies = sorted(self.segment_unigrams, key=self.segment_unigrams.get, reverse=True)[:30]
-                print("\t\t\t", top25_melodies)
-                #for topmel in top25_melodies:
-                #  print("\t\t\t{}".format(topmel))
+                self.__print_iteration_results(i, chant_segmentation, modes)
+            chant_segmentation = self.__train_iteration(chant_segmentation, k_best = k_best, alpha = alpha)
+        self.__print_iteration_results(iterations, chant_segmentation, modes)
+        self.__plot_statistics()
         return chant_segmentation
+
+    # --------------------------------- printers, plotters ----------------------------
+    def __print_iteration_results(self, iteration, segmentation, modes):
+        top20_melodies = sorted(self.segment_unigrams, key=self.segment_unigrams.get, reverse=True)[:20]
+        accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len = single_iteration_pipeline(segmentation, modes, iteration, top20_melodies)
+        self.statistics["accuracy"].append(accuracy)
+        self.statistics["f1"].append(f1)
+        self.statistics["mjww"].append(mjww)
+        self.statistics["wtmf"].append(wtmf)
+        self.statistics["wufpc"].append(wufpc)
+        self.statistics["vocab_size"].append(vocab_size)
+        self.statistics["avg_segment_len"].append(avg_segment_len)
+        self.statistics["iterations"].append(iteration)
+
+    def __plot_statistics(self):
+        plot_line_chart("Bacor - not tuned - Accuracy (%)",
+            self.statistics["iterations"], self.statistics["accuracy"])
+        plot_line_chart("Bacor - not tuned - F1 (%)",
+            self.statistics["iterations"], self.statistics["f1"])
+        plot_line_chart("Melody Justified With Words (%)",
+            self.statistics["iterations"], self.statistics["mjww"])
+        plot_line_chart("Weighted Top Mode Frequency (%)",
+            self.statistics["iterations"], self.statistics["wtmf"])
+        plot_line_chart("Weighted Unique Final Pitch Count",
+            self.statistics["iterations"], self.statistics["wufpc"])
+        plot_line_chart("Vocabulary Size",
+            self.statistics["iterations"], self.statistics["vocab_size"])
+        plot_line_chart("Average Segment Length",
+            self.statistics["iterations"], self.statistics["avg_segment_len"])
+
 
     # ------------------------------- data structures updates -------------------------
     def __init_model(self):
@@ -50,6 +80,17 @@ class UnigramModel:
         self.chant_count = 0
         # vocabulary
         self.vocabulary = set()
+        # Statistics
+        self.statistics = {
+            "accuracy": [],
+            "f1": [],
+            "mjww": [],
+            "wtmf": [],
+            "wufpc": [],
+            "vocab_size": [],
+            "avg_segment_len": [],
+            "iterations": []
+        }
 
     def __generate_vocabulary(self, chants):
         self.vocabulary = set()

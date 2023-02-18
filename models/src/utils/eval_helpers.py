@@ -1,5 +1,8 @@
 import numpy as np
 from pandas import DataFrame
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import LinearSVC
+from sklearn.pipeline import Pipeline
 
 def list2string(segmented_chants):
     """
@@ -9,6 +12,33 @@ def list2string(segmented_chants):
     for chant_segments in segmented_chants:
         string_segmentations.append(' '.join(chant_segments))
     return string_segmentations
+
+def get_bacor_model():
+    "The model is not tuned, bacor's model is"
+    tfidf_params = dict(
+        # Defaults
+        strip_accents=None,
+        stop_words=None,
+        ngram_range=(1,1),
+        max_df=1.0,
+        min_df=1,
+        max_features=5000,
+        use_idf=True,
+        smooth_idf=True,
+        sublinear_tf=False,
+        lowercase=False,
+        analyzer='word',
+        token_pattern=r'[^ ]+')
+    svc_params = {
+        'penalty': 'l2',
+        'loss': 'squared_hinge',
+        'multi_class': 'ovr',
+        'random_state': np.random.randint(100)
+    }
+    return Pipeline([
+        ('vect', TfidfVectorizer(**tfidf_params)),
+        ('clf', LinearSVC(**svc_params)),
+    ])
 
 
 def get_topmelodies_frequency(train_segmented_chants, train_modes,

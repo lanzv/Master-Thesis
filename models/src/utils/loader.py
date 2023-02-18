@@ -8,8 +8,6 @@ def load_chants(test_chants_file = "test-chants.csv",
                 train_repr_pitch_file = "train-representation-pitch.csv"):
     train_chants = pd.read_csv(train_chants_file, index_col='id')
     test_chants = pd.read_csv(test_chants_file, index_col='id')
-    logging.info("Number of train chants: {}".format(len(train_chants)))
-    logging.info("Number of test chants: {}".format(len(test_chants)))
     chants = pd.concat([train_chants, test_chants])
     pitch_repr_test = pd.read_csv(test_repr_pitch_file, index_col='id')
     pitch_repr_train = pd.read_csv(train_repr_pitch_file, index_col='id')
@@ -19,6 +17,7 @@ def load_chants(test_chants_file = "test-chants.csv",
 
 def prepare_dataset():
     chants, pitch_repr = load_chants()
+    logging.info("Number of chants: {}".format(len(chants)))
     X, y = [], []
     for segments, mode, id_pitches, id_chant in zip(pitch_repr["1-mer"],
                                                 chants['mode'],
