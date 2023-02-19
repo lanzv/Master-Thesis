@@ -3,7 +3,7 @@ from src.models.nhpylm.pyp import PYP
 from src.models.nhpylm.definitions import HPYLM_INITIAL_D, HPYLM_INITIAL_THETA, HPYLM_A, HPYLM_B, HPYLM_ALPHA, HPYLM_BETA
 import numpy as np
 
-class WHYPLM(HPYLM):
+class WHPYLM(HPYLM):
     def __init__(self, order: int):
         super().__init__()
         # All the fields are "inherited" from HPYLM. Or, to put it another way, unlike CHPYLM, WHPYLM doesn't have its own new fields.
@@ -16,7 +16,7 @@ class WHYPLM(HPYLM):
         # Array of discount parameters indexed by depth (maybe + 1?). Note that in a HPYLM all PYPs of the same depth share the same parameters.
         self.d_array:list = [HPYLM_INITIAL_D for _ in range(order)]
         #Array of concentration parameters indexed by depth+1. Note that in a HPYLM all PYPs of the same depth share the same parameters.
-        self.θ_array:list = [HPYLM_INITIAL_THETA for _ in range(order)]
+        self.theta_array:list = [HPYLM_INITIAL_THETA for _ in range(order)]
 
         # These variables are related to the sampling process as described in the Teh technical report, expressions (40) and (41)
         # Note that they do *not* directly correspond to the alpha, beta parameters of a Beta distribution, nor the shape and scale parameters of a Gamma distribution.
@@ -45,7 +45,7 @@ class WHYPLM(HPYLM):
         return self.root.get_stop_counts() + 1
 
     def sample_hyperparameters(self):
-        max_depth = len(self.d_array) # -1
+        max_depth = len(self.d_array) - 1
         sum_log_x_u_array = [0.0 for _ in range(max_depth + 1)]
         sum_y_ui_array = [0.0 for _ in range(max_depth + 1)]
         sum_one_minus_y_ui_array = [0.0 for _ in range(max_depth + 1)]
@@ -55,7 +55,7 @@ class WHYPLM(HPYLM):
         self.depth = self.sum_auxiliary_variables_recursively(sum_log_x_u_array, sum_y_ui_array, sum_one_minus_y_ui_array, sum_one_minus_z_uwkj_array)
         self.init_hyperparameters_at_depth_if_needed(self.depth)
 
-        for u in range(self.depth + 1):
+        for u in range(self.depth):
             self.d_array[u] = np.random.beta(
                 self.a_array[u] + sum_one_minus_y_ui_array[u],
                 self.b_array[u] + sum_one_minus_z_uwkj_array[u])
@@ -65,7 +65,7 @@ class WHYPLM(HPYLM):
             )
 
         excessive_length = max_depth - self.depth
-        for _ in range(excessive_length): #excessive_lenght + 1
+        for _ in range(excessive_length):
             self.d_array.pop()
             self.theta_array.pop()
             self.a_array.pop()
