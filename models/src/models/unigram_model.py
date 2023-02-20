@@ -41,10 +41,10 @@ class UnigramModel:
     def __print_iteration_results(self, iteration, segmentation, modes):
         top20_melodies = sorted(self.segment_unigrams, key=self.segment_unigrams.get, reverse=True)[:20]
         accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len = single_iteration_pipeline(segmentation, modes, iteration, top20_melodies)
-        self.statistics["accuracy"].append(accuracy)
-        self.statistics["f1"].append(f1)
-        self.statistics["mjww"].append(mjww)
-        self.statistics["wtmf"].append(wtmf)
+        self.statistics["accuracy"].append(accuracy*100)
+        self.statistics["f1"].append(f1*100)
+        self.statistics["mjww"].append(mjww*100)
+        self.statistics["wtmf"].append(wtmf*100)
         self.statistics["wufpc"].append(wufpc)
         self.statistics["vocab_size"].append(vocab_size)
         self.statistics["avg_segment_len"].append(avg_segment_len)

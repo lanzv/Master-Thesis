@@ -29,16 +29,47 @@
 | UM 1-14-20-words       | 66.94                  | 67.09            | **45.27**    | **97.92**    | **3.75**            |
 
 
+## Unigram Model - Iteration Statistics
+### Bacor Acuracy (not tuned)
+![1_14_gaussian](./models/imgs/1_14_gaussian_accuracy.png)![1_14_words](./models/imgs/1_14_words_accuracy.png)![1_7_gaussian](./models/imgs/1_7_gaussian_accuracy.png)![1_7_words](./models/imgs/1_7_words_accuracy.png)![3_8_gaussian](./models/imgs/3_8_gaussian_accuracy.png)![3_8_words](./models/imgs/3_8_words_accuracy.png)![3_5_gaussian](./models/imgs/3_5_gaussian_accuracy.png)![3_5_words](./models/imgs/3_5_words_accuracy.png)
+### Bacor F1 (not tuned)
+![1_14_gaussian](./models/imgs/1_14_gaussian_f1.png)![1_14_words](./models/imgs/1_14_words_f1.png)![1_7_gaussian](./models/imgs/1_7_gaussian_f1.png)![1_7_words](./models/imgs/1_7_words_f1.png)![3_8_gaussian](./models/imgs/3_8_gaussian_f1.png)![3_8_words](./models/imgs/3_8_words_f1.png)![3_5_gaussian](./models/imgs/3_5_gaussian_f1.png)![3_5_words](./models/imgs/3_5_words_f1.png)
+### MJWW
+![1_14_gaussian](./models/imgs/1_14_gaussian_mjww.png)![1_14_words](./models/imgs/1_14_words_mjww.png)![1_7_gaussian](./models/imgs/1_7_gaussian_mjww.png)![1_7_words](./models/imgs/1_7_words_mjww.png)![3_8_gaussian](./models/imgs/3_8_gaussian_mjww.png)![3_8_words](./models/imgs/3_8_words_mjww.png)![3_5_gaussian](./models/imgs/3_5_gaussian_mjww.png)![3_5_words](./models/imgs/3_5_words_mjww.png)
+### WTMF
+![1_14_gaussian](./models/imgs/1_14_gaussian_wtmf.png)![1_14_words](./models/imgs/1_14_words_wtmf.png)![1_7_gaussian](./models/imgs/1_7_gaussian_wtmf.png)![1_7_words](./models/imgs/1_7_words_wtmf.png)![3_8_gaussian](./models/imgs/3_8_gaussian_wtmf.png)![3_8_words](./models/imgs/3_8_words_wtmf.png)![3_5_gaussian](./models/imgs/3_5_gaussian_wtmf.png)![3_5_words](./models/imgs/3_5_words_wtmf.png)
+### WUFPC
+![1_14_gaussian](./models/imgs/1_14_gaussian_wufpc.png)![1_14_words](./models/imgs/1_14_words_wufpc.png)![1_7_gaussian](./models/imgs/1_7_gaussian_wufpc.png)![1_7_words](./models/imgs/1_7_words_wufpc.png)![3_8_gaussian](./models/imgs/3_8_gaussian_wufpc.png)![3_8_words](./models/imgs/3_8_words_wufpc.png)![3_5_gaussian](./models/imgs/3_5_gaussian_wufpc.png)![3_5_words](./models/imgs/3_5_words_wufpc.png)
+### Vocabulary Size
+![1_14_gaussian](./models/imgs/1_14_gaussian_vocab.png)![1_14_words](./models/imgs/1_14_words_vocab.png)![1_7_gaussian](./models/imgs/1_7_gaussian_vocab.png)![1_7_words](./models/imgs/1_7_words_vocab.png)![3_8_gaussian](./models/imgs/3_8_gaussian_vocab.png)![3_8_words](./models/imgs/3_8_words_vocab.png)![3_5_gaussian](./models/imgs/3_5_gaussian_vocab.png)![3_5_words](./models/imgs/3_5_words_vocab.png)
+### Average Segment Length
+![1_14_gaussian](./models/imgs/1_14_gaussian_avglen.png)![1_14_words](./models/imgs/1_14_words_avglen.png)![1_7_gaussian](./models/imgs/1_7_gaussian_avglen.png)![1_7_words](./models/imgs/1_7_words_avglen.png)![3_8_gaussian](./models/imgs/3_8_gaussian_avglen.png)![3_8_words](./models/imgs/3_8_words_avglen.png)![3_5_gaussian](./models/imgs/3_5_gaussian_avglen.png)![3_5_words](./models/imgs/3_5_words_avglen.png)
+
+
 
 ## Feature Extractions
 
 ### Frequencies of top 100 melodies
 
 - Overlapping 4-grams
-    ![top 4grams frequencies](./data_analysis/melody_mode_frequencies/4grams.png)
+    ![top 4grams frequencies](./models/imgs/4grams_fe.png)
 - Overlapping 5-grams
-    ![top 5grams frequencies](./data_analysis/melody_mode_frequencies/5grams.png)
+    ![top 5grams frequencies](./models/imgs/5grams_fe.png)
 - Overlapping 6-grams
-    ![top 6grams frequencies](./data_analysis/melody_mode_frequencies/6grams.png)
-- Unigram Model (min size = 1, max size = 7, iterations = 20)
-    ![top UM frequencies](./data_analysis/melody_mode_frequencies/um.png)
+    ![top 6grams frequencies](./models/imgs/6grams_fe.png)
+- Unigram Model (min size = 1, max size = 14, iterations = 100, init mode = gaussian)
+    ![top UM frequencies 1 14 gaussian](./models/imgs/1_14_gaussian_fe.png)
+- Unigram Model (min size = 1, max size = 14, iterations = 100, init mode = words)
+    ![top UM frequencies 1 14 words](./models/imgs/1_14_words_fe.png)
+- Unigram Model (min size = 1, max size = 7, iterations = 100, init mode = gaussian)
+    ![top UM frequencies 1 7 gaussian](./models/imgs/1_7_gaussian_fe.png)
+- Unigram Model (min size = 1, max size = 7, iterations = 100, init mode = words)
+    ![top UM frequencies 1 7 words](./models/imgs/1_7_words_fe.png)
+- Unigram Model (min size = 3, max size = 8, iterations = 100, init mode = gaussian)
+    ![top UM frequencies 3 8 gaussian](./models/imgs/3_8_gaussian_fe.png)
+- Unigram Model (min size = 3, max size = 8, iterations = 100, init mode = words)
+    ![top UM frequencies 3 8 words](./models/imgs/3_8_words_fe.png)
+- Unigram Model (min size = 3, max size = 5, iterations = 100, init mode = gaussian)
+    ![top UM frequencies 3 5 gaussian](./models/imgs/3_5_gaussian_fe.png)
+- Unigram Model (min size = 3, max size = 35, iterations = 100, init mode = words)
+    ![top UM frequencies 3 5 words](./models/imgs/3_5_words_fe.png)
