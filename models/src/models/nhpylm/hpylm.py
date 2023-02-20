@@ -44,28 +44,28 @@ class HPYLM(ABC):
         pass
 
     def init_hyperparameters_at_depth_if_needed(self, depth: int):
-        if len(self.d_array) <= depth + 1:
-            while(len(self.d_array) <= depth + 1):
+        if len(self.d_array) <= depth:
+            while(len(self.d_array) <= depth):
                 self.d_array.append(HPYLM_INITIAL_D)
         
-        if len(self.theta_array) <= depth + 1:
-            while(len(self.theta_array) <= depth + 1):
+        if len(self.theta_array) <= depth:
+            while(len(self.theta_array) <= depth):
                 self.theta_array.append(HPYLM_INITIAL_THETA)
 
-        if len(self.a_array) <= depth + 1:
-            while(len(self.a_array) <= depth + 1):
+        if len(self.a_array) <= depth:
+            while(len(self.a_array) <= depth):
                 self.a_array.append(HPYLM_A)
 
-        if len(self.b_array) <= depth + 1:
-            while(len(self.b_array) <= depth + 1):
+        if len(self.b_array) <= depth:
+            while(len(self.b_array) <= depth):
                 self.b_array.append(HPYLM_B)
 
-        if len(self.alpha_array) <= depth + 1:
-            while(len(self.alpha_array) <= depth + 1):
+        if len(self.alpha_array) <= depth:
+            while(len(self.alpha_array) <= depth):
                 self.alpha_array.append(HPYLM_ALPHA)
 
-        if len(self.beta_array) <= depth + 1:
-            while(len(self.beta_array) <= depth + 1):
+        if len(self.beta_array) <= depth:
+            while(len(self.beta_array) <= depth):
                 self.beta_array.append(HPYLM_BETA)
 
     def sum_auxiliary_variables_recursively(self, node: PYP, sum_log_x_u_array: list, sum_y_ui_array: list, 

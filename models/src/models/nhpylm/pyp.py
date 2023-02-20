@@ -41,10 +41,10 @@ class PYP():
 
     @staticmethod
     def init_hyperparameters_at_depth_if_needed(depth: int, d_array: list, theta_array: list):
-        if depth + 1 >= len(d_array):
-            while len(d_array) <= depth + 1:
+        if depth >= len(d_array):
+            while len(d_array) <= depth:
                 d_array.append(HPYLM_INITIAL_D)
-            while len(theta_array) <= depth + 1:
+            while len(theta_array) <= depth:
                 theta_array.append(HPYLM_INITIAL_THETA)
 
 
@@ -388,7 +388,7 @@ class PYP():
     def sample_summed_y_ui(self, d_u: float, theta_u: float, is_one_minus: bool = False) -> float:
         if self.ntables >= 2:
             sum = 0.0
-            for i in range(1, self.ntables): #1..n-1
+            for i in range(1, self.ntables): # both rust and julia have ntables-1
                 denom = theta_u + d_u * float(i) 
                 assert denom > 0
                 prob = theta_u /denom
