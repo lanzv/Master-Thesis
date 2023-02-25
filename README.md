@@ -25,7 +25,9 @@ Unsupervised Melody Segmentation of Gregorian Chants
 
 Tabulated results of experiments could be seen in the [RESULTS file](./RESULTS.MD).
 ### Jupyter Notebooks experiments
- - [SEGMENTATION MODELS](./models/experiments.ipynb)
+ - [Unigram Model Segmentation](./models/experiments/unigram_model.ipynb)
+ - [Unigram Model (Modes) Segmentation](./models/experiments/unigram_model_modes.ipynb)
+ - [Overlapping N Grams](./models/experiments/overlappig_n_grams.ipynb)
  - [Naive Bayes Experiments](./models/naive_bayes_analysis.ipynb)
 
 
