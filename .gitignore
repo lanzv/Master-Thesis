@@ -5,9 +5,13 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 .texpadtmp
+*.csv
 
 # Cantus Corpus
 dataset/cantuscorpus/
+
+# Chineese dataset
+models/src/models/nhpylm/icwb2-data/
 
 # Others
 tmp/

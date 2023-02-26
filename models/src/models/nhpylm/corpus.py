@@ -36,7 +36,7 @@ class Corpus():
         Read the corpus from an input stream
         """
         input_file = open(input_file_path, 'r')
-        lines = input_file.readlines()
+        lines = input_file.read().splitlines()
         # Strips the newline character
         for line in lines:
             if len(line) == 0:

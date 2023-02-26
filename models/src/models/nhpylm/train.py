@@ -41,3 +41,4 @@ def train(corpus_path, split_proportion = 0.9, epochs = 20, max_word_length = 4)
         if epoch % 10 == 0:
             trainer.print_segmentations_train(10)
             print("Perplexity_dev: {}".format(trainer.compute_perplexity_dev()))
+    return model

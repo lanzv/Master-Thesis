@@ -46,10 +46,9 @@ class Model:
 
         # Skip the first two BOS in the sentence.
         # start_index = 3
-
-        start_index = 1
+        start_index = 0
         for length in segment_lengths:
-            word = sentence_string[start_index:start_index + length - 1]
+            word = sentence_string[int(start_index):int(start_index) + int(length)]
             segmented_sentence.append(word)
             start_index += length
 
