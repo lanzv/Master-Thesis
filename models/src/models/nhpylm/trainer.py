@@ -75,12 +75,12 @@ class Trainer:
         """
         prob_sum = 0.0
         chpylm = self.model.npylm.chpylm
-        table_index = 1
+        table_index = 0
         all_characters = self.vocabulary.all_characters
         num_characters = len(all_characters)
         for c in all_characters:
             # context_begin: 0, context_end: length - 1
-            p_w = chpylm.compute_p_w_given_h(c, context_chars, 0, context_length - 1)
+            p_w = chpylm.compute_p_w_given_target_char_and_h(c, context_chars, 0, context_length - 1)
             prob_sum += p_w
             self.chpylm_sampling_probability_table[table_index] = p_w
             self.chpylm_sampling_id_table[table_index] = c
@@ -88,7 +88,7 @@ class Trainer:
 
         # Also record EOW as a probable character to be sampled.
         if not skip_eow:
-            p_w = chpylm.compute_p_w_given_h(EOW, context_chars, 0, context_length - 1)
+            p_w = chpylm.compute_p_w_given_target_char_and_h(EOW, context_chars, 0, context_length - 1)
             prob_sum += p_w
             self.chpylm_sampling_probability_table[table_index] = p_w
             self.chpylm_sampling_id_table[table_index] = EOW
@@ -171,7 +171,7 @@ class Trainer:
         np.random.shuffle(self.rand_indices_train)
 
         # Update model parameters
-        for step in range(1, num_sentences + 1):
+        for step in range(num_sentences):
             sentence_index = self.rand_indices_train[step]
             sentence: "Sentence" = self.dataset.train_sentences[sentence_index]
 

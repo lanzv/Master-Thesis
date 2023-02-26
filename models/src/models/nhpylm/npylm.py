@@ -2,8 +2,9 @@ from src.models.nhpylm.whpylm import WHPYLM
 from src.models.nhpylm.chpylm import CHPYLM
 from src.models.nhpylm.pyp import PYP
 from src.models.nhpylm.definitions import BOW, EOW, BOS, EOS, EOS_CHAR
-from src.models.nhpylm.wtype import WORDTYPE_NUM_TYPES, detect_word_type
+from src.models.nhpylm.wtype import WORDTYPE_NUM_TYPES, detect_word_type_substr
 import numpy as np
+from scipy.stats import poisson
 from src.models.nhpylm.sentence import Sentence
 
 class NPYLM:
@@ -34,7 +35,7 @@ class NPYLM:
         self.chpylm_G_0_cache = {} # Dict{Int, Float64}
         self.lambda_for_types = [0.0 for _ in range(WORDTYPE_NUM_TYPES + 1)] # OffsetVector{Float64}
         # Probability of generating a word of length k from the CHPYLM
-        self.p_k_chpylm = [0.0 for _ in range(3)] # .. trigram .. OffsetVector{Float64}
+        self.p_k_chpylm = [1.0 / (max_word_length + 2) for _ in range(max_word_length + 2)] # .. trigram .. OffsetVector{Float64}
         self.max_word_length = max_word_length # Int
         self.max_sentence_length = max_sentence_length #Int
         # The shape parameter of the Gamma distribution for estimating the λ value for the Poisson distribution. (Expression (16) of the paper)
@@ -45,7 +46,7 @@ class NPYLM:
         self.lambda_b = initial_lambda_b # Float64
         # Cache for easier computation
         # + 2 because of bow and eow
-        self.whpylm_parent_p_w_cache = [1.0 / (max_word_length + 2) for _ in max_word_length + 2], # OffsetVector{Float64}
+        self.whpylm_parent_p_w_cache = [0.0 for _ in range(3)] # OffsetVector{Float64}
         # Cache for the characters that make up the sentence that was last added to the chpylm
         # Note that because this is a container that gets reused over and over again, its length is simply the maximum word length. The "actual word length" will be computed and passed in as a parameter to functions that use this variable. Not sure if this is the most sensible approach though. Maybe we can refactor it to a less tedious way later. The extra length parameter is no fun.
         self.most_recent_word = [] # OffsetVector{Char}
@@ -98,7 +99,7 @@ class NPYLM:
         assert pyp != None
         num_tables_before_addition: int = self.whpylm.root.ntables
         index_of_table_added_to_in_root: list =[-1]
-        pyp.add_customer(token_n, self.whpylm_parent_p_w_cache, self.whpylm.d_array, self.whpylm.θ_array, True, index_of_table_added_to_in_root)
+        pyp.add_customer(token_n, self.whpylm_parent_p_w_cache, self.whpylm.d_array, self.whpylm.theta_array, True, index_of_table_added_to_in_root)
         num_tables_after_addition: int = self.whpylm.root.ntables
         word_begin_index = sentence.segment_begin_positions[n]
         word_end_index = word_begin_index + sentence.segment_lengths[n] - 1
@@ -171,7 +172,7 @@ class NPYLM:
                 # The char representation for EOS is what, "1"?
                 self.chpylm.root.remove_customer(EOS_CHAR, True, index_of_table_removed_from)
                 return True
-            assert index_of_table_removed_from.int != -1
+            assert index_of_table_removed_from[0] != -1
             depths = self.recorded_depth_arrays_for_tablegroups_of_token[token_n]
             recorded_depths = depths[index_of_table_removed_from[0]]
             assert len(recorded_depths) > 0
@@ -277,7 +278,6 @@ class NPYLM:
             # p_w = compute_p_w(npylm.chpylm, token_ids, word_length_with_symbols)
             p_w = self.chpylm.compute_p_w(self.most_recent_word)
             # println("most_recent_word is $npylm.most_recent_word, p_w is $p_w")
-
             # If it's the very first iteration where there isn't any word yet, we cannot compute G_0 based on the chpylm.
             if word_length > self.max_word_length:
                 self.whpylm_G_0_cache[word_n_id] = p_w
@@ -287,7 +287,7 @@ class NPYLM:
                 p_k_given_chpylm = self.compute_p_k_given_chpylm(word_length)
 
                 # Each word type will have a different poisson parameter
-                t = detect_word_type(sentence_as_chars, word_begin_index, word_end_index)
+                t = detect_word_type_substr(sentence_as_chars, word_begin_index, word_end_index)
                 lmbda = self.lambda_for_types[t]
                 # Deduce the word length with the Poisson distribution
                 poisson_sample = NPYLM.sample_poisson_k_lambda(word_length, lmbda)
@@ -317,7 +317,7 @@ class NPYLM:
             return self.whpylm_G_0_cache[word_n_id]
 
     def sample_poisson_k_lambda(k: int, lmbda: float) -> float:
-        return np.random.poisson(lmbda, k)
+        return poisson.pmf(k=k, mu=lmbda)
 
     def compute_p_k_given_chpylm(self, k: int) -> float:
         if k > self.max_word_length:

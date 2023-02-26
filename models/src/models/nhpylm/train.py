@@ -7,8 +7,9 @@ from src.models.nhpylm.definitions import HPYLM_A, HPYLM_B, CHPYLM_BETA_STOP, CH
 def build_corpus(path) -> "Corpus":
     corpus = Corpus()
     corpus.read_corpus(path)
+    return corpus
 
-def train(corpus_path, split_proportion = 0.9, epochs = 100000, max_word_length = 4):
+def train(corpus_path, split_proportion = 0.9, epochs = 20, max_word_length = 4): # ToDo epochs 1000000
     corpus = build_corpus(corpus_path)
     dataset = Dataset(corpus, split_proportion)
 
@@ -37,7 +38,6 @@ def train(corpus_path, split_proportion = 0.9, epochs = 100000, max_word_length 
         if epoch > 3:
             trainer.update_p_k_given_chpylm()
         print("Iteration {}".format(epoch))
-        if epoch %10 == 0:
+        if epoch % 10 == 0:
             trainer.print_segmentations_train(10)
             print("Perplexity_dev: {}".format(trainer.compute_perplexity_dev()))
-    model.serialize()

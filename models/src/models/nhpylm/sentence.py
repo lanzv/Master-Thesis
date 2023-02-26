@@ -7,6 +7,7 @@ class Sentence:
     either via a preexisting segmentation or via running the forward-filtering-backward-sampling segmentation algorithm.
     """
     def __init__(self, sentence_string: str):
+        self.sentence_string: str = sentence_string # UTF32String
         # The individual characters that make up this sentence
         self.characters: list = [*sentence_string] # OffsetVector{Char}
         self.num_segments: int = 4
@@ -42,7 +43,7 @@ class Sentence:
         #'们': Unicode U+4eec (category Lo: Letter, other)
         #```
         #However, in this program we need to constantly access individual characters in the string directly by their indices. Therefore, UTF32String, which always stores its characters in a fixed-width fashion, similar to the `wstring` type in C++, is used.
-        self.sentence_string: str = sentence_string # UTF32String
+
 
 
 
@@ -72,7 +73,7 @@ class Sentence:
         Note that the `hash` method returns UInt! This makes sense because a 2-fold increase in potential hash values can actually help a lot.
         """
         # Let me put +1 on everything involving sentence_string since I can't seem to change its indexing easily
-        return hash(self.sentence_string[start_index:end_index+1])
+        return hash(self.sentence_string[int(start_index):int(end_index)+1])
 
     def get_substr_word_string(self, start_index, end_index) -> str:
         # Let me put +1 on everything involving sentence_string since I can't seem to change its indexing easily
@@ -93,7 +94,7 @@ class Sentence:
             end_position = start_position + self.segment_lengths[n]
             # println("The string length is $(length(s)), the start position is $(start_position), the end_position is $(end_position)")
             # Now we have to + 1 because UTF32String cannot be 0-indexed.
-            return self.sentence_string[start_position:end_position]
+            return self.sentence_string[int(start_position):int(end_position)]
 
     def show(self):
         for index in range(2, self.num_segments-1):

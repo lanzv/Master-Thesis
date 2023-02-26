@@ -69,7 +69,7 @@ class PYP():
             return sum(self.tablegroups[dish])
         return 0
     
-    def find_child_pyp(self, dish, generate_if_not_found: bool) -> "PYP":
+    def find_child_pyp(self, dish, generate_if_not_found: bool = False) -> "PYP":
         """
         Find the child PYP whose context is the given dish
         """
@@ -119,8 +119,8 @@ class PYP():
         d_array and θ_array contain the d values and θ values for each depth of the relevant HPYLM (Recall that those values are the same for one single depth.)
         """
         PYP.init_hyperparameters_at_depth_if_needed(self.depth, d_array, theta_array)
-        d_u = d_array[dish]
-        theta_u = theta_array[dish]
+        d_u = d_array[self.depth]
+        theta_u = theta_array[self.depth]
         if type(G_0_or_parent_p_ws) == float:
             if self.parent != None:
                 parent_p_w = self.parent.compute_p_w(dish, G_0_or_parent_p_ws, d_array, theta_array)
@@ -401,7 +401,7 @@ class PYP():
         else:
             return 0.0
     
-    def sample_summed_one_minus_z_uwkj(self, d_u: float, theta_u: float, is_one_minus: bool = False) -> float:
+    def sample_summed_one_minus_z_uwkj(self, d_u: float) -> float:
         """
         The sum is \sum_{j=1}^{c_**u**wk - 1} (1 - z_{**u**wkj}) in expression (40) of the Teh technical report.
         """

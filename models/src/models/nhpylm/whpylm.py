@@ -52,7 +52,7 @@ class WHPYLM(HPYLM):
         sum_one_minus_z_uwkj_array = [0.0 for _ in range(max_depth + 1)]
 
         self.depth = 0
-        self.depth = self.sum_auxiliary_variables_recursively(sum_log_x_u_array, sum_y_ui_array, sum_one_minus_y_ui_array, sum_one_minus_z_uwkj_array)
+        self.depth = self.sum_auxiliary_variables_recursively(self.root, sum_log_x_u_array, sum_y_ui_array, sum_one_minus_y_ui_array, sum_one_minus_z_uwkj_array, self.depth)
         self.init_hyperparameters_at_depth_if_needed(self.depth)
 
         for u in range(self.depth):

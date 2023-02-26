@@ -298,7 +298,7 @@ class CHPYLM(HPYLM):
                     cur_node = cur_node.find_child_pyp(context_char)
 
         # The following samples the depth according to their respective probabilities.
-        depths = [np.arange(0, len(sampling_table))]
+        depths = np.arange(0, len(sampling_table))
         ps = np.array(sampling_table)/np.array(sampling_table).sum()
         return np.random.choice(depths, p=ps)
 
@@ -327,7 +327,7 @@ class CHPYLM(HPYLM):
         sum_one_minus_z_uwkj_array = [0.0 for _ in range(max_depth + 1)]
 
         self.depth = 0
-        self.depth = self.sum_auxiliary_variables_recursively(sum_log_x_u_array, sum_y_ui_array, sum_one_minus_y_ui_array, sum_one_minus_z_uwkj_array)
+        self.depth = self.sum_auxiliary_variables_recursively(self.root, sum_log_x_u_array, sum_y_ui_array, sum_one_minus_y_ui_array, sum_one_minus_z_uwkj_array, self.depth)
         self.init_hyperparameters_at_depth_if_needed(self.depth)
 
         for u in range(self.depth):

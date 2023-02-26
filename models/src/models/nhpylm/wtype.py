@@ -59,7 +59,7 @@ def is_number(c) -> bool:
     t = detect_ctype(c)
     character = hex(ord(c))
     if t == CTYPE_BASIC_LATIN:
-        if 0x30 <= character and character <= 0x39:
+        if 0x30 <= int(character, 0) and int(character, 0) <= 0x39:
             return True
         return False
     if t == CTYPE_NUMBER_FORMS:
@@ -81,9 +81,9 @@ def is_number(c) -> bool:
 
 def is_alphabet(c) -> bool:
     character = hex(ord(c))
-    if 0x41 <= character and character <= 0x5a:
+    if 0x41 <= int(character, 0) and int(character, 0) <= 0x5a:
         return True
-    if 0x61 <= character and character <= 0x7a:
+    if 0x61 <= int(character, 0) and int(character, 0) <= 0x7a:
         return True
     return False
 
@@ -100,8 +100,8 @@ def is_symbol(c) -> bool:
     return True
 
 
-#def detect_word_type(word: &[char]): 
-#    return detect_word_type_substr(word, 0, word.len() - 1)
+def detect_word_type(word):
+    return detect_word_type_substr(word, 0, len(word) - 1)
 
 
 def detect_word_type_substr(chars: list, start: int, end: int):

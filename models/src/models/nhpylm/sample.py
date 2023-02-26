@@ -15,7 +15,7 @@ class Sampler:
         self.substring_word_id_cache: list = np.zeros((max_sentence_length+1, max_word_length+1))
         #3-dimensional tensor that contains the forward variables, i.e. in α[t][k][j] at p.104 of the paper
         # α_tensor::Array{Float64, 3}
-        self.alpha_tensor: list = np.array((max_sentence_length+1, max_word_length+1, max_word_length+1)) # OffsetArray{Float64}
+        self.alpha_tensor: list = np.zeros((max_sentence_length+1, max_word_length+1, max_word_length+1)) # OffsetArray{Float64}
 
         # Cache of word probabilities p_w given by the CHPYLM. Caching the value is useful so that we can avoid excessive repeated computations.
         # I think the "h" here actually stands for Theta or something
@@ -138,7 +138,7 @@ class Sampler:
             self.word_ids[2] = word_k_id
             # Compute the probability of this word with length k
             # Why do we - 1 in the end though?
-            p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
+            p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
             assert p_w_h > 0.0
             # I think the scaling is to make sure that this thing doesn't underflow.
             # Store the values in the cache
@@ -152,7 +152,7 @@ class Sampler:
             self.word_ids[1] = word_j_id
             self.word_ids[2] = word_k_id
             # Probably of the word with length k, which is the last (3rd) word.
-            p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
+            p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
             assert p_w_h > 0.0
             assert self.alpha_tensor[t-k,j,0] > 0.0
             # In this case, the expression becomes the following.
@@ -174,7 +174,7 @@ class Sampler:
                 self.word_ids[2] = word_k_id
 
                 # This way of writing the code is still a bit messy. Let's see if we can do better then.
-                p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
+                p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
                 assert p_w_h > 0.0
                 assert i <= self.max_word_length
                 assert self.alpha_tensor[t-k,j,i] > 0.0
@@ -267,7 +267,7 @@ class Sampler:
                 if t == sentence.length():
                     # The only exception to caching is the situation where the last gram is EOS.
                     # p(EOS | c^N_{N-k} c^{N-k}_{N-k-j})
-                    p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t, t)
+                    p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t, t)
                 else:
                     # In all other scenarios, we should have already cached this value.
                     p_w_h = self.p_w_h_cache[t + third_gram_length, third_gram_length, k, j]
@@ -297,7 +297,7 @@ class Sampler:
                 p_w_h = 0.0
                 if t == sentence.length():
                     # p(EOS | c^N_{N-k} c^{N-k}_{N-k-j})
-                    p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t, t)
+                    p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t, t)
                 else:
                     # We should have already cached this value.
                     p_w_h = self.p_w_h_cache[t + third_gram_length, third_gram_length, k, j]
@@ -328,8 +328,8 @@ class Sampler:
                 stack += self.backward_sampling_table[index] * normalizer
                 # println("randnum is $(randnum), stack is $(stack)")
                 if randnum < stack:
-                    sampled_k.int = k
-                    sampled_j.int = j
+                    sampled_k[0] = k
+                    sampled_j[0] = j
                     return
                 index += 1
 
@@ -373,7 +373,7 @@ class Sampler:
             self.word_ids[2] = word_k_id
             # Compute the probability of this word with length k
             # Why do we - 1 in the end though? We probably shouldn't do so here since the indexing system is different. Eh.
-            p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
+            p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
             assert(p_w_h > 0.0)
             # I think the scaling is to make sure that this thing doesn't underflow.
             # Store the values in the cache
@@ -388,7 +388,7 @@ class Sampler:
             self.word_ids[1] = word_j_id
             self.word_ids[2] = word_k_id
             # Probability of the word with length k, which is the last (3rd) word.
-            p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
+            p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
             assert(p_w_h > 0.0)
             assert(self.alpha_tensor[t-k,j,0] != 0.0)
             # In this case, the expression becomes the following.
@@ -409,7 +409,7 @@ class Sampler:
                 # The third gram
                 self.word_ids[2] = word_k_id
 
-                p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
+                p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t - k, t - 1)
                 assert(p_w_h > 0.0)
                 assert(i <= self.max_word_length)
                 # Because it's a log value then.
@@ -457,7 +457,7 @@ class Sampler:
                 self.word_ids[1] = word_k_id
                 self.word_ids[2] = EOS
                 # It's still the EOS. We just wrote it in a simpler way.
-                p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t, t)
+                p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t, t)
                 assert self.alpha_tensor[t,k,j] <= 0
                 temp = np.log(p_w_h) + self.alpha_tensor[t,k,j]
                 assert temp <= 0
@@ -476,7 +476,7 @@ class Sampler:
                 self.word_ids[0] = word_j_id
                 self.word_ids[1] = word_k_id
                 self.word_ids[2] = word_t_id
-                p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t, t)
+                p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t, t)
                 assert self.alpha_tensor[t,k,0] <= 0
                 # p(3rd_gram | c^N_{N-k} c^{N-k}_{N-k-j}) * α[N][k][j])
                 temp = np.log(p_w_h) + self.alpha_tensor[t,k,0]
@@ -510,7 +510,7 @@ class Sampler:
         assert(j <= self.max_word_length)
         segment_lengths.append(j)
         # We knew that i is the index that maximizes the possibility of the trigram
-        i = self.viterbi_backward_indices[t,k,j]
+        i = self.viterbi_backward_indices[int(t),int(k),int(j)]
         assert i >= 0
         assert i <= self.max_word_length
         sum_length += j + i
@@ -531,7 +531,7 @@ class Sampler:
         # TODO: This code repetition surely is also avoidable?
         # Repeatedly push forward the end, taking advantage of the already recorded viterbi indices.
         while (t > 0):
-            i = self.viterbi_backward_indices[t,k,j]
+            i = self.viterbi_backward_indices[int(t),int(k),int(j)]
             assert i >= 0
             assert i <= self.max_word_length
             if (i != 0):
@@ -603,7 +603,7 @@ class Sampler:
                 self.word_ids[0] = self.get_substring_word_id_at_t_k(sentence, t - k - j, i)
                 self.word_ids[1] = self.get_substring_word_id_at_t_k(sentence, t - k, j)
                 self.word_ids[2] = EOS
-                p_w_h = self.npylm.compute_p_w_of_nth_word(sentence_as_chars, self.word_ids, 2, t, t)
+                p_w_h = self.npylm.compute_p_w_of_nth_word_chars(sentence_as_chars, self.word_ids, 2, t, t)
                 assert(p_w_h > 0.0)
                 prob_sum += p_w_h * self.alpha_tensor[t-k,j,i]
             self.alpha_tensor[t,k,j] = prob_sum
