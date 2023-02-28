@@ -5,19 +5,19 @@ from src.models.nhpylm.definitions import BOW, EOW, BOS, EOS, EOS_CHAR
 from src.models.nhpylm.wtype import WORDTYPE_NUM_TYPES, detect_word_type_substr
 import numpy as np
 from scipy.stats import poisson
-from src.models.nhpylm.sentence import Sentence
+from src.models.nhpylm.chant import Chant
 
 class NPYLM:
 
-    def __init__(self, max_word_length: int, max_sentence_length: int, G_0: float, initial_lambda_a: float, initial_lambda_b: float, chpylm_beta_stop: float, chpylm_beta_pass: float):
+    def __init__(self, max_word_length: int, max_chant_length: int, G_0: float, initial_lambda_a: float, initial_lambda_b: float, chpylm_beta_stop: float, chpylm_beta_pass: float):
         # The hierarhical Pitman-Yor model for words
         self.whpylm: "WHPYLM" = WHPYLM(3) # trigram
         # The hierarhical Pitman-Yor model for characters
-        self.chpylm: "CHPYLM" = CHPYLM(G_0, max_sentence_length, chpylm_beta_stop, chpylm_beta_pass)
+        self.chpylm: "CHPYLM" = CHPYLM(G_0, max_chant_length, chpylm_beta_stop, chpylm_beta_pass)
 
 
         # Each key represents a word.
-        # Remember that we feed in a word like a "sentence", i.e. run `add_customer` char-by-char, into the CHPYLM.
+        # Remember that we feed in a word like a "chant", i.e. run `add_customer` char-by-char, into the CHPYLM.
         # We need to record the depth of each char when it was first added, so that we can remove them at the same depths later, when we remove the word from the CHPYLM.
         # Remember that each dish can be served at multiple tables, i.e. there is a certain probability that a customer sits at a new table.
         # Therefore, the outermost Vector in Vector{Vector{Int}} keeps tracks of the different tables that this token is served at!
@@ -37,7 +37,7 @@ class NPYLM:
         # Probability of generating a word of length k from the CHPYLM
         self.p_k_chpylm = [1.0 / (max_word_length + 2) for _ in range(max_word_length + 2)] # .. trigram .. OffsetVector{Float64}
         self.max_word_length = max_word_length # Int
-        self.max_sentence_length = max_sentence_length #Int
+        self.max_chant_length = max_chant_length #Int
         # The shape parameter of the Gamma distribution for estimating the λ value for the Poisson distribution. (Expression (16) of the paper)
         # The relation: λ ~ Ga(a, b), where a is the shape and b is rate (not scale)
         self.lambda_a = initial_lambda_a # Float64
@@ -47,13 +47,13 @@ class NPYLM:
         # Cache for easier computation
         # + 2 because of bow and eow
         self.whpylm_parent_p_w_cache = [0.0 for _ in range(3)] # OffsetVector{Float64}
-        # Cache for the characters that make up the sentence that was last added to the chpylm
+        # Cache for the characters that make up the chant that was last added to the chpylm
         # Note that because this is a container that gets reused over and over again, its length is simply the maximum word length. The "actual word length" will be computed and passed in as a parameter to functions that use this variable. Not sure if this is the most sensible approach though. Maybe we can refactor it to a less tedious way later. The extra length parameter is no fun.
         self.most_recent_word = [] # OffsetVector{Char}
 
         self.sample_lambda_with_initial_params()
 
-    def produce_word_with_bow_and_eow(sentence_as_chars: list, word_begin_index: int, word_end_index: int):
+    def produce_word_with_bow_and_eow(chant_as_chars: list, word_begin_index: int, word_end_index: int):
         """
         Wraps a character array which represents a word with two special tokens: BOW and EOW
         I think a better idea is to just return an array each time which is never overly long.
@@ -65,20 +65,20 @@ class NPYLM:
         i = 0
         while i < (word_end_index - word_begin_index + 1):
             # - 1 because Julia arrays are 1-indexed
-            word[i + 1] = sentence_as_chars[word_begin_index + i]
+            word[i + 1] = chant_as_chars[word_begin_index + i]
             i += 1
         word[i + 1] = EOW
         return word
 
-    def extend_capacity(self, max_sentence_length: int):
-        if (max_sentence_length <= self.max_sentence_length):
+    def extend_capacity(self, max_chant_length: int):
+        if (max_chant_length <= self.max_chant_length):
             return
         else:
-            self.allocate_capacity(max_sentence_length)
+            self.allocate_capacity(max_chant_length)
 
-    def allocate_capacity(self, max_sentence_length: int):
-        self.max_sentence_length = max_sentence_length
-        self.most_recent_word = [' ' for _ in range(max_sentence_length + 2)]
+    def allocate_capacity(self, max_chant_length: int):
+        self.max_chant_length = max_chant_length
+        self.most_recent_word = [' ' for _ in range(max_chant_length + 2)]
 
     def sample_lambda_with_initial_params(self):
         for i in range(1, WORDTYPE_NUM_TYPES + 1):
@@ -88,21 +88,21 @@ class NPYLM:
                 1/self.lambda_b
             )
 
-    def add_customer_at_index_n(self, sentence: "Sentence", n: int) -> bool:
+    def add_customer_at_index_n(self, chant: "Chant", n: int) -> bool:
         """
-        This function adds the nth segmented word in the sentence to the NPYLM.
+        This function adds the nth segmented word in the chant to the NPYLM.
         """
         # The first two entries are always the BOS symbols.
         assert(n >= 2)
-        token_n: int = sentence.get_nth_word_id(n)
-        pyp: "PYP" = self.find_node_by_tracing_back_context_from_index_n_sentence(sentence, n, self.whpylm_parent_p_w_cache, True, False)
+        token_n: int = chant.get_nth_word_id(n)
+        pyp: "PYP" = self.find_node_by_tracing_back_context_from_index_n_chant(chant, n, self.whpylm_parent_p_w_cache, True, False)
         assert pyp != None
         num_tables_before_addition: int = self.whpylm.root.ntables
         index_of_table_added_to_in_root: list =[-1]
         pyp.add_customer(token_n, self.whpylm_parent_p_w_cache, self.whpylm.d_array, self.whpylm.theta_array, True, index_of_table_added_to_in_root)
         num_tables_after_addition: int = self.whpylm.root.ntables
-        word_begin_index = sentence.segment_begin_positions[n]
-        word_end_index = word_begin_index + sentence.segment_lengths[n] - 1
+        word_begin_index = chant.segment_begin_positions[n]
+        word_end_index = word_begin_index + chant.segment_lengths[n] - 1
         # If the number of tables in the root is increased, we'll need to break down the word into characters and add them to the chpylm as well.
         # Remember that a customer has a certain probability to sit at a new table. However, it might also join an old table, in which case the G_0 doesn't change?
         if (num_tables_before_addition < num_tables_after_addition):
@@ -127,20 +127,20 @@ class NPYLM:
             # recorded_depth_array = Int[]
             # `word_end_index - word_begin_index + 2` is `length(word) - 1 + 2`, i.e. word_length_with_symbols
             recorded_depth_array = [0 for _ in range(word_end_index - word_begin_index + 3)]
-            self.add_word_to_chpylm(sentence.characters, word_begin_index, word_end_index, recorded_depth_array)
+            self.add_word_to_chpylm(chant.characters, word_begin_index, word_end_index, recorded_depth_array)
             assert(len(recorded_depth_array) == word_end_index - word_begin_index + 3)
             # Therefore we push the result of depths for *this new table* into the array.
             depth_arrays_for_the_tablegroup.append(recorded_depth_array)
         return True
-    def add_word_to_chpylm(self, sentence_as_chars: list, word_begin_index: int, word_end_index: int, recorded_depths: list):
+    def add_word_to_chpylm(self, chant_as_chars: list, word_begin_index: int, word_end_index: int, recorded_depths: list):
         """
         Yeah OK so token_ids is just a temporary variable holding all the characters to be added into the chpylm? What a weird design... 
         Why can't we do better let's see how we might refactor this code later.
         """
         assert word_end_index >= word_begin_index
         # This is probably to avoid EOS?
-        assert word_end_index < self.max_sentence_length
-        self.most_recent_word = NPYLM.produce_word_with_bow_and_eow(sentence_as_chars, word_begin_index, word_end_index)
+        assert word_end_index < self.max_chant_length
+        self.most_recent_word = NPYLM.produce_word_with_bow_and_eow(chant_as_chars, word_begin_index, word_end_index)
         # + 2 because of bow and eow
         word_length_with_symbols = word_end_index - word_begin_index + 1 + 2
         for n in range(word_length_with_symbols):
@@ -150,15 +150,15 @@ class NPYLM:
             # push!(recorded_depths, depth_n)
             recorded_depths[n] = depth_n
 
-    def remove_customer_at_index_n(self, sentence: "Sentence", n: int):
+    def remove_customer_at_index_n(self, chant: "Chant", n: int):
         assert n >= 2
-        token_n = sentence.get_nth_word_id(n)
-        pyp:"PYP"= self.find_node_by_tracing_back_context_from_index_n_word_ids(sentence.word_ids, n, False, False)
+        token_n = chant.get_nth_word_id(n)
+        pyp:"PYP"= self.find_node_by_tracing_back_context_from_index_n_word_ids(chant.word_ids, n, False, False)
         assert pyp != None
         num_tables_before_removal: int = self.whpylm.root.ntables
         index_of_table_removed_from = [-1]
-        word_begin_index = sentence.segment_begin_positions[n]
-        word_end_index = word_begin_index + sentence.segment_lengths[n] - 1
+        word_begin_index = chant.segment_begin_positions[n]
+        word_end_index = word_begin_index + chant.segment_lengths[n] - 1
 
         # println("In remove_customer_at_index_n, before remove_customer. token_n: $token_n, word_begin_index: $word_begin_index, word_end_index: $word_end_index")
         pyp.remove_customer(token_n, True, index_of_table_removed_from)
@@ -176,18 +176,18 @@ class NPYLM:
             depths = self.recorded_depth_arrays_for_tablegroups_of_token[token_n]
             recorded_depths = depths[index_of_table_removed_from[0]]
             assert len(recorded_depths) > 0
-            self.remove_word_from_chpylm(sentence.characters, word_begin_index, word_end_index, recorded_depths)
+            self.remove_word_from_chpylm(chant.characters, word_begin_index, word_end_index, recorded_depths)
             # This entry is now removed.
             del depths[index_of_table_removed_from[0]]
         if pyp.need_to_remove_from_parent():
             pyp.remove_from_parent()
         return True
 
-    def remove_word_from_chpylm(self, sentence_as_chars: list, word_begin_index: int, word_end_index: int, recorded_depths: list):
+    def remove_word_from_chpylm(self, chant_as_chars: list, word_begin_index: int, word_end_index: int, recorded_depths: list):
         assert len(recorded_depths) > 0
         assert word_end_index >= word_begin_index
-        assert word_end_index < self.max_sentence_length
-        self.most_recent_word = NPYLM.produce_word_with_bow_and_eow(sentence_as_chars, word_begin_index, word_end_index)
+        assert word_end_index < self.max_chant_length
+        self.most_recent_word = NPYLM.produce_word_with_bow_and_eow(chant_as_chars, word_begin_index, word_end_index)
         # + 2 because of bow and eow
         word_length_with_symbols = word_end_index - word_begin_index + 1 + 2
         assert len(recorded_depths) == word_length_with_symbols
@@ -215,19 +215,19 @@ class NPYLM:
         assert cur_node.depth == 2
         return cur_node
 
-    def find_node_by_tracing_back_context_from_index_n_sentence(self, sentence: "Sentence", n: int, parent_p_w_cache: list, generate_if_not_found: bool, return_middle_node: bool):
+    def find_node_by_tracing_back_context_from_index_n_chant(self, chant: "Chant", n: int, parent_p_w_cache: list, generate_if_not_found: bool, return_middle_node: bool):
         """
         Used by add_customer
         """
         assert n >= 2
-        # println("Sentence is $(sentence), n is $(n), sentence.num_segments is $(sentence.num_segments)")
-        assert n < sentence.num_segments
-        assert sentence.segment_lengths[n] > 0
-        word_begin_index = sentence.segment_begin_positions[n]
-        word_end_index = word_begin_index + sentence.segment_lengths[n] - 1
-        return self.find_node_by_tracing_back_context_from_index_n_both(sentence.characters, sentence.word_ids, n, word_begin_index, word_end_index, parent_p_w_cache, generate_if_not_found, return_middle_node) 
+        # println("chant is $(chant), n is $(n), chant.num_segments is $(chant.num_segments)")
+        assert n < chant.num_segments
+        assert chant.segment_lengths[n] > 0
+        word_begin_index = chant.segment_begin_positions[n]
+        word_end_index = word_begin_index + chant.segment_lengths[n] - 1
+        return self.find_node_by_tracing_back_context_from_index_n_both(chant.characters, chant.word_ids, n, word_begin_index, word_end_index, parent_p_w_cache, generate_if_not_found, return_middle_node) 
 
-    def find_node_by_tracing_back_context_from_index_n_both(self, sentence_as_chars: list, word_ids: list, n: int, word_begin_index: int, word_end_index: int, parent_p_w_cache: list, generate_if_not_found: bool, return_middle_node: bool)-> "PYP":
+    def find_node_by_tracing_back_context_from_index_n_both(self, chant_as_chars: list, word_ids: list, n: int, word_begin_index: int, word_end_index: int, parent_p_w_cache: list, generate_if_not_found: bool, return_middle_node: bool)-> "PYP":
         """
         We should be filling the parent_p_w_cache while trying to find the node already. So if not there's some problem going on.
         """
@@ -237,7 +237,7 @@ class NPYLM:
         assert word_end_index >= word_begin_index
         cur_node = self.whpylm.root
         word_n_id = word_ids[n]
-        parent_p_w = self.compute_G_0_of_word_at_index_n(sentence_as_chars, word_begin_index, word_end_index, word_n_id)
+        parent_p_w = self.compute_G_0_of_word_at_index_n(chant_as_chars, word_begin_index, word_end_index, word_n_id)
         # println("The first parent_p_w is $parent_p_w")
         parent_p_w_cache[0] = parent_p_w
         for depth in range(1, 3):
@@ -258,13 +258,13 @@ class NPYLM:
         assert cur_node.depth == 2
         return cur_node
 
-    def compute_G_0_of_word_at_index_n(self, sentence_as_chars: list, word_begin_index: int, word_end_index: int, word_n_id) -> float:
-        # println("In compute_G_0_of_word_at_index_n, sentence_as_chars is $sentence_as_chars, word_begin_index is $word_begin_index, word_end_index is $word_end_index, word_n_id is $word_n_id")
+    def compute_G_0_of_word_at_index_n(self, chant_as_chars: list, word_begin_index: int, word_end_index: int, word_n_id) -> float:
+        # println("In compute_G_0_of_word_at_index_n, chant_as_chars is $chant_as_chars, word_begin_index is $word_begin_index, word_end_index is $word_end_index, word_n_id is $word_n_id")
         if word_n_id == EOS:
             # println("The word is EOS, directly return")
             return self.chpylm.G_0
 
-        assert word_end_index < self.max_sentence_length
+        assert word_end_index < self.max_chant_length
         assert word_begin_index >= 0
         assert word_end_index >= word_begin_index
         word_length = word_end_index - word_begin_index + 1
@@ -272,7 +272,7 @@ class NPYLM:
         if not word_n_id in self.whpylm_G_0_cache:
             # println("The nothing branch is entered.")
             # token_ids = npylm.most_recent_word
-            self.most_recent_word = NPYLM.produce_word_with_bow_and_eow(sentence_as_chars, word_begin_index, word_end_index)
+            self.most_recent_word = NPYLM.produce_word_with_bow_and_eow(chant_as_chars, word_begin_index, word_end_index)
             # Add bow and eow
             word_length_with_symbols = word_length + 2
             # p_w = compute_p_w(npylm.chpylm, token_ids, word_length_with_symbols)
@@ -287,7 +287,7 @@ class NPYLM:
                 p_k_given_chpylm = self.compute_p_k_given_chpylm(word_length)
 
                 # Each word type will have a different poisson parameter
-                t = detect_word_type_substr(sentence_as_chars, word_begin_index, word_end_index)
+                t = detect_word_type_substr(chant_as_chars, word_begin_index, word_end_index)
                 lmbda = self.lambda_for_types[t]
                 # Deduce the word length with the Poisson distribution
                 poisson_sample = NPYLM.sample_poisson_k_lambda(word_length, lmbda)
@@ -302,7 +302,7 @@ class NPYLM:
                     # Now there is a bug and this branch is triggered all the time.
                     print("Very rarely the result will exceed 1")
                     for i in range(word_begin_index,word_end_index+1):
-                        print(sentence_as_chars[i])
+                        print(chant_as_chars[i])
                     print("\n")
                     print(p_w)
                     print(poisson_sample)
@@ -328,45 +328,45 @@ class NPYLM:
         self.whpylm.sample_hyperparameters()
         self.chpylm.sample_hyperparameters()
 
-    def compute_probability_of_sentence(self, sentence: "Sentence"):
+    def compute_probability_of_chant(self, chant: "Chant"):
         """
-        Compute the probability of the sentence by using the product of the probabilities of the words that make up the sentence.
+        Compute the probability of the chant by using the product of the probabilities of the words that make up the chant.
         """
         prod = 1.0
-        for n in range(2, sentence.num_segments):
-            prod *= self.compute_p_w_of_nth_word(self, sentence, n)
+        for n in range(2, chant.num_segments):
+            prod *= self.compute_p_w_of_nth_word(self, chant, n)
         return prod
 
-    def compute_log_probability_of_sentence(self, sentence: "Sentence"):
+    def compute_log_probability_of_chant(self, chant: "Chant"):
         """
-        Compute the probability of the sentence by using the sum of the log probabilities of the words that make up the sentence.
+        Compute the probability of the chant by using the sum of the log probabilities of the words that make up the chant.
         Using log could be more beneficial in preventing underflow.
         """
         sum = 0.0
-        for n in range(2, sentence.num_segments):
-            sum += np.log(self.compute_p_w_of_nth_word(sentence, n))
+        for n in range(2, chant.num_segments):
+            sum += np.log(self.compute_p_w_of_nth_word(chant, n))
         return sum
 
-    def compute_p_w_of_nth_word(self, sentence: "Sentence", n: int):
+    def compute_p_w_of_nth_word(self, chant: "Chant", n: int):
         """
-        This is the real "compute_p_w"... The above ones don't have much to do with p_w I reckon. They are about whole sentences. Eh.
+        This is the real "compute_p_w"... The above ones don't have much to do with p_w I reckon. They are about whole chants. Eh.
         """
         assert n >= 2
-        assert n < sentence.num_segments
-        assert sentence.segment_lengths[n] > 0
-        word_begin_index = sentence.segment_begin_positions[n]
+        assert n < chant.num_segments
+        assert chant.segment_lengths[n] > 0
+        word_begin_index = chant.segment_begin_positions[n]
         # I mean, why don't you just record the end index directly anyways. The current implementation is such a torture.
-        word_end_index = word_begin_index + sentence.segment_lengths[n] - 1
-        return self.compute_p_w_of_nth_word_chars(sentence.characters, sentence.word_ids, n, word_begin_index, word_end_index)
+        word_end_index = word_begin_index + chant.segment_lengths[n] - 1
+        return self.compute_p_w_of_nth_word_chars(chant.characters, chant.word_ids, n, word_begin_index, word_end_index)
 
 
-    def compute_p_w_of_nth_word_chars(self, sentence_as_chars: list, word_ids: list, n: int, word_begin_position: int, word_end_position: int) -> float:
+    def compute_p_w_of_nth_word_chars(self, chant_as_chars: list, word_ids: list, n: int, word_begin_position: int, word_end_position: int) -> float:
         word_id = word_ids[n]
-        # println("We're in compute_p_w_of_nth_word, sentence_as_chars: $sentence_as_chars, word_ids: $word_ids, word_begin_index: $word_begin_position, word_end_index: $word_end_position")
+        # println("We're in compute_p_w_of_nth_word, chant_as_chars: $chant_as_chars, word_ids: $word_ids, word_begin_index: $word_begin_position, word_end_index: $word_end_position")
 
         # So apparently the parent_p_w_cache should be set while we're trying to find the node?
         # generate_if_not_found = false, return_middle_node = true
-        node = self.find_node_by_tracing_back_context_from_index_n_both(sentence_as_chars, word_ids, n, word_begin_position, word_end_position, self.whpylm_parent_p_w_cache, False, True)
+        node = self.find_node_by_tracing_back_context_from_index_n_both(chant_as_chars, word_ids, n, word_begin_position, word_end_position, self.whpylm_parent_p_w_cache, False, True)
         assert node != None
         # println("Node is $node")
         parent_p_w = self.whpylm_parent_p_w_cache[node.depth]

@@ -10,8 +10,9 @@ __pycache__/
 # Cantus Corpus
 dataset/cantuscorpus/
 
-# Chineese dataset
+# PYP
 models/src/models/nhpylm/icwb2-data/
+models/src/models/nhpylm/chinese
 
 # Others
 tmp/

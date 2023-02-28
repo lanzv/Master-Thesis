@@ -13,8 +13,8 @@ def train(chants: list, split_proportion = 0.9, epochs = 20, max_word_length = 4
     corpus = build_corpus(chants)
     dataset = Dataset(corpus, split_proportion)
 
-    print("Number of train sentences {}".format(dataset.get_num_train_sentences()))
-    print("Number of dev sentences {}".format(dataset.get_num_dev_sentences()))
+    print("Number of train chants {}".format(dataset.get_num_train_chants()))
+    print("Number of dev chants {}".format(dataset.get_num_dev_chants()))
 
     vocabulary = dataset.vocabulary
     # Not sure if this is necessary if we already automatically serialize everything.

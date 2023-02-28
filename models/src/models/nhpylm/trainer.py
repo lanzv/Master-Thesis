@@ -1,6 +1,6 @@
 from src.models.nhpylm.corpus import Dataset, Vocabulary
 from src.models.nhpylm.model import Model
-from src.models.nhpylm.sentence import Sentence
+from src.models.nhpylm.chant import Chant
 from src.models.nhpylm.wtype import WORDTYPE_NUM_TYPES, detect_word_type
 from src.models.nhpylm.definitions import EOW, BOW
 import numpy as np
@@ -10,8 +10,8 @@ This struct contains everything needed for the training process
 """
 class Trainer:
     def __init__(self, dataset: "Dataset", model: "Model", always_accept_new_segmentation: bool = True):
-        self.rand_indices_train: list = [i for i in range(len(dataset.train_sentences))]
-        self.rand_indices_dev: list =  [i for i in range(len(dataset.dev_sentences))]
+        self.rand_indices_train: list = [i for i in range(len(dataset.train_chants))]
+        self.rand_indices_dev: list =  [i for i in range(len(dataset.dev_chants))]
         self.dataset: "Dataset" = dataset
         self.vocabulary: "Vocabulary" = dataset.vocabulary
         self.model: "Model" = model
@@ -19,8 +19,8 @@ class Trainer:
         self.chpylm_sampling_probability_table: list = [0.0 for _ in range(dataset.vocabulary.get_num_characters() + 1)] # Vector{Float64}
         self.chpylm_sampling_id_table: list = [' ' for _ in range(dataset.vocabulary.get_num_characters() + 1)] # Vector{Char}
         self.always_accept_new_segmentation: bool = always_accept_new_segmentation
-        # Indicates whether the sentence at this index has already been added to the CHPYLM. If yes, in iterations > 2 we'd need to remove the sentence from the CHPYLM and add it again.
-        self.added_to_chpylm_train: list = [False for _ in range(len(dataset.train_sentences))] # Vector{Bool}
+        # Indicates whether the chant at this index has already been added to the CHPYLM. If yes, in iterations > 2 we'd need to remove the chant from the CHPYLM and add it again.
+        self.added_to_chpylm_train: list = [False for _ in range(len(dataset.train_chants))] # Vector{Bool}
         # If we don't always accept new segmentations, some segmentations might be rejected.
         self.num_segmentation_rejections: int = 0
         self.num_segmentation_acceptances: int = 0
@@ -38,13 +38,13 @@ class Trainer:
         a_array = [self.model.sampler.npylm.lambda_a for _ in range(WORDTYPE_NUM_TYPES + 1)]
         b_array = [self.model.sampler.npylm.lambda_b for _ in range(WORDTYPE_NUM_TYPES + 1)]
         word_ids: set = set()
-        # Get all sentences in the training set.
-        for sentence in self.dataset.train_sentences:
-            # Go through each word in the sentence, excluding the BOS and EOS tokens.
-            for index in range(2, sentence.num_segments - 1):
-                word = sentence.get_nth_word_string(index)
-                word_id = sentence.get_nth_word_id(index)
-                word_length = sentence.get_nth_segment_length(index)
+        # Get all chants in the training set.
+        for chant in self.dataset.train_chants:
+            # Go through each word in the chant, excluding the BOS and EOS tokens.
+            for index in range(2, chant.num_segments - 1):
+                word = chant.get_nth_word_string(index)
+                word_id = chant.get_nth_word_id(index)
+                word_length = chant.get_nth_segment_length(index)
                 if word_length > self.model.npylm.max_word_length:
                     continue
 
@@ -124,7 +124,7 @@ class Trainer:
             # Keeps track of the actual word length
             cur_word_length = 0
             for j in range(max_word_length):
-                # If we're only at the beginning of the sentence we shouldn't sample an EOW, because that would result in the "word" containing no characters at all.
+                # If we're only at the beginning of the chant we shouldn't sample an EOW, because that would result in the "word" containing no characters at all.
                 skip_eow = True if (j == 0) else False
                 next_char = self.sample_next_char_from_chpylm_given_context(wrapped_chars, j + 1, j + 1, skip_eow)
                 wrapped_chars[j + 1] = next_char
@@ -161,136 +161,136 @@ class Trainer:
 
     def blocked_gibbs_sampling(self):
         # Yeah I think we're not doing any segmentation in the first round at all. Segmentations only start from the second round. So the behavior is normal.
-        # Still then the problem is why on only certain sentences they try to remove EOS twice from the table. Fucking hell this just simply doesn't make the least bit of sense whatsoever let's just go on and see then.
-        # temp_sentence = trainer.dataset.train_sentences[1]
-        # println("In blocked_gibbs_sampling, temp_sentence is $temp_sentence, temp_sentence.num_segments is $(temp_sentence.num_segments), temp_sentence.segment_lengths is $(temp_sentence.segment_lengths) ")
-        num_sentences = len(self.dataset.train_sentences)
-        max_sentence_length = self.dataset.max_sentence_length
+        # Still then the problem is why on only certain chants they try to remove EOS twice from the table. Fucking hell this just simply doesn't make the least bit of sense whatsoever let's just go on and see then.
+        # temp_chant = trainer.dataset.train_chants[1]
+        # println("In blocked_gibbs_sampling, temp_chant is $temp_chant, temp_chant.num_segments is $(temp_chant.num_segments), temp_chant.segment_lengths is $(temp_chant.segment_lengths) ")
+        num_chants = len(self.dataset.train_chants)
+        max_chant_length = self.dataset.max_chant_length
 
-        # TODO: ... Why don't you just shuffle the array of sentences itself instead of this seemingly extraneous array of indices?
+        # TODO: ... Why don't you just shuffle the array of chants itself instead of this seemingly extraneous array of indices?
         np.random.shuffle(self.rand_indices_train)
 
         # Update model parameters
-        for step in range(num_sentences):
-            sentence_index = self.rand_indices_train[step]
-            sentence: "Sentence" = self.dataset.train_sentences[sentence_index]
+        for step in range(num_chants):
+            chant_index = self.rand_indices_train[step]
+            chant: "Chant" = self.dataset.train_chants[chant_index]
 
-            if sentence.supervised:
+            if chant.supervised:
                 # Remove the segmentation and add it again, so that the seating arrangements can be updated.
-                if self.added_to_chpylm_train[sentence_index] == True:
-                    for n in range(2, sentence.num_segments):
-                        self.model.npylm.remove_customer_at_index_n(sentence, n)
-                # Because this is supervised data, i.e. guaranteed to be the true segmentation, we don't need to resample the sentence at all.
-                for n in range(2, sentence.num_segments):
-                    self.model.npylm.add_customer_at_index_n(sentence, n)
-                self.added_to_chpylm_train[sentence_index] = True
+                if self.added_to_chpylm_train[chant_index] == True:
+                    for n in range(2, chant.num_segments):
+                        self.model.npylm.remove_customer_at_index_n(chant, n)
+                # Because this is supervised data, i.e. guaranteed to be the true segmentation, we don't need to resample the chant at all.
+                for n in range(2, chant.num_segments):
+                    self.model.npylm.add_customer_at_index_n(chant, n)
+                self.added_to_chpylm_train[chant_index] = True
                 continue
             else:
                 # TODO: I thought this has more to do with the iteration of sampling? Do we really need such a mechanism anyways. But where is the iteration number in the first place eh.
-                if self.added_to_chpylm_train[sentence_index] == True:
-                    old_segment_lengths = [0 for _ in range(max_sentence_length + 3)]
+                if self.added_to_chpylm_train[chant_index] == True:
+                    old_segment_lengths = [0 for _ in range(max_chant_length + 3)]
                     num_old_segments = 0
                     old_log_p_s = 0.0
                     new_log_p_s = 0.0
 
                     # Wait, why is this thing triggered in the first round already. Even this doesn't seem to make sense.
-                    for n in range(2, sentence.num_segments):
-                        # println("In blocked_gibbs_sampling, n is $n, sentence is $sentence, sentence.num_segments is $(sentence.num_segments), sentence.segment_lengths is $(sentence.segment_lengths) ")
-                        self.model.npylm.remove_customer_at_index_n(sentence, n)
+                    for n in range(2, chant.num_segments):
+                        # println("In blocked_gibbs_sampling, n is $n, chant is $chant, chant.num_segments is $(chant.num_segments), chant.segment_lengths is $(chant.segment_lengths) ")
+                        self.model.npylm.remove_customer_at_index_n(chant, n)
 
                     # We need to later decide by some criteria whether to accept the new segmentation or just keep the old one.
                     if self.always_accept_new_segmentation == False:
-                        num_old_segments = sentence.get_num_segments_without_special_tokens()
+                        num_old_segments = chant.get_num_segments_without_special_tokens()
                         for i in range(num_old_segments):
                             # We save the old segmentation but get rid of the BOS and EOS tokens
                             # Two BOS in the beginning.
-                            old_segment_lengths[i] = sentence.segment_lengths[i + 2]
-                        old_log_p_s = self.model.npylm.compute_log_probability_of_sentence(sentence)
+                            old_segment_lengths[i] = chant.segment_lengths[i + 2]
+                        old_log_p_s = self.model.npylm.compute_log_probability_of_chant(chant)
 
                     # Produce the new segmentation
-                    new_segment_lengths = self.model.sampler.blocked_gibbs_segment(sentence, True)
+                    new_segment_lengths = self.model.sampler.blocked_gibbs_segment(chant, True)
                     # println("new_segment_lengths is $new_segment_lengths")
-                    sentence.split_sentence(new_segment_lengths)
+                    chant.split_chant(new_segment_lengths)
 
-                    # TODO: There might be a way to avoid performing the check twice? Using a single Sentence struct to hold all these stuffs is quite a bit restrictive.
+                    # TODO: There might be a way to avoid performing the check twice? Using a single Chant struct to hold all these stuffs is quite a bit restrictive.
                     if self.always_accept_new_segmentation == False:
-                        new_log_p_s = self.model.npylm.compute_log_probability_of_sentence(sentence)
+                        new_log_p_s = self.model.npylm.compute_log_probability_of_chant(chant)
                         # When the log probability of the new segmentation is lower, accept the new segmentation only with a certain probability
                         bernoulli = min(1.0, np.exp(new_log_p_s - old_log_p_s))
                         r = np.random.uniform(0,1)
                         if bernoulli < r:
-                            sentence.split_sentence(old_segment_lengths, num_old_segments)
+                            chant.split_chant(old_segment_lengths, num_old_segments)
                             self.num_segmentation_rejections += 1
                         else:
                             self.num_segmentation_acceptances += 1
 
 
-                # Put the sentence data into the NPYLM
-                # Yeah I think I get it. All the sampling process we're basically trying to alter the model parameters. We're not really storing the segmentation results of the training sentences anyways, as that would be quite pointless and irrelevant. Let's go then.
-                for n in range(2, sentence.num_segments):
-                    self.model.npylm.add_customer_at_index_n(sentence, n)
-                self.added_to_chpylm_train[sentence_index] = True
+                # Put the chant data into the NPYLM
+                # Yeah I think I get it. All the sampling process we're basically trying to alter the model parameters. We're not really storing the segmentation results of the training chants anyways, as that would be quite pointless and irrelevant. Let's go then.
+                for n in range(2, chant.num_segments):
+                    self.model.npylm.add_customer_at_index_n(chant, n)
+                self.added_to_chpylm_train[chant_index] = True
         assert self.model.npylm.whpylm.root.ntables <= self.model.npylm.chpylm.get_num_customers()
 
 
-    def compute_perplexity(self, sentences: list):
+    def compute_perplexity(self, chants: list):
         """
         TODO: Summarize the difference between the usgae of the Viterbi algorithm and the original blocked sampler.
         Compute the perplexity based on optimal segmentation produced by the Viterbi algorithm"
         """
-        num_sentences = len(sentences)
-        if num_sentences == 0:
+        num_chants = len(chants)
+        if num_chants == 0:
             return 0.0
         sum = 0.0
 
-        for s in sentences:
+        for s in chants:
             # Create a copy so that no interference occurs.
-            sentence: "Sentence" = Sentence(s.sentence_string)
-            segment_lengths = self.model.sampler.viterbi_decode(sentence)
-            sentence.split_sentence(segment_lengths)
+            chant: "Chant" = Chant(s.chant_string)
+            segment_lengths = self.model.sampler.viterbi_decode(chant)
+            chant.split_chant(segment_lengths)
             # Why - 2 not - 3 though? EOS still needs to be taken into account in perplexity computation I guess?
-            sum += self.model.npylm.compute_log_probability_of_sentence(sentence) / sentence.num_segments - 2
-        ppl = np.exp(-sum / num_sentences)
+            sum += self.model.npylm.compute_log_probability_of_chant(chant) / chant.num_segments - 2
+        ppl = np.exp(-sum / num_chants)
         return ppl
 
     def compute_perplexity_train(self):
-        return self.compute_perplexity(self.dataset.train_sentences)
+        return self.compute_perplexity(self.dataset.train_chants)
 
     def compute_perplexity_dev(self):
-        return self.compute_perplexity(self.dataset.dev_sentences)
+        return self.compute_perplexity(self.dataset.dev_chants)
 
-    def compute_log_likelihood(self, sentences: list):
-        num_sentences = len(sentences)
-        if num_sentences == 0:
+    def compute_log_likelihood(self, chants: list):
+        num_chants = len(chants)
+        if num_chants == 0:
             return 0.0
         sum = 0.0
-        for sentence in sentences:
-            log_p_x = self.model.sampler.compute_log_forward_probability(sentence, True)
+        for chant in chants:
+            log_p_x = self.model.sampler.compute_log_forward_probability(chant, True)
             sum += log_p_x
         return sum
 
     def compute_log_likelihood_train(self):
-        return self.compute_log_likelihood(self.dataset.train_sentences)
+        return self.compute_log_likelihood(self.dataset.train_chants)
 
     def compute_log_likelihood_dev(self):
-        return self.compute_log_likelihood(self.dataset.dev_sentences)
+        return self.compute_log_likelihood(self.dataset.dev_chants)
 
-    def print_segmentations(self, num_to_print: int, sentences: list, rand_indices: list):
-        num_to_print = min(len(sentences), num_to_print)
+    def print_segmentations(self, num_to_print: int, chants: list, rand_indices: list):
+        num_to_print = min(len(chants), num_to_print)
         for n in range(1, num_to_print + 1):
-            sentence_index = rand_indices[n]
-            # I think this should really be clone, not just create a new sentence based on the string. Let's see then.
-            # OK I don't think it makes a difference because the sentence provided to it as trainer.dataset.train_sentences and trainer.dataset.dev_sentences are probably still non-segmented anyways.
-            sentence = Sentence(sentences[sentence_index].sentence_string)
-            # Use the viterbi_decode method to segment sentences, given an already trained model.
-            segment_lengths = self.model.sampler.viterbi_decode(sentence)
-            sentence.split_sentence(segment_lengths)
-            sentence.show()
+            chant_index = rand_indices[n]
+            # I think this should really be clone, not just create a new chant based on the string. Let's see then.
+            # OK I don't think it makes a difference because the chant provided to it as trainer.dataset.train_chants and trainer.dataset.dev_chants are probably still non-segmented anyways.
+            chant = Chant(chants[chant_index].chant_string)
+            # Use the viterbi_decode method to segment chants, given an already trained model.
+            segment_lengths = self.model.sampler.viterbi_decode(chant)
+            chant.split_chant(segment_lengths)
+            chant.show()
             print("\n")
 
     def print_segmentations_train(self, num_to_print: int):
-        return self.print_segmentations(num_to_print, self.dataset.train_sentences, self.rand_indices_train)
+        return self.print_segmentations(num_to_print, self.dataset.train_chants, self.rand_indices_train)
 
     def print_segmentations_dev(self, num_to_print: int):
         # shuffle!(trainer.rand_indices_dev) Rust doesn't have this part of code, only Julia does
-        return self.print_segmentations(num_to_print, self.dataset.dev_sentences, self.rand_indices_dev)
+        return self.print_segmentations(num_to_print, self.dataset.dev_chants, self.rand_indices_dev)

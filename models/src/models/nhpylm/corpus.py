@@ -1,4 +1,4 @@
-from src.models.nhpylm.sentence import Sentence
+from src.models.nhpylm.chant import Chant
 import numpy as np
 
 """
@@ -17,19 +17,19 @@ class Vocabulary():
 
 
 """
-This struct keeps track of all sentences from the corpus files, and optionally the "true" segmentations, if any.
+This struct keeps track of all chants from the corpus files, and optionally the "true" segmentations, if any.
 """
 class Corpus():
     def __init__(self):
 
-        self.sentence_list: list = [] # Vector{UTF32String}
+        self.chant_list: list = [] # Vector{UTF32String}
         self.segmented_word_list: list = [] # Vector{Vector{UTF32String}}
 
-    def add_sentence(self, sentence_string: str):
+    def add_chant(self, chant_string: str):
         """
         Add an individual sentence to the corpus
         """
-        self.sentence_list.append(sentence_string)
+        self.chant_list.append(chant_string)
 
     def load_corpus(self, chants):
         """
@@ -40,12 +40,12 @@ class Corpus():
             if len(chant) == 0:
                 continue
             else:
-                self.add_sentence(chant)
+                self.add_chant(chant)
 
-    def get_num_sentences(self):
-        return len(self.sentence_list)
+    def get_num_chants(self):
+        return len(self.chant_list)
 
-    def get_num_already_segmented_sentences(self):
+    def get_num_already_segmented_chants(self):
         return len(self.segmented_word_list)
 
 
@@ -57,51 +57,51 @@ class Dataset():
     def __init__(self, corpus: "Corpus", train_proportion: float):
         self.vocabulary = Vocabulary()
         self.corpus = corpus
-        # Max allowed sentence length in this dataset
-        self.max_sentence_length: int = 0
-        # Average sentence length in this dataset
-        self.avg_sentence_length: float = 0
+        # Max allowed chant length in this dataset
+        self.max_chant_length: int = 0
+        # Average chant length in this dataset
+        self.avg_chant_length: float = 0
         self.num_segmented_words: int = 0
-        self.train_sentences: list = [] # Vector{Sentence}
-        self.dev_sentences: list = [] # Vector{Sentence}
+        self.train_chants: list = [] # Vector{Chant}
+        self.dev_chants: list = [] # Vector{Chant}
 
         corpus_length: int = 0
-        sentence_indices = [0 for _ in range(corpus.get_num_sentences())]
-        for i in range(corpus.get_num_sentences()):
-            sentence_indices[i] = i
+        chant_indices = [0 for _ in range(corpus.get_num_chants())]
+        for i in range(corpus.get_num_chants()):
+            chant_indices[i] = i
 
-        np.random.shuffle(sentence_indices)
+        np.random.shuffle(chant_indices)
 
         # How much of the input data will be used for training vs. used as dev (is there even a dev set in tihs one?)
         train_proportion = min(1.0, max(0.0, train_proportion))
-        num_train_sentences = float(corpus.get_num_sentences()) * train_proportion
-        for i in range(corpus.get_num_sentences()):
-            sentence_string = corpus.sentence_list[sentence_indices[i]]
-            if i <= num_train_sentences:
-                self.add_sentence(sentence_string, self.train_sentences)
+        num_train_chants = float(corpus.get_num_chants()) * train_proportion
+        for i in range(corpus.get_num_chants()):
+            chant_string = corpus.chant_list[chant_indices[i]]
+            if i <= num_train_chants:
+                self.add_chant(chant_string, self.train_chants)
             else:
-                self.add_sentence(sentence_string, self.dev_sentences)
+                self.add_chant(chant_string, self.dev_chants)
 
 
-            if len(sentence_string) > self.max_sentence_length:
-                self.max_sentence_length = len(sentence_string)
+            if len(chant_string) > self.max_chant_length:
+                self.max_chant_length = len(chant_string)
 
-            corpus_length += len(sentence_string)
+            corpus_length += len(chant_string)
 
-        self.avg_sentence_length = corpus_length / corpus.get_num_sentences()
+        self.avg_chant_length = corpus_length / corpus.get_num_chants()
 
 
-    def get_num_train_sentences(self):
-        return len(self.train_sentences)
+    def get_num_train_chants(self):
+        return len(self.train_chants)
 
-    def get_num_dev_sentences(self):
-        return len(self.dev_sentences)
+    def get_num_dev_chants(self):
+        return len(self.dev_chants)
 
-    def add_sentence(self, sentence_string: str, sentences: list):
+    def add_chant(self, chant_string: str, chants: list):
         """
-        Add a sentence to the train or dev sentence vector of the dataset
+        Add a chant to the train or dev chant vector of the dataset
         """
-        assert(len(sentence_string) > 0)
-        for char in sentence_string:
+        assert(len(chant_string) > 0)
+        for char in chant_string:
             self.vocabulary.add_character(char)
-        sentences.append(Sentence(sentence_string))
+        chants.append(Chant(chant_string))

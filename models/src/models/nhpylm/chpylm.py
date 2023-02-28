@@ -141,7 +141,7 @@ class CHPYLM(HPYLM):
         if n < depth_of_n:
             return None
 
-        # The actual char at location n of the sentence
+        # The actual char at location n of the chant
         char_n = characters[n]
         # Start from the root node, order 0
         cur_node = self.root

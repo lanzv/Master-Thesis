@@ -1,4 +1,4 @@
-# Beginning of sentence
+# Beginning of chant
 # Since 0 and 1 are not Char/String in Julia, might be useful to add some unique representations as well.
 # Use alpha and omega then.
 BOS_CHAR = 'Α'
