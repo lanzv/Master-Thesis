@@ -15,7 +15,7 @@ class UnigramModel:
         self.__init_model()
 
 
-    def predict_segments(self, chants, modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
+    def train(self, chants, modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
                          alpha = 1, k_best = 15, print_each = 1):
         self.__init_model()
         self.__generate_vocabulary(chants)
@@ -35,7 +35,15 @@ class UnigramModel:
             chant_segmentation = self.__train_iteration(chant_segmentation, k_best = k_best, alpha = alpha)
         self.__print_iteration_results(iterations, chant_segmentation, modes)
         self.__plot_statistics()
-        return chant_segmentation
+
+    def predict_segments(self, chants, k_best=15, alpha=1):
+        final_segmentation = []
+        for chant_string in chants:
+            assert type(chant_string) is str or type(chant_string) is np.str_
+            new_segments = self.__get_optimized_chant(chant_segments=[chant_string],
+                                                      k_best=k_best, alpha=alpha, argmax=True)
+            final_segmentation.append(new_segments)
+        return final_segmentation
 
     # --------------------------------- printers, plotters ----------------------------
     def __print_iteration_results(self, iteration, segmentation, modes):
@@ -205,14 +213,14 @@ class UnigramModel:
         return new_segmented_chants
 
 
-    def __get_optimized_chant(self, chant_segments, k_best: int, alpha: float):
+    def __get_optimized_chant(self, chant_segments, k_best: int, alpha: float, argmax: bool = False):
         chant = ''.join(chant_segments)
         # for each melody pitch, store the list of k_best nodes (prob, position, prev_node)
         trellis = [[] for _ in range((len(chant)+1))]
         trellis[0] = [Node(0, 1, None)] # position = 0, prob = 1, prev_node = None
         self.__chant_viterbi_optimization(chant_str=chant, trellis=trellis,
                                           k_best=k_best, alpha=alpha)
-        return self.__decode_trellis(trellis, chant)
+        return self.__decode_trellis(trellis, chant, argmax=argmax)
 
 
 
@@ -245,7 +253,7 @@ class UnigramModel:
 
 
 
-    def __decode_trellis(self, graph: list, chant_str: str):
+    def __decode_trellis(self, graph: list, chant_str: str, argmax: bool = False):
         final_segmentation_ids = []
 
 
@@ -254,11 +262,14 @@ class UnigramModel:
         if len(probs) == 0:
         # too small chant that is not segmentable into self.min_size,..,self.max_size segments
             return [chant_str]
-        if probs.sum() == 0:
-        # when probs.sum is too small, face it as a uniform distribution
-            probs = np.full((len(probs)), 1/len(probs))
-        final_node = graph[-1][np.random.choice(
-            np.arange(0, len(probs)), p=probs/probs.sum())]
+        if not argmax:
+            if probs.sum() == 0:
+            # when probs.sum is too small, face it as a uniform distribution
+                probs = np.full((len(probs)), 1/len(probs))
+            final_node = graph[-1][np.random.choice(
+                np.arange(0, len(probs)), p=probs/probs.sum())]
+        else:
+            final_node = graph[-1][probs.argmax()]
         final_segmentation_ids.append(final_node.position)
 
 
@@ -285,7 +296,7 @@ class UnigramModelModes:
         self.__init_model()
 
 
-    def predict_segments(self, chants, modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
+    def train(self, chants, modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
                          alpha = 1, k_best = 15, print_each = 1):
         self.__init_model()
         self.__generate_vocabulary(chants, modes)
@@ -303,7 +314,15 @@ class UnigramModelModes:
             chant_segmentation = self.__train_iteration(chant_segmentation, modes, k_best = k_best, alpha = alpha)
         self.__print_iteration_results(iterations, chant_segmentation, modes)
         self.__plot_statistics()
-        return chant_segmentation
+
+    def predict_segments(self, chants, modes, k_best=15, alpha=1):
+        final_segmentation = []
+        for chant_string, mode in zip(chants, modes):
+            assert type(chant_string) is str or type(chant_string) is np.str_
+            new_segments = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
+                                                      k_best=k_best, alpha=alpha, argmax=True)
+            final_segmentation.append(new_segments)
+        return final_segmentation
 
     # --------------------------------- printers, plotters ----------------------------
     def __print_iteration_results(self, iteration, segmentation, modes):
@@ -496,14 +515,14 @@ class UnigramModelModes:
         return new_segmented_chants
 
 
-    def __get_optimized_chant(self, chant_segments, mode, k_best: int, alpha: float):
+    def __get_optimized_chant(self, chant_segments, mode, k_best: int, alpha: float, argmax: bool = False):
         chant = ''.join(chant_segments)
         # for each melody pitch, store the list of k_best nodes (prob, position, prev_node)
         trellis = [[] for _ in range((len(chant)+1))]
         trellis[0] = [Node(0, 1, None)] # position = 0, prob = 1, prev_node = None
         self.__chant_viterbi_optimization(chant_str=chant, mode=mode, trellis=trellis,
                                           k_best=k_best, alpha=alpha)
-        return self.__decode_trellis(trellis, chant)
+        return self.__decode_trellis(trellis, chant, argmax = argmax)
 
 
 
@@ -536,7 +555,7 @@ class UnigramModelModes:
 
 
 
-    def __decode_trellis(self, graph: list, chant_str: str):
+    def __decode_trellis(self, graph: list, chant_str: str, argmax: bool = False):
         final_segmentation_ids = []
 
 
@@ -545,11 +564,14 @@ class UnigramModelModes:
         if len(probs) == 0:
         # too small chant that is not segmentable into self.min_size,..,self.max_size segments
             return [chant_str]
-        if probs.sum() == 0:
-        # when probs.sum is too small, face it as a uniform distribution
-            probs = np.full((len(probs)), 1/len(probs))
-        final_node = graph[-1][np.random.choice(
-            np.arange(0, len(probs)), p=probs/probs.sum())]
+        if not argmax:
+            if probs.sum() == 0:
+            # when probs.sum is too small, face it as a uniform distribution
+                probs = np.full((len(probs)), 1/len(probs))
+            final_node = graph[-1][np.random.choice(
+                np.arange(0, len(probs)), p=probs/probs.sum())]
+        else:
+            final_node = graph[-1][probs.argmax()]
         final_segmentation_ids.append(final_node.position)
 
 

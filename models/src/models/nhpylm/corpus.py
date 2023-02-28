@@ -27,7 +27,7 @@ class Corpus():
 
     def add_chant(self, chant_string: str):
         """
-        Add an individual sentence to the corpus
+        Add an individual chant to the corpus
         """
         self.chant_list.append(chant_string)
 
@@ -51,7 +51,7 @@ class Corpus():
 
 
 """
-This struct holds all the structs related to a session/task, including the vocabulary, the corpus and the sentences produced from the corpus.
+This struct holds all the structs related to a session/task, including the vocabulary, the corpus and the chants produced from the corpus.
 """
 class Dataset():
     def __init__(self, corpus: "Corpus", train_proportion: float):
