@@ -31,18 +31,16 @@ class Corpus():
         """
         self.sentence_list.append(sentence_string)
 
-    def read_corpus(self, input_file_path):
+    def load_corpus(self, chants):
         """
         Read the corpus from an input stream
         """
-        input_file = open(input_file_path, 'r')
-        lines = input_file.read().splitlines()
         # Strips the newline character
-        for line in lines:
-            if len(line) == 0:
+        for chant in chants:
+            if len(chant) == 0:
                 continue
             else:
-                self.add_sentence(line)
+                self.add_sentence(chant)
 
     def get_num_sentences(self):
         return len(self.sentence_list)

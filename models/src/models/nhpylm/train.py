@@ -4,13 +4,13 @@ from src.models.nhpylm.trainer import Trainer
 from src.models.nhpylm.definitions import HPYLM_A, HPYLM_B, CHPYLM_BETA_STOP, CHPYLM_BETA_PASS
 
 
-def build_corpus(path) -> "Corpus":
+def build_corpus(chants) -> "Corpus":
     corpus = Corpus()
-    corpus.read_corpus(path)
+    corpus.load_corpus(chants)
     return corpus
 
-def train(corpus_path, split_proportion = 0.9, epochs = 20, max_word_length = 4): # ToDo epochs 1000000
-    corpus = build_corpus(corpus_path)
+def train(chants: list, split_proportion = 0.9, epochs = 20, max_word_length = 4): # ToDo epochs 1000000
+    corpus = build_corpus(chants)
     dataset = Dataset(corpus, split_proportion)
 
     print("Number of train sentences {}".format(dataset.get_num_train_sentences()))
