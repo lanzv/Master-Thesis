@@ -1,5 +1,4 @@
 from src.models.nhpylm.corpus import Dataset, Vocabulary
-from src.models.nhpylm.model import Model
 from src.models.nhpylm.chant import Chant
 from src.models.nhpylm.wtype import WORDTYPE_NUM_TYPES, detect_word_type
 from src.models.nhpylm.definitions import EOW, BOW
@@ -9,12 +8,12 @@ Actually I'm not sure if we really need such a complicated Trainer class. Let's 
 This struct contains everything needed for the training process
 """
 class Trainer:
-    def __init__(self, dataset: "Dataset", model: "Model", always_accept_new_segmentation: bool = True):
+    def __init__(self, dataset: "Dataset", model, always_accept_new_segmentation: bool = True):
         self.rand_indices_train: list = [i for i in range(len(dataset.train_chants))]
         self.rand_indices_dev: list =  [i for i in range(len(dataset.dev_chants))]
         self.dataset: "Dataset" = dataset
         self.vocabulary: "Vocabulary" = dataset.vocabulary
-        self.model: "Model" = model
+        self.model = model
         # These tables are used when we generate words randomly from the CHPYLM, in the `sample_next_char_from_chpylm_given_context` function.
         self.chpylm_sampling_probability_table: list = [0.0 for _ in range(dataset.vocabulary.get_num_characters() + 1)] # Vector{Float64}
         self.chpylm_sampling_id_table: list = [' ' for _ in range(dataset.vocabulary.get_num_characters() + 1)] # Vector{Char}

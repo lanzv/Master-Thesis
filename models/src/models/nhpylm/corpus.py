@@ -105,3 +105,12 @@ class Dataset():
         for char in chant_string:
             self.vocabulary.add_character(char)
         chants.append(Chant(chant_string))
+
+    def generate_dataset(chants: list, split_proportion: float):
+        corpus = Corpus()
+        corpus.load_corpus(chants)
+        dataset = Dataset(corpus, split_proportion)
+
+        print("Number of train chants {}".format(dataset.get_num_train_chants()))
+        print("Number of dev chants {}".format(dataset.get_num_dev_chants()))
+        return dataset

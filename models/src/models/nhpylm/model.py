@@ -2,7 +2,8 @@ from src.models.nhpylm.corpus import Dataset
 from src.models.nhpylm.npylm import NPYLM
 from src.models.nhpylm.sample import Sampler
 from src.models.nhpylm.chant import Chant
-from src.models.nhpylm.definitions import CHPYLM_BETA_STOP, CHPYLM_BETA_PASS
+from src.models.nhpylm.trainer import Trainer
+from src.models.nhpylm.definitions import HPYLM_A, HPYLM_B, CHPYLM_BETA_STOP, CHPYLM_BETA_PASS
 
 """
 This is the struct that will serve as a container for the whole NHPYLM. it will be serialized after training.
@@ -16,6 +17,29 @@ class Model:
         # Need to do this because `Model` is immutable
         self.npylm: "NPYLM" = NPYLM(max_word_length, max_chant_length, chpylm_G_0, initial_a, initial_b, chpylm_beta_stop, chpylm_beta_pass)
         self.sampler: "Sampler" = Sampler(self.npylm, max_word_length, max_chant_length)
+
+        self.dataset = dataset
+        self.set_initial_a(HPYLM_A)
+        self.set_initial_b(HPYLM_B)
+        self.set_chpylm_beta_stop(CHPYLM_BETA_STOP)
+        self.set_chpylm_beta_pass(CHPYLM_BETA_PASS)
+
+
+    def train(self, epochs = 20):
+        trainer = Trainer(self.dataset, self)
+
+        for epoch in range(1, epochs + 1):
+            trainer.blocked_gibbs_sampling()
+            trainer.sample_hyperparameters()
+            trainer.sample_lambda()
+            # The accuracy is better after several iterations have been already done.
+            if epoch > 3:
+                trainer.update_p_k_given_chpylm()
+            print("Iteration {}".format(epoch))
+            if epoch % 10 == 0:
+                trainer.print_segmentations_train(10)
+                print("Perplexity_dev: {}".format(trainer.compute_perplexity_dev()))
+
 
     def get_max_word_length(self):
         return self.npylm.max_word_length
