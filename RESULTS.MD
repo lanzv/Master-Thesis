@@ -4,16 +4,16 @@
 
 *Results of Unigram Model of several settings of min size, max size segments, seeds and iterations. For evaluating we used 5 score functions. For more information see [docs](./README.md#score-functions). The model name in the table is described by the format of 'model min_size-max_size-iterations-init_segmentation (seed)'. Seed is by default 0. UM stands for Unigram Model, UMM for Unigram Model focused on each mode separately.*
 
-|                      | **bacor accuracy (%)** | **bacor f1 (%)** | **mjww (%)** | **wtmf (%)** | **wufpc (pitches)** | **vocabulary size** | **average segment length** |
+|                      | **bacor accuracy (%)** | **bacor f1 (%)** | **mjww (%)** | **wtmf (%)** | **wufpc (pitches)** | **vocabulary size** (last iteration - not final) | **average segment length** (last iteration - not final) |
 |----------------------|------------------------|------------------|--------------|--------------|---------------------|---------------------|----------------------------|
-| UM 1-14-100-rand     | 67.80                  | 67.81            | 44.75        | **97.94**    | 3.77                | 50 103              | 12.62                      |
-| UM 1-14-100-words    | 67.76                  | 67.74            | **45.33**    | 97.94        | **3.75**            | 50 193              | 12.62                      |
-| UM 1-7-100-rand      | 91.66                  | 91.58            | 42.00        | 78.00        | 5.12                | 38 002              | 6.55                       |
-| UM 1-7-100-words     | 91.73                  | 91.64            | 42.04        | 78.01        | 5.13                | 37 979              | 6.55                       |
-| UM 3-8-100-rand      | 90.17                  | 90.04            | 41.54        | 85.66        | 4.90                | 47 668              | 7.50                       |
-| UM 3-8-100-words     | 90.05                  | 89.95            | 41.54        | 85.60        | 4.90                | 47 709              | 7.50                       |
-| UM 3-5-100-rand      | 93.34                  | **93.29**        | 36.57        | 59.78        | 5.87                | **13 495**          | 4.60                       |
-| UM 3-5-100-words     | 93.17                  | 93.13            | 36.78        | 60.23        | 5.88                | 13 549              | **4.59**                   |
+| UM 1-14-100-rand     | 68.86                  | 69.03            | 44.86        | 97.75        | 3.77                | 50 103              | 12.62                      |
+| UM 1-14-100-words    | 68.93                  | 68.92            | **45.47**    | **97.80**    | **3.75**            | 50 193              | 12.62                      |
+| UM 1-7-100-rand      | 91.82                  | 91.74            | 42.24        | 77.99        | 5.12                | 38 002              | 6.55                       |
+| UM 1-7-100-words     | 92.19                  | 92.10            | 42.27        | 78.03        | 5.11                | 37 979              | 6.55                       |
+| UM 3-8-100-rand      | 90.17                  | 90.03            | 41.79        | 85.45        | 4.89                | 47 668              | 7.50                       |
+| UM 3-8-100-words     | 90.12                  | 90.01            | 41.85        | 85.44        | 4.89                | 47 709              | 7.50                       |
+| UM 3-5-100-rand      | **93.44**              | **93.39**        | 36.69        | 60.11        | 5.85                | **13 495**          | 4.60                       |
+| UM 3-5-100-words     | 92.88                  | 92.84            | 36.96        | 60.42        | 5.87                | 13 549              | **4.59**                   |
 | _UMM 1-14-100-rand_  | _71.58_                | _72.55_          | _44.81_      | _99.59_      | _3.76_              | _50 601_            | _12.62_                    |
 | _UMM 1-14-100-words_ | _71.53_                | _72.45_          | **_45.75_**  | **_99.61_**  | **_3.75_**          | _50 510_            | _12.62_                    |
 | _UMM 1-7-100-rand_   | _95.89_                | _95.86_          | _41.25_      | _86.97_      | _5.12_              | _41 283_            | _6.56_                     |
