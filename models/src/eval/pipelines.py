@@ -6,6 +6,7 @@ from src.utils.plotters import plot_melody_mode_frequencies
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from src.utils.eval_helpers import list2string, get_bacor_model
+from src.eval.segment_statistics import get_average_segment_length, get_vocabulary_size
 import logging
 
 def single_iteration_pipeline(final_segmentation, modes, iteration, top_melodies):
@@ -18,17 +19,7 @@ def single_iteration_pipeline(final_segmentation, modes, iteration, top_melodies
 
     X_train, y_train = final_segmentation[:train_len], modes[:train_len]
     X_test, y_test = final_segmentation[train_len:], modes[train_len:]
-    # get vocab size and average length segment
-    vocabulary = set()
-    all_segments = 0
-    segment_length_sum = 0
-    for chant in final_segmentation:
-        for segment in chant:
-            vocabulary.add(segment)
-            all_segments += 1
-            segment_length_sum += len(segment)
-    vocab_size = len(vocabulary)
-    avg_segment_len = float(segment_length_sum)/float(all_segments)
+
     # bacor score
     train_data, test_data = list2string(X_train), list2string(X_test)
     bacor_model = get_bacor_model()
@@ -42,6 +33,10 @@ def single_iteration_pipeline(final_segmentation, modes, iteration, top_melodies
     wtmf = wtmf_score(final_segmentation, modes)
     # Weighted Unique Final Pitch Count score
     wufpc = wufpc_score(final_segmentation)
+    # Vocabulary Size
+    vocab_size = get_vocabulary_size(final_segmentation)
+    # Average Segment Length
+    avg_segment_len = get_average_segment_length(final_segmentation)
 
     print("{}. Iteration \t accuracy: {:.2f}%, f1: {:.2f}%, mjww: {:.2f}%, wtmf: {:.2f}%, wufpc: {:.2f} pitches, vocabulary size: {}, avg segment len: {:.2f} \t\t {}"
         .format(iteration, accuracy*100, f1*100, mjww*100, wtmf*100, wufpc, vocab_size, avg_segment_len, top_melodies))
@@ -50,6 +45,9 @@ def single_iteration_pipeline(final_segmentation, modes, iteration, top_melodies
 
 def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159,
         max_features_from_model = 100, max_features_additative = 100, include_additative = True):
+    """
+    final segmentation is a list of list of segments
+    """
     X_train, y_train = final_segmentation[:train_len], modes[:train_len]
     X_test, y_test = final_segmentation[train_len:], modes[train_len:]
     assert len(X_test) == test_len and len(y_test) == test_len
@@ -67,6 +65,10 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
     wtmf = wtmf_score(final_segmentation, modes)
     # Weighted Unique Final Pitch Count score
     wufpc = wufpc_score(final_segmentation)
+    # Vocabulary Size
+    vocab_size = get_vocabulary_size(final_segmentation)
+    # Average Segment Length
+    avg_segment_len = get_average_segment_length(final_segmentation)
 
 
     # Print scores
@@ -84,6 +86,12 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
     print()
     print("\t\t Weighted Unique Final Pitch Count")
     print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(wufpc))
+    print()
+    print("\t\t Vocabulary Size")
+    print("\t\t\t size: {} unique segments".format(vocab_size))
+    print()
+    print("\t\t Average Segment Length")
+    print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
     print("--------------------------------------------------------------------------")
 
     print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
