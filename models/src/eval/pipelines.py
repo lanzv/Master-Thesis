@@ -6,7 +6,7 @@ from src.utils.plotters import plot_melody_mode_frequencies
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from src.utils.eval_helpers import list2string, get_bacor_model
-from src.eval.segment_statistics import get_average_segment_length, get_vocabulary_size
+from src.eval.segment_statistics import get_average_segment_length, get_vocabulary_size, show_mode_segment_statistics
 import logging
 
 def single_iteration_pipeline(final_segmentation, modes, iteration, top_melodies):
@@ -100,6 +100,7 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
         print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
         plot_melody_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
 
+    show_mode_segment_statistics(final_segmentation, modes)
 
     return bacor, mjww, wtmf, wufpc, selected_features, trained_model
 

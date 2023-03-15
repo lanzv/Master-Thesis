@@ -1,5 +1,6 @@
 import numpy as np
 from pandas import DataFrame
+from src.utils.plotters import plot_mode_segment_statistics
 
 def get_vocabulary_size(segmentation: list) -> int:
     """
@@ -30,7 +31,8 @@ def show_mode_segment_statistics(segmentation, modes, mode_list = ["1", "2", "3"
     distinct_dataframe = get_distinct_segments_mode_dataframe(segmentation, modes, mode_list)
     vocabulary_sizes_dataframe = get_vocab_segments_mode_dataframe(segmentation, modes, mode_list)
     unique_dataframe = get_unique_segments_mode_dataframe(segmentation, modes, mode_list)
-    
+    plot_mode_segment_statistics(shared_dataframe, distinct_dataframe, vocabulary_sizes_dataframe, unique_dataframe)
+
 
 def get_shared_segments_mode_dataframe(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     """
