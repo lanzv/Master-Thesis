@@ -4,7 +4,7 @@ from collections import defaultdict
 import logging
 from src.utils.loader import load_word_segmentations
 from src.eval.pipelines import single_iteration_pipeline
-from src.utils.plotters import plot_line_chart
+from src.utils.plotters import plot_iteration_statistics
 
 class UnigramModel:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
@@ -59,20 +59,16 @@ class UnigramModel:
         self.statistics["iterations"].append(iteration)
 
     def __plot_statistics(self):
-        plot_line_chart("Bacor - not tuned - Accuracy (%)",
-            self.statistics["iterations"], self.statistics["accuracy"])
-        plot_line_chart("Bacor - not tuned - F1 (%)",
-            self.statistics["iterations"], self.statistics["f1"])
-        plot_line_chart("Melody Justified With Words (%)",
-            self.statistics["iterations"], self.statistics["mjww"])
-        plot_line_chart("Weighted Top Mode Frequency (%)",
-            self.statistics["iterations"], self.statistics["wtmf"])
-        plot_line_chart("Weighted Unique Final Pitch Count",
-            self.statistics["iterations"], self.statistics["wufpc"])
-        plot_line_chart("Vocabulary Size",
-            self.statistics["iterations"], self.statistics["vocab_size"])
-        plot_line_chart("Average Segment Length",
-            self.statistics["iterations"], self.statistics["avg_segment_len"])
+        statistics_to_plot = {
+            "Bacor - not tuned - Accuracy (%)": (self.statistics["iterations"], self.statistics["accuracy"]),
+            "Bacor - not tuned - F1 (%)": (self.statistics["iterations"], self.statistics["f1"]),
+            "Melody Justified With Words (%)": (self.statistics["iterations"], self.statistics["mjww"]),
+            "Weighted Top Mode Frequency (%)": (self.statistics["iterations"], self.statistics["wtmf"]),
+            "Weighted Unique Final Pitch Count": (self.statistics["iterations"], self.statistics["wufpc"]),
+            "Vocabulary Size": (self.statistics["iterations"], self.statistics["vocab_size"]),
+            "Average Segment Length": (self.statistics["iterations"], self.statistics["avg_segment_len"])
+        }
+        plot_iteration_statistics(statistics_to_plot)
 
 
     # ------------------------------- data structures updates -------------------------
@@ -345,21 +341,16 @@ class UnigramModelModes:
         self.statistics["iterations"].append(iteration)
 
     def __plot_statistics(self):
-        plot_line_chart("Bacor - not tuned - Accuracy (%)",
-            self.statistics["iterations"], self.statistics["accuracy"])
-        plot_line_chart("Bacor - not tuned - F1 (%)",
-            self.statistics["iterations"], self.statistics["f1"])
-        plot_line_chart("Melody Justified With Words (%)",
-            self.statistics["iterations"], self.statistics["mjww"])
-        plot_line_chart("Weighted Top Mode Frequency (%)",
-            self.statistics["iterations"], self.statistics["wtmf"])
-        plot_line_chart("Weighted Unique Final Pitch Count",
-            self.statistics["iterations"], self.statistics["wufpc"])
-        plot_line_chart("Vocabulary Size",
-            self.statistics["iterations"], self.statistics["vocab_size"])
-        plot_line_chart("Average Segment Length",
-            self.statistics["iterations"], self.statistics["avg_segment_len"])
-
+        statistics_to_plot = {
+            "Bacor - not tuned - Accuracy (%)": (self.statistics["iterations"], self.statistics["accuracy"]),
+            "Bacor - not tuned - F1 (%)": (self.statistics["iterations"], self.statistics["f1"]),
+            "Melody Justified With Words (%)": (self.statistics["iterations"], self.statistics["mjww"]),
+            "Weighted Top Mode Frequency (%)": (self.statistics["iterations"], self.statistics["wtmf"]),
+            "Weighted Unique Final Pitch Count": (self.statistics["iterations"], self.statistics["wufpc"]),
+            "Vocabulary Size": (self.statistics["iterations"], self.statistics["vocab_size"]),
+            "Average Segment Length": (self.statistics["iterations"], self.statistics["avg_segment_len"])
+        }
+        plot_iteration_statistics(statistics_to_plot)
 
     # ------------------------------- data structures updates -------------------------
     def __init_model(self, all_modes = ["1", "2", "3", "4", "5", "6", "7", "8"]):
