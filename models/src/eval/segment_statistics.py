@@ -27,14 +27,14 @@ def get_average_segment_length(segmentation: list) -> float:
     return float(segment_length_sum)/float(all_segments)
 
 def show_mode_segment_statistics(segmentation, modes, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
-    shared_dataframe = get_shared_segments_mode_dataframe(segmentation, modes, mode_list)
-    distinct_dataframe = get_distinct_segments_mode_dataframe(segmentation, modes, mode_list)
-    vocabulary_sizes_dataframe = get_vocab_segments_mode_dataframe(segmentation, modes, mode_list)
-    unique_dataframe = get_unique_segments_mode_dataframe(segmentation, modes, mode_list)
+    shared_dataframe, distinct_dataframe = get_2d_statistic_matrices(segmentation, modes, mode_list)
+    unique_dataframe, vocabulary_sizes_dataframe = get_1d_statistic_matrices(segmentation, modes, mode_list)
+
+    print("------------- Modes Vocabulary Statistics -------------")
     plot_mode_segment_statistics(shared_dataframe, distinct_dataframe, vocabulary_sizes_dataframe, unique_dataframe)
+    print("-------------------------------------------------------")
 
-
-def get_shared_segments_mode_dataframe(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+def get_2d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     """
     segmentation is a list of lists of segments
     [["asda", "asdasd", "as", "ds"]]
@@ -48,11 +48,12 @@ def get_shared_segments_mode_dataframe(segmentation: list, modes: list, mode_lis
     for chant, mode in zip(segmentation, modes):
         for segment in chant:
             mode_unique_segments[mode].add(segment)
-    
+
     # Create the final dataframe
     index = mode_list.copy()
     columns = mode_list.copy()
-    shared_segments = np.zeros((len(index), len(columns))) 
+    shared_segments = np.zeros((len(index), len(columns)))
+    distinct_segments = np.zeros((len(index), len(columns)))
     for i in range(len(mode_list)):
         for j in range(i+1, len(mode_list)):
             count = 0
@@ -61,12 +62,14 @@ def get_shared_segments_mode_dataframe(segmentation: list, modes: list, mode_lis
                     count += 1
             shared_segments[j, i] = count
             shared_segments[i, j] = count
-    df = DataFrame(shared_segments, index=index, columns=columns)
+            distinct_segments[j, i] = len(mode_unique_segments[mode_list[i]]) + len(mode_unique_segments[mode_list[j]]) - 2*count
+            distinct_segments[i, j] = len(mode_unique_segments[mode_list[i]]) + len(mode_unique_segments[mode_list[j]]) - 2*count
+    shared_df = DataFrame(shared_segments, index=index, columns=columns)
+    distinct_df = DataFrame(distinct_segments, index=index, columns=columns)
+    return shared_df, distinct_df
 
-    return df
 
-
-def get_distinct_segments_mode_dataframe(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+def get_1d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     """
     segmentation is a list of lists of segments
     [["asda", "asdasd", "as", "ds"]]
@@ -81,75 +84,20 @@ def get_distinct_segments_mode_dataframe(segmentation: list, modes: list, mode_l
         for segment in chant:
             mode_unique_segments[mode].add(segment)
     
+
     # Create the final dataframe
     index = mode_list.copy()
-    columns = mode_list.copy()
-    distinct_segments = np.zeros((len(index), len(columns))) 
-    for i in range(len(mode_list)):
-        for j in range(i+1, len(mode_list)):
-            count = 0
-            for segment in mode_unique_segments[mode_list[i]]:
-                if segment in mode_unique_segments[mode_list[j]]:
-                    count += 1
-            count = len(mode_unique_segments[mode_list[i]]) + len(mode_unique_segments[mode_list[j]]) - 2*count
-            distinct_segments[j, i] = count
-            distinct_segments[i, j] = count
-    df = DataFrame(distinct_segments, index=index, columns=columns)
-    
-    return df
-
-
-
-def get_vocab_segments_mode_dataframe(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
-    """
-    segmentation is a list of lists of segments
-    [["asda", "asdasd", "as", "ds"]]
-    """
-    # Dictionary of all unique segments that occure in the specific mode
-    mode_unique_segments = {}
-    for mode in mode_list:
-        mode_unique_segments[mode] = set()
-
-    # Collect all unique segments of all modes
-    for chant, mode in zip(segmentation, modes):
-        for segment in chant:
-            mode_unique_segments[mode].add(segment)
-    
-    # Create the final dataframe
-    index = mode_list.copy()
-    vocab_segments = np.zeros((len(index))) 
+    unique_segments = np.zeros((len(index)))
+    vocab_segments = np.zeros((len(index)))
     for i in range(len(mode_list)):
         vocab_segments[i] = len(mode_unique_segments[mode_list[i]])
-    df = DataFrame(vocab_segments, index=index)
-    
-    return df
-
-def get_unique_segments_mode_dataframe(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
-    """
-    segmentation is a list of lists of segments
-    [["asda", "asdasd", "as", "ds"]]
-    """
-    # Dictionary of all unique segments that occure in the specific mode
-    mode_unique_segments = {}
-    for mode in mode_list:
-        mode_unique_segments[mode] = set()
-
-    # Collect all unique segments of all modes
-    for chant, mode in zip(segmentation, modes):
-        for segment in chant:
-            mode_unique_segments[mode].add(segment)
-    
-    # Create the final dataframe
-    index = mode_list.copy()
-    unique_segments = np.zeros((len(index))) 
-    for i in range(len(mode_list)):
         temp_vocab = mode_unique_segments[mode_list[i]].copy()
         for j in range(len(mode_list)):
             if not i == j:
-                for segment in temp_vocab:
-                    if segment in mode_unique_segments[mode_list[j]]:
+                for segment in mode_unique_segments[mode_list[i]]:
+                    if segment in mode_unique_segments[mode_list[j]] and segment in temp_vocab:
                         temp_vocab.remove(segment)
         unique_segments[i] = len(temp_vocab)
-    df = DataFrame(unique_segments, index=index)
-    
-    return df
+    unique_df = DataFrame(unique_segments, index=index)
+    vocab_df = DataFrame(vocab_segments, index=index)
+    return unique_df, vocab_df
