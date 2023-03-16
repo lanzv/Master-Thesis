@@ -9,14 +9,14 @@ from src.models.nhpylm.definitions import HPYLM_A, HPYLM_B, CHPYLM_BETA_STOP, CH
 This is the struct that will serve as a container for the whole NHPYLM. it will be serialized after training.
 """
 class Model:
-    def __init__(self, dataset: "Dataset", max_word_length: int, initial_a=4.0, initial_b=1.0, chpylm_beta_stop=CHPYLM_BETA_STOP, chpylm_beta_pass=CHPYLM_BETA_PASS):
+    def __init__(self, dataset: "Dataset", min_word_length: int, max_word_length: int, initial_a=4.0, initial_b=1.0, chpylm_beta_stop=CHPYLM_BETA_STOP, chpylm_beta_pass=CHPYLM_BETA_PASS):
         max_chant_length = dataset.max_chant_length
         # The G_0 probability for the character HPYLM, which depends on the number of different characters in the whole corpus.
         chpylm_G_0 = 1.0 / dataset.vocabulary.get_num_characters()
 
         # Need to do this because `Model` is immutable
-        self.npylm: "NPYLM" = NPYLM(max_word_length, max_chant_length, chpylm_G_0, initial_a, initial_b, chpylm_beta_stop, chpylm_beta_pass)
-        self.sampler: "Sampler" = Sampler(self.npylm, max_word_length, max_chant_length)
+        self.npylm: "NPYLM" = NPYLM(min_word_length, max_word_length, max_chant_length, chpylm_G_0, initial_a, initial_b, chpylm_beta_stop, chpylm_beta_pass)
+        self.sampler: "Sampler" = Sampler(self.npylm, min_word_length, max_word_length, max_chant_length)
 
         self.dataset = dataset
         self.set_initial_a(HPYLM_A)
@@ -43,6 +43,9 @@ class Model:
 
     def get_max_word_length(self):
         return self.npylm.max_word_length
+    
+    def get_min_word_length(self):
+        return self.npylm.min_word_length
 
     def set_initial_a(self, initial_a: float):
         self.npylm.lambda_a = initial_a

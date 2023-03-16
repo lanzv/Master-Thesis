@@ -78,8 +78,12 @@ def plot_melody_mode_frequencies(frequencies: DataFrame):
     plt.xticks(np.arange(0.5, len(frequencies.columns), 1), frequencies.columns)
     plt.show()
 
-
-def plot_line_chart(title, x, y):
-    plt.plot(x, y)
-    plt.title(title)
+def plot_iteration_statistics(statistics_to_plot):
+    figure, axis = plt.subplots(1, len(statistics_to_plot))
+    for i, title in enumerate(statistics_to_plot):
+        x, y = statistics_to_plot[title]
+        axis[i].plot(x, y)
+        axis[i].set_title(title)
+    figure.set_size_inches(40, 5)
+    plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0.2, hspace=0.2)
     plt.show()
