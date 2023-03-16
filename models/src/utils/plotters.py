@@ -58,6 +58,17 @@ def plot_mode_segment_statistics(
     plt.show()
 
 
+def plot_unique_segments_densities(densities: dict, labels = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    figure, axis = plt.subplots(1, len(labels))
+    for i, label in enumerate(labels):
+        axis[i].plot(np.arange(1, 101), densities[label])
+        axis[i].set_title("Density of unique segments for mode {}".format(label))
+        axis[i].set_xlabel("% of chant")
+        axis[i].set_ylabel("unique occurences")
+    figure.set_size_inches(40, 5)
+    plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0.2, hspace=0.2)
+    plt.show()
+
 def plot_melody_mode_frequencies(frequencies: DataFrame):
     f = plt.figure()
     f.set_figwidth(len(frequencies.columns)*2)

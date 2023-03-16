@@ -1,6 +1,6 @@
 import numpy as np
 from pandas import DataFrame
-from src.utils.plotters import plot_mode_segment_statistics
+from src.utils.plotters import plot_mode_segment_statistics, plot_unique_segments_densities
 
 def get_vocabulary_size(segmentation: list) -> int:
     """
@@ -29,9 +29,10 @@ def get_average_segment_length(segmentation: list) -> float:
 def show_mode_segment_statistics(segmentation, modes, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     shared_dataframe, distinct_dataframe = get_2d_statistic_matrices(segmentation, modes, mode_list)
     unique_dataframe, vocabulary_sizes_dataframe = get_1d_statistic_matrices(segmentation, modes, mode_list)
-
+    densities_dict = get_unique_segment_densities(segmentation, modes)
     print("------------- Modes Vocabulary Statistics -------------")
     plot_mode_segment_statistics(shared_dataframe, distinct_dataframe, vocabulary_sizes_dataframe, unique_dataframe)
+    plot_unique_segments_densities(densities_dict, mode_list)
     print("-------------------------------------------------------")
 
 def get_2d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
@@ -101,3 +102,46 @@ def get_1d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1",
     unique_df = DataFrame(unique_segments, index=index)
     vocab_df = DataFrame(vocab_segments, index=index)
     return unique_df, vocab_df
+
+
+def get_unique_segment_densities(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    """
+    segmentation is a list of lists of segments
+    [["asda", "asdasd", "as", "ds"]]
+    """
+    # Preprocess data
+    # Dictionary of all unique segments that occure in the specific mode
+    mode_unique_segments = {}
+    for mode in mode_list:
+        mode_unique_segments[mode] = set()
+    # Collect all unique segments of all modes
+    for chant, mode in zip(segmentation, modes):
+        for segment in chant:
+            mode_unique_segments[mode].add(segment)
+    # Create the final dataframe
+    unique_values = {}
+    for i in range(len(mode_list)):
+        temp_vocab = mode_unique_segments[mode_list[i]].copy()
+        for j in range(len(mode_list)):
+            if not i == j:
+                for segment in mode_unique_segments[mode_list[i]]:
+                    if segment in mode_unique_segments[mode_list[j]] and segment in temp_vocab:
+                        temp_vocab.remove(segment)
+        unique_values[mode_list[i]] = temp_vocab
+
+    # Get Density Data
+    # Prepare Density
+    densities = {}
+    for mode in mode_list:
+        densities[mode] = np.zeros((100))
+    # Get Percentage distribution of unique segments
+    for chant, mode in zip(segmentation, modes):
+        chant_len = len(''.join(chant))
+        actual_position = 1
+        for i, segment in enumerate(chant):
+            if segment in unique_values[mode]:
+                for j in range(len(segment)):
+                    densities[mode][int(((actual_position + j)/chant_len)*100)-1] += 1
+            actual_position += len(segment)
+
+    return densities
