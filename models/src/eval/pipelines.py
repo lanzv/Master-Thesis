@@ -9,16 +9,9 @@ from src.utils.eval_helpers import list2string, get_bacor_model
 from src.eval.segment_statistics import get_average_segment_length, get_vocabulary_size, show_mode_segment_statistics
 import logging
 
-def single_iteration_pipeline(final_segmentation, modes, iteration, top_melodies):
-    if len(final_segmentation) == 9706 + 4159:
-        train_len = 9706
-    else:
-        logging.info("Iteration Pipeline: different length of training/testing datasets: {} chants."
-            .format(len(final_segmentation)))
-        train_len = int(0.75*len(final_segmentation))
-
-    X_train, y_train = final_segmentation[:train_len], modes[:train_len]
-    X_test, y_test = final_segmentation[train_len:], modes[train_len:]
+def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation, dev_modes, iteration, top_melodies):
+    X_train, y_train = train_segmentation, train_modes
+    X_test, y_test = dev_segmentation, dev_modes
 
     # bacor score
     train_data, test_data = list2string(X_train), list2string(X_test)
@@ -28,19 +21,17 @@ def single_iteration_pipeline(final_segmentation, modes, iteration, top_melodies
     accuracy = accuracy_score(y_test, predictions)
     f1 = f1_score(y_test, predictions, average='weighted')
     # Melody Justified With Words score
-    mjww = mjww_score(final_segmentation)
+    mjww = mjww_score(dev_segmentation)
     # Weighted Top Mode Frequency score
-    wtmf = wtmf_score(final_segmentation, modes)
+    wtmf = wtmf_score(dev_segmentation, dev_modes)
     # Weighted Unique Final Pitch Count score
-    wufpc = wufpc_score(final_segmentation)
+    wufpc = wufpc_score(dev_segmentation)
     # Vocabulary Size
-    vocab_size = get_vocabulary_size(final_segmentation)
+    vocab_size = get_vocabulary_size(dev_segmentation)
     # Average Segment Length
-    avg_segment_len = get_average_segment_length(final_segmentation)
+    avg_segment_len = get_average_segment_length(dev_segmentation)
 
-    print("{}. Iteration \t accuracy: {:.2f}%, f1: {:.2f}%, mjww: {:.2f}%, wtmf: {:.2f}%, wufpc: {:.2f} pitches, vocabulary size: {}, avg segment len: {:.2f} \t\t {}"
-        .format(iteration, accuracy*100, f1*100, mjww*100, wtmf*100, wufpc, vocab_size, avg_segment_len, top_melodies))
-    return accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len
+    return accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies
 
 
 def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159,
