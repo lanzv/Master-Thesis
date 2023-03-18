@@ -362,7 +362,7 @@ class UnigramModelModes:
         top20_melodies = sorted(all_melodies, key=all_melodies.get, reverse=True)[:20]
         train_segmentation, _ = self.predict_segments(train_chants)
         dev_segmentation, dev_perplexity = self.predict_segments(dev_chants)
-        accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len = single_iteration_pipeline(train_segmentation, train_modes, 
+        accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
                                                                                         dev_segmentation, dev_modes, top20_melodies)
         self.dev_statistics["accuracy"].append(accuracy*100)
         self.dev_statistics["f1"].append(f1*100)
