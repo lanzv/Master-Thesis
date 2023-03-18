@@ -38,7 +38,7 @@ class UnigramModel:
             if i%print_each == 0:
                 self.__store_iteration_results(i, train_chants, train_modes, dev_chants, dev_modes)
             chant_segmentation = self.__train_iteration(chant_segmentation, k_best = k_best, alpha = alpha)
-        self.__store_iteration_results(iterations, chant_segmentation, train_modes, dev_chants, dev_modes)
+        self.__store_iteration_results(iterations, train_chants, train_modes, dev_chants, dev_modes)
         self.__plot_statistics()
 
     def predict_segments(self, chants, k_best=15, alpha=1):
@@ -49,7 +49,8 @@ class UnigramModel:
             new_segments, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string],
                                                       k_best=k_best, alpha=alpha, argmax=True)
             final_segmentation.append(new_segments)
-            entropy_sum -= chant_prob*np.log2(chant_prob)
+            if chant_prob > 0:
+                entropy_sum -= chant_prob*np.log2(chant_prob)
         perplexity = np.exp2(entropy_sum)
         return final_segmentation, perplexity
 
@@ -59,7 +60,7 @@ class UnigramModel:
         train_segmentation, _ = self.predict_segments(train_chants)
         dev_segmentation, dev_perplexity = self.predict_segments(dev_chants)
         accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
-                                                                                        dev_segmentation, dev_modes, iteration, top20_melodies)
+                                                                                        dev_segmentation, dev_modes, top20_melodies)
         self.dev_statistics["accuracy"].append(accuracy*100)
         self.dev_statistics["f1"].append(f1*100)
         self.dev_statistics["mjww"].append(mjww*100)
@@ -70,20 +71,19 @@ class UnigramModel:
         self.dev_statistics["perplexity"].append(dev_perplexity)
         self.dev_statistics["iterations"].append(iteration)
         
-        print("{}. Iteration \t dev accuracy: {:.2f}%, dev f1: {:.2f}%, dev mjww: {:.2f}%, dev wtmf: {:.2f}%, dev wufpc: {:.2f} pitches, "+
-              "dev vocabulary size: {}, dev avg segment len: {:.2f}, dev perplexity {:.2f}\t\t {}"
-            .format(iteration, accuracy*100, f1*100, mjww*100, wtmf*100, wufpc, vocab_size, avg_segment_len, dev_perplexity, top_melodies))
+        print("{}. Iteration \t dev accuracy: {:.2f}%, dev f1: {:.2f}%, dev perplexity {:.6f}, dev vocabulary size: {}, dev avg segment len: {:.2f}, dev mjww: {:.2f}%, dev wtmf: {:.2f}%, dev wufpc: {:.2f} pitches\t\t {}"
+            .format(iteration, accuracy*100, f1*100, dev_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc, top_melodies))
 
     def __plot_statistics(self):
         statistics_to_plot = {
             "Dev Bacor - not tuned - Accuracy (%)": (self.dev_statistics["iterations"], self.dev_statistics["accuracy"]),
             "Dev Bacor - not tuned - F1 (%)": (self.dev_statistics["iterations"], self.dev_statistics["f1"]),
-            "Dev Melody Justified With Words (%)": (self.dev_statistics["iterations"], self.dev_statistics["mjww"]),
-            "Dev Weighted Top Mode Frequency (%)": (self.dev_statistics["iterations"], self.dev_statistics["wtmf"]),
-            "Dev Weighted Unique Final Pitch Count": (self.dev_statistics["iterations"], self.dev_statistics["wufpc"]),
+            "Dev Perplexity": (self.dev_statistics["iterations"], self.dev_statistics["perplexity"]),
             "Dev Vocabulary Size": (self.dev_statistics["iterations"], self.dev_statistics["vocab_size"]),
             "Dev Average Segment Length": (self.dev_statistics["iterations"], self.dev_statistics["avg_segment_len"]),
-            "Dev Perplexity": (self.dev_statistics["iterations"], self.dev_statistics["perplexity"])
+            "Dev Melody Justified With Words (%)": (self.dev_statistics["iterations"], self.dev_statistics["mjww"]),
+            "Dev Weighted Top Mode Frequency (%)": (self.dev_statistics["iterations"], self.dev_statistics["wtmf"]),
+            "Dev Weighted Unique Final Pitch Count": (self.dev_statistics["iterations"], self.dev_statistics["wufpc"])
         }
         plot_iteration_statistics(statistics_to_plot)
 
@@ -220,7 +220,7 @@ class UnigramModel:
         for chant_id in rand_indices:
             segments = segmented_chants[chant_id]
             self.__ignore_chant(chant_segments = segments, chant_id=chant_id)
-            new_segments = self.__get_optimized_chant(chant_segments=segments,
+            new_segments, _ = self.__get_optimized_chant(chant_segments=segments,
                                                       k_best=k_best, alpha=alpha)
             self.__add_chant(chant_segments=new_segments, chant_id=chant_id)
             new_segmented_chants[chant_id] = new_segments

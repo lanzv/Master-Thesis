@@ -7,9 +7,8 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from src.utils.eval_helpers import list2string, get_bacor_model
 from src.eval.segment_statistics import get_average_segment_length, get_vocabulary_size, show_mode_segment_statistics
-import logging
 
-def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation, dev_modes, iteration, top_melodies):
+def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation, dev_modes, top_melodies):
     X_train, y_train = train_segmentation, train_modes
     X_test, y_test = dev_segmentation, dev_modes
 
@@ -34,40 +33,46 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     return accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies
 
 
-def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159,
+def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity, test_perplexity,
         max_features_from_model = 100, max_features_additative = 100, include_additative = True):
     """
     final segmentation is a list of list of segments
     """
-    X_train, y_train = final_segmentation[:train_len], modes[:train_len]
-    X_test, y_test = final_segmentation[train_len:], modes[train_len:]
-    assert len(X_test) == test_len and len(y_test) == test_len
-
-    # bacor score
+    # Train dataset
     bacor, selected_features, trained_model = bacor_score(
-        X_train, y_train, X_test, y_test,
+        X_train, y_train, X_train, y_train,
         max_features_from_model = max_features_from_model,
         max_features_additative = max_features_additative,
         include_additative = include_additative
     )
+
     # Melody Justified With Words score
-    mjww = mjww_score(final_segmentation)
+    mjww = mjww_score(X_train)
     # Weighted Top Mode Frequency score
-    wtmf = wtmf_score(final_segmentation, modes)
+    wtmf = wtmf_score(X_train, y_train)
     # Weighted Unique Final Pitch Count score
-    wufpc = wufpc_score(final_segmentation)
+    wufpc = wufpc_score(X_train)
     # Vocabulary Size
-    vocab_size = get_vocabulary_size(final_segmentation)
+    vocab_size = get_vocabulary_size(X_train)
     # Average Segment Length
-    avg_segment_len = get_average_segment_length(final_segmentation)
+    avg_segment_len = get_average_segment_length(X_train)
 
 
     # Print scores
-    print("--------------------------------- Scores ---------------------------------")
+    print("------------------------------- Train Scores -------------------------------")
     print()
     print("\t\t bacor accuracy and f1")
     print("\t\t\t accuracy: {:.2f}%".format(bacor["test"]["accuracy"]*100))
     print("\t\t\t f1: {:.2f}%".format(bacor["test"]["f1"]*100))
+    print()
+    print("\t\t Perplexity")
+    print("\t\t\t {:.6f}".format(train_perplexity))
+    print()
+    print("\t\t Vocabulary Size")
+    print("\t\t\t size: {} unique segments".format(vocab_size))
+    print()
+    print("\t\t Average Segment Length")
+    print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
     print()
     print("\t\t Melody Justified With Words")
     print("\t\t\t mjww: {:.2f}% of segments".format(mjww*100))
@@ -77,12 +82,55 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
     print()
     print("\t\t Weighted Unique Final Pitch Count")
     print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(wufpc))
+    show_mode_segment_statistics(X_train, y_train)
+    print("--------------------------------------------------------------------------")
+
+    # Test dataset
+    # bacor score
+    bacor, selected_features, trained_model = bacor_score(
+        X_train, y_train, X_test, y_test,
+        max_features_from_model = max_features_from_model,
+        max_features_additative = max_features_additative,
+        include_additative = include_additative
+    )
+
+    # Melody Justified With Words score
+    mjww = mjww_score(X_test)
+    # Weighted Top Mode Frequency score
+    wtmf = wtmf_score(X_test, y_test)
+    # Weighted Unique Final Pitch Count score
+    wufpc = wufpc_score(X_test)
+    # Vocabulary Size
+    vocab_size = get_vocabulary_size(X_test)
+    # Average Segment Length
+    avg_segment_len = get_average_segment_length(X_test)
+
+
+    # Print scores
+    print("------------------------------- Test Scores -------------------------------")
+    print()
+    print("\t\t bacor accuracy and f1")
+    print("\t\t\t accuracy: {:.2f}%".format(bacor["test"]["accuracy"]*100))
+    print("\t\t\t f1: {:.2f}%".format(bacor["test"]["f1"]*100))
+    print()
+    print("\t\t Perplexity")
+    print("\t\t\t {:.6f}".format(test_perplexity))
     print()
     print("\t\t Vocabulary Size")
     print("\t\t\t size: {} unique segments".format(vocab_size))
     print()
     print("\t\t Average Segment Length")
     print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
+    print()
+    print("\t\t Melody Justified With Words")
+    print("\t\t\t mjww: {:.2f}% of segments".format(mjww*100))
+    print()
+    print("\t\t Weighted Top Mode Frequency")
+    print("\t\t\t wtmf: {:.2f}% of melodies".format(wtmf*100))
+    print()
+    print("\t\t Weighted Unique Final Pitch Count")
+    print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(wufpc))
+    show_mode_segment_statistics(X_test, y_test)
     print("--------------------------------------------------------------------------")
 
     print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
@@ -90,10 +138,13 @@ def evaluation_pipeline(final_segmentation, modes, train_len: int = 9706, test_l
     if include_additative:
         print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
         plot_melody_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
+    print()
+    print()
+    print("------------------------- Train + Test data charts ----------------------------")
+    show_mode_segment_statistics(X_train+X_test, y_train + y_test)
+    print("------------------------------------------------------------------------")
 
-    show_mode_segment_statistics(final_segmentation, modes)
-
-    return bacor, mjww, wtmf, wufpc, selected_features, trained_model
+    return trained_model
 
 
 def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159,
