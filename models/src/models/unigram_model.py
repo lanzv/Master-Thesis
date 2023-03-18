@@ -312,37 +312,46 @@ class UnigramModelModes:
         self.max_size = max_size
         self.__init_model()
 
-
     def train(self, chants, modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
-                         alpha = 1, k_best = 15, print_each = 1):
+                         alpha = 1, k_best = 15, print_each = 1, train_proportion: float = 0.9):
+        # Divide chants to train and dev datasets
+        splitting_point = int(train_proportion*len(chants))
+        train_chants, dev_chants = chants[:splitting_point], chants[splitting_point:]
+        train_modes, dev_modes = modes[:splitting_point], modes[splitting_point:]
+        # Init model
         self.__init_model()
-        self.__generate_vocabulary(chants, modes)
+        self.__generate_vocabulary(train_chants, modes)
         # Do init segmentation, generate model's dictionaries (segment_unigrams, ...)
         if init_mode == 'gaussian':
-            init_segmentation = self.__gaus_rand_segments(chants, modes, mu, sigma)
+            init_segmentation = self.__gaus_rand_segments(train_chants, train_modes, mu, sigma)
         elif init_mode == 'words':
-            init_segmentation = self.__word_segments(modes)
+            init_segmentation = self.__word_segments(train_modes)
         else:
             raise ValueError("Init mode argument could be only words or gaussian, not {}".format(init_segmentation))
         chant_segmentation = init_segmentation
         for i in range(iterations):
             if i%print_each == 0:
-                self.__print_iteration_results(i, chant_segmentation, modes)
-            chant_segmentation = self.__train_iteration(chant_segmentation, modes, k_best = k_best, alpha = alpha)
-        self.__print_iteration_results(iterations, chant_segmentation, modes)
+                self.__store_iteration_results(i, train_chants, train_modes, dev_chants, dev_modes)
+            chant_segmentation = self.__train_iteration(chant_segmentation, train_modes, k_best = k_best, alpha = alpha)
+        self.__store_iteration_results(iterations, train_chants, train_modes, dev_chants, dev_modes)
         self.__plot_statistics()
 
-    def predict_segments(self, chants, modes, k_best=15, alpha=1):
+    def predict_segments(self, chants, k_best=15, alpha=1):
+        modes = [] # ToDo, find modes own way
         final_segmentation = []
+        entropy_sum = 0
         for chant_string, mode in zip(chants, modes):
             assert type(chant_string) is str or type(chant_string) is np.str_
-            new_segments = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
+            new_segments, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
                                                       k_best=k_best, alpha=alpha, argmax=True)
             final_segmentation.append(new_segments)
-        return final_segmentation
+            if chant_prob > 0:
+                entropy_sum -= chant_prob*np.log2(chant_prob)
+        perplexity = np.exp2(entropy_sum)
+        return final_segmentation, perplexity
 
     # --------------------------------- printers, plotters ----------------------------
-    def __print_iteration_results(self, iteration, segmentation, modes):
+    def __store_iteration_results(self, iteration, train_chants, train_modes, dev_chants, dev_modes):
         all_melodies = {}
         for mode in self.segment_unigrams:
             for segment in self.segment_unigrams[mode]:
@@ -351,25 +360,34 @@ class UnigramModelModes:
                 else:
                     all_melodies[segment] = 1
         top20_melodies = sorted(all_melodies, key=all_melodies.get, reverse=True)[:20]
-        accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len = single_iteration_pipeline(segmentation, modes, iteration, top20_melodies)
-        self.statistics["accuracy"].append(accuracy*100)
-        self.statistics["f1"].append(f1*100)
-        self.statistics["mjww"].append(mjww*100)
-        self.statistics["wtmf"].append(wtmf*100)
-        self.statistics["wufpc"].append(wufpc)
-        self.statistics["vocab_size"].append(vocab_size)
-        self.statistics["avg_segment_len"].append(avg_segment_len)
-        self.statistics["iterations"].append(iteration)
+        train_segmentation, _ = self.predict_segments(train_chants)
+        dev_segmentation, dev_perplexity = self.predict_segments(dev_chants)
+        accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len = single_iteration_pipeline(train_segmentation, train_modes, 
+                                                                                        dev_segmentation, dev_modes, top20_melodies)
+        self.dev_statistics["accuracy"].append(accuracy*100)
+        self.dev_statistics["f1"].append(f1*100)
+        self.dev_statistics["mjww"].append(mjww*100)
+        self.dev_statistics["wtmf"].append(wtmf*100)
+        self.dev_statistics["wufpc"].append(wufpc)
+        self.dev_statistics["vocab_size"].append(vocab_size)
+        self.dev_statistics["avg_segment_len"].append(avg_segment_len)
+        self.dev_statistics["perplexity"].append(dev_perplexity)
+        self.dev_statistics["iterations"].append(iteration)
+
+        print("{}. Iteration \t dev accuracy: {:.2f}%, dev f1: {:.2f}%, dev perplexity {:.6f}, dev vocabulary size: {}, dev avg segment len: {:.2f}, dev mjww: {:.2f}%, dev wtmf: {:.2f}%, dev wufpc: {:.2f} pitches\t\t {}"
+            .format(iteration, accuracy*100, f1*100, dev_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc, top_melodies))
+
 
     def __plot_statistics(self):
         statistics_to_plot = {
-            "Bacor - not tuned - Accuracy (%)": (self.statistics["iterations"], self.statistics["accuracy"]),
-            "Bacor - not tuned - F1 (%)": (self.statistics["iterations"], self.statistics["f1"]),
-            "Melody Justified With Words (%)": (self.statistics["iterations"], self.statistics["mjww"]),
-            "Weighted Top Mode Frequency (%)": (self.statistics["iterations"], self.statistics["wtmf"]),
-            "Weighted Unique Final Pitch Count": (self.statistics["iterations"], self.statistics["wufpc"]),
-            "Vocabulary Size": (self.statistics["iterations"], self.statistics["vocab_size"]),
-            "Average Segment Length": (self.statistics["iterations"], self.statistics["avg_segment_len"])
+            "Dev Bacor - not tuned - Accuracy (%)": (self.dev_statistics["iterations"], self.dev_statistics["accuracy"]),
+            "Dev Bacor - not tuned - F1 (%)": (self.dev_statistics["iterations"], self.dev_statistics["f1"]),
+            "Dev Perplexity": (self.dev_statistics["iterations"], self.dev_statistics["perplexity"]),
+            "Dev Vocabulary Size": (self.dev_statistics["iterations"], self.dev_statistics["vocab_size"]),
+            "Dev Average Segment Length": (self.dev_statistics["iterations"], self.dev_statistics["avg_segment_len"]),
+            "Dev Melody Justified With Words (%)": (self.dev_statistics["iterations"], self.dev_statistics["mjww"]),
+            "Dev Weighted Top Mode Frequency (%)": (self.dev_statistics["iterations"], self.dev_statistics["wtmf"]),
+            "Dev Weighted Unique Final Pitch Count": (self.dev_statistics["iterations"], self.dev_statistics["wufpc"])
         }
         plot_iteration_statistics(statistics_to_plot)
 
@@ -387,7 +405,7 @@ class UnigramModelModes:
         # vocabulary
         self.vocabulary = {}
         # Statistics
-        self.statistics = {
+        self.dev_statistics = {
             "accuracy": [],
             "f1": [],
             "mjww": [],
@@ -395,6 +413,7 @@ class UnigramModelModes:
             "wufpc": [],
             "vocab_size": [],
             "avg_segment_len": [],
+            "perplexity": [],
             "iterations": []
         }
         for mode in all_modes:
@@ -407,7 +426,7 @@ class UnigramModelModes:
     def __generate_vocabulary(self, chants, modes):
         for chant_str, mode in zip(chants, modes):
             self.__update_vocab(chant_str=chant_str, mode=mode, char_id = 0)
-        
+
         logging.info("Vocabulary of 1 mode was generated with size of {}".format(len(self.vocabulary["1"])))
         logging.info("Vocabulary of 2 mode was generated with size of {}".format(len(self.vocabulary["2"])))
         logging.info("Vocabulary of 3 mode was generated with size of {}".format(len(self.vocabulary["3"])))
@@ -491,7 +510,7 @@ class UnigramModelModes:
         return rand_segments
 
     def __word_segments(self, modes):
-        word_segments = load_word_segmentations()
+        word_segments = load_word_segmentations()[:len(modes)]
         for chant_id, (chant, mode) in enumerate(zip(word_segments, modes)):
             self.chant_count[mode] += 1
             for segment in chant:
@@ -519,7 +538,7 @@ class UnigramModelModes:
             segments = segmented_chants[chant_id]
             mode = modes[chant_id]
             self.__ignore_chant(chant_segments = segments, mode = mode, chant_id=chant_id)
-            new_segments = self.__get_optimized_chant(chant_segments=segments,
+            new_segments, _ = self.__get_optimized_chant(chant_segments=segments,
                                                       mode=mode,
                                                       k_best=k_best, alpha=alpha)
             self.__add_chant(chant_segments=new_segments, mode=mode, chant_id=chant_id)
@@ -582,8 +601,10 @@ class UnigramModelModes:
                 probs = np.full((len(probs)), 1/len(probs))
             final_node = graph[-1][np.random.choice(
                 np.arange(0, len(probs)), p=probs/probs.sum())]
+            final_prob = None
         else:
             final_node = graph[-1][probs.argmax()]
+            final_prob = probs.max()
         final_segmentation_ids.append(final_node.position)
 
 
@@ -597,7 +618,7 @@ class UnigramModelModes:
         for i, j in zip(final_segmentation_ids[:-1], final_segmentation_ids[1:]):
             final_segmentation.append(chant_str[j:i])
         final_segmentation.reverse()
-        return final_segmentation
+        return final_segmentation, final_prob
 
 class Node:
     def __init__(self, position:int, prob:float, prev_node: "Node"):
