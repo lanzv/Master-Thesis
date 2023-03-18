@@ -664,6 +664,187 @@ class UnigramModelModes:
         final_segmentation.reverse()
         return final_segmentation, final_prob
 
+
+
+class UnigramModel4Modes(UnigramModelModes):
+    mode_mapper = {
+        "1": "1,2",
+        "2": "1,2",
+        "3": "3,4",
+        "4": "3,4",
+        "5": "5,6",
+        "6": "5,6",
+        "7": "7,8",
+        "8": "7,8",
+        "1,2": "1,2",
+        "3,4": "3,4",
+        "5,6": "5,6",
+        "7,8": "7,8"
+    }
+    def predict_segments(self, chants, k_best=15, alpha=1,
+                         final_range_classifier = False, mode_priors_uniform = True):
+        modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
+                                   mode_priors_uniform = mode_priors_uniform)
+        print("new predict segments")
+        final_segmentation = []
+        entropy_sum = 0
+        for chant_string, mode in zip(chants, modes):
+            assert type(chant_string) is str or type(chant_string) is np.str_
+            new_segments, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=self.mode_mapper[mode],
+                                                      k_best=k_best, alpha=alpha, argmax=True)
+            final_segmentation.append(new_segments)
+            if chant_prob > 0:
+                entropy_sum -= chant_prob*np.log2(chant_prob)
+        perplexity = np.exp2(entropy_sum)
+        return final_segmentation, perplexity
+
+    def predict_modes(self, chants, k_best=15, alpha=1, mode_list = ["1,2", "3,4", "5,6", "7,8"],
+                      final_range_classifier = False, mode_priors_uniform = True):
+        print("new predict modes")
+        """
+        Using the Bayes Rule
+        p(m|c') = (p(c'|m)*p(m))/(p(c')) ~ p(c'|m)*p(m)  ~ p(c'|m) for constant p(m) and p(c')
+        m = argmax p(m|c') ... only when p(m) = 1/8 for all m
+        needs to be tested whether p(m) = priors
+        """
+        if final_range_classifier:
+            return FinalRangeClassifier.predict(chants=chants)
+        else:
+            final_modes = []
+            training_chants_num = 0
+            for mode in self.chant_count:
+                training_chants_num += self.chant_count[mode]
+            for chant_string in chants:
+                chosen_mode = None
+                best_prob = -1
+                assert type(chant_string) is str or type(chant_string) is np.str_
+                for mode in mode_list:
+                    _, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
+                                                            k_best=k_best, alpha=alpha, argmax=True)
+                    if mode_priors_uniform:
+                        pm = 1.0/float(len(mode_list))
+                    else:
+                        pm = float(self.chant_count[mode])/float(training_chants_num)
+                    if chant_prob*pm > best_prob:
+                        chosen_mode = mode
+                        best_prob = chant_prob*pm
+                final_modes.append(chosen_mode)
+            return final_modes
+
+    # ------------------------------- data structures updates -------------------------
+    def __init_model(self, all_modes = ["1,2", "3,4", "5,6", "7,8"]):
+        print("new init model")
+        # dictionary of melody string and its counts over all documents (as integer)
+        self.segment_unigrams = {}
+        # number of all segments, the sum over all counts
+        self.total_segments = {}
+        # dictionaryof melody strings and its hashset of chants that contains
+        # this melody
+        self.segment_inverted_index = {}
+        # total number of chants
+        self.chant_count = {}
+        # vocabulary
+        self.vocabulary = {}
+        # Statistics
+        self.dev_statistics = {
+            "accuracy": [],
+            "f1": [],
+            "mjww": [],
+            "wtmf": [],
+            "wufpc": [],
+            "vocab_size": [],
+            "avg_segment_len": [],
+            "perplexity": [],
+            "iterations": []
+        }
+        for mode in all_modes:
+            self.segment_unigrams[mode] = defaultdict(int)
+            self.total_segments[mode] = 0
+            self.segment_inverted_index[mode] = defaultdict(set)
+            self.chant_count[mode] = 0
+            self.vocabulary[mode] = set()
+
+    def __generate_vocabulary(self, chants, modes):
+        print("new generate vocabulary")
+        for chant_str, mode in zip(chants, modes):
+            self.__update_vocab(chant_str=chant_str, mode=self.mode_mapper[mode], char_id = 0)
+
+        logging.info("Vocabulary of 1,2 mode was generated with size of {}".format(len(self.vocabulary["1,2"])))
+        logging.info("Vocabulary of 3,4 mode was generated with size of {}".format(len(self.vocabulary["3,4"])))
+        logging.info("Vocabulary of 5,6 mode was generated with size of {}".format(len(self.vocabulary["5,6"])))
+        logging.info("Vocabulary of 7,8 mode was generated with size of {}".format(len(self.vocabulary["7,8"])))
+
+    # ------------------------------- init segmentations -----------------------------
+    def __gaus_rand_segments(self, chants, modes, mu, sigma):
+        print("new rand segments")
+        rand_segments = []
+        for chant_id, (chant, mode) in enumerate(zip(chants, modes)):
+            new_chant_segments = []
+            self.chant_count[self.mode_mapper[mode]] += 1
+            i = 0
+            while i != len(chant):
+                # Find new segment
+                new_len = np.clip(a = int(random.gauss(mu, sigma)),
+                    a_min = self.min_size, a_max = self.max_size)
+                k = min(i+new_len, len(chant))
+                new_chant_segments.append(chant[i:k])
+                last_added_segment = new_chant_segments[-1]
+                # Update segment_unigrams
+                if last_added_segment in self.segment_unigrams[self.mode_mapper[mode]]:
+                    self.segment_unigrams[self.mode_mapper[mode]][last_added_segment] += 1
+                else:
+                    self.segment_unigrams[self.mode_mapper[mode]][last_added_segment] = 1
+                # Update total_segments count
+                self.total_segments[self.mode_mapper[mode]] += 1
+                # Update segment_inverted_index
+                if last_added_segment in self.segment_inverted_index[self.mode_mapper[mode]]:
+                    self.segment_inverted_index[self.mode_mapper[mode]][last_added_segment].add(chant_id)
+                else:
+                    self.segment_inverted_index[self.mode_mapper[mode]][last_added_segment] = {chant_id}
+                # Update i index
+                i = k
+            rand_segments.append(new_chant_segments)
+        return rand_segments
+
+    def __word_segments(self, modes):
+        print("new word segments")
+        word_segments = load_word_segmentations()[:len(modes)]
+        for chant_id, (chant, mode) in enumerate(zip(word_segments, modes)):
+            self.chant_count[self.mode_mapper[mode]] += 1
+            for segment in chant:
+                # Update segment_unigrams
+                if segment in self.segment_unigrams[self.mode_mapper[mode]]:
+                    self.segment_unigrams[self.mode_mapper[mode]][segment] += 1
+                else:
+                    self.segment_unigrams[self.mode_mapper[mode]][segment] = 1
+                # Update total_segments count
+                self.total_segments[self.mode_mapper[mode]] += 1
+                # Update segment_inverted_index
+                if segment in self.segment_inverted_index[self.mode_mapper[mode]]:
+                    self.segment_inverted_index[self.mode_mapper[mode]][segment].add(chant_id)
+                else:
+                    self.segment_inverted_index[self.mode_mapper[mode]][segment] = {chant_id}
+        return word_segments
+
+    # -------------------------------- training ------------------------------
+    def __train_iteration(self, segmented_chants, modes, k_best: int, alpha: float):
+        print("new train iteration")
+        # Gibbs Sampling
+        new_segmented_chants = [None for _ in range(len(segmented_chants))]
+        rand_indices = np.arange(len(segmented_chants))
+        np.random.shuffle(rand_indices)
+        for chant_id in rand_indices:
+            segments = segmented_chants[chant_id]
+            mode = modes[chant_id]
+            self.__ignore_chant(chant_segments = segments, mode = self.mode_mapper[mode], chant_id=chant_id)
+            new_segments, _ = self.__get_optimized_chant(chant_segments=segments,
+                                                      mode=self.mode_mapper[mode],
+                                                      k_best=k_best, alpha=alpha)
+            self.__add_chant(chant_segments=new_segments, mode=self.mode_mapper[mode], chant_id=chant_id)
+            new_segmented_chants[chant_id] = new_segments
+        return new_segmented_chants
+
+
 class Node:
     def __init__(self, position:int, prob:float, prev_node: "Node"):
         self.position = position
