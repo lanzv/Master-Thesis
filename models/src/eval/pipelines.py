@@ -2,7 +2,7 @@ from src.eval.bacor_score import bacor_score
 from src.eval.mjww_score import mjww_score
 from src.eval.wufpc_score import wufpc_score
 from src.eval.wtmf_score import wtmf_score
-from src.utils.plotters import plot_melody_mode_frequencies
+from src.utils.plotters import plot_melody_mode_frequencies, plot_umm_confusion_matries
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from src.utils.eval_helpers import list2string, get_bacor_model
@@ -181,3 +181,32 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
 
 
     return scores, selected_features, trained_model
+
+def umm_modes_accuracy_pipeline(umm_model, train_chants, train_modes, test_chants, test_modes,
+                                train_proportion: float = 0.9, final_range_classifier = False,
+                                mode_priors_uniform = True):
+    # Divide chants to train and dev datasets
+    splitting_point = int(train_proportion*len(train_chants))
+    train_chants, dev_chants = train_chants[:splitting_point], train_chants[splitting_point:]
+    train_modes, dev_modes = train_modes[:splitting_point], train_modes[splitting_point:]
+
+    train_predictions = umm_model.predict_modes(train_chants,
+                            final_range_classifier = final_range_classifier,
+                            mode_priors_uniform = mode_priors_uniform)
+    dev_predictions = umm_model.predict_modes(dev_chants,
+                            final_range_classifier = final_range_classifier,
+                            mode_priors_uniform = mode_priors_uniform)
+    test_predictions = umm_model.predict_modes(test_chants,
+                            final_range_classifier = final_range_classifier,
+                            mode_priors_uniform = mode_priors_uniform)
+
+    print("------------------------ Unigram Model Modes - Mode Prediction Scores ------------------------")
+    print()
+    print("\t\tTrain accuracy {:.2f}".format(accuracy_score(train_modes, train_predictions)))
+    print("\t\tDev accuracy {:.2f}".format(accuracy_score(dev_modes, dev_predictions)))
+    print("\t\tTest accuracy {:.2f}".format(accuracy_score(test_modes, test_predictions)))
+    print()
+    plot_umm_confusion_matries(train_modes, train_predictions,
+                               dev_modes, dev_predictions,
+                               test_modes, test_predictions)
+    print("----------------------------------------------------------------------------------------------")

@@ -1,6 +1,9 @@
 import numpy as np
 from pandas import DataFrame
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+
 
 
 def plot_mode_segment_statistics(
@@ -86,4 +89,24 @@ def plot_iteration_statistics(statistics_to_plot):
         axis[i].set_title(title)
     figure.set_size_inches(40, 5)
     plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0.2, hspace=0.2)
+    plt.show()
+
+def plot_umm_confusion_matries(train_true, train_pred, dev_true, dev_pred, test_true, test_pred, labels):
+    print("Train UMM modes accuracy")
+    cm = confusion_matrix(train_true, train_pred, labels=labels)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=labels)
+    disp.plot()
+    plt.show()
+    print("Dev UMM modes accuracy")
+    cm = confusion_matrix(dev_true, dev_pred, labels=labels)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=labels)
+    disp.plot()
+    plt.show()
+    print("Test UMM modes accuracy")
+    cm = confusion_matrix(test_true, test_pred, labels=labels)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=labels)
+    disp.plot()
     plt.show()
