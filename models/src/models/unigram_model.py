@@ -719,7 +719,6 @@ class UnigramModel4Modes(UnigramModelModes):
                          final_range_classifier = False, mode_priors_uniform = True):
         modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
                                    mode_priors_uniform = mode_priors_uniform)
-        print("new predict segments")
         final_segmentation = []
         entropy_sum = 0
         for chant_string, mode in zip(chants, modes):
@@ -734,7 +733,6 @@ class UnigramModel4Modes(UnigramModelModes):
 
     def predict_modes(self, chants, k_best=15, alpha=1, mode_list = ["1,2", "3,4", "5,6", "7,8"],
                       final_range_classifier = False, mode_priors_uniform = True):
-        print("new predict modes")
         """
         Using the Bayes Rule
         p(m|c') = (p(c'|m)*p(m))/(p(c')) ~ p(c'|m)*p(m)  ~ p(c'|m) for constant p(m) and p(c')
@@ -814,7 +812,6 @@ class UnigramModel4Modes(UnigramModelModes):
 
     # ------------------------------- data structures updates -------------------------
     def __init_model(self, all_modes = ["1,2", "3,4", "5,6", "7,8"]):
-        print("new init model")
         # dictionary of melody string and its counts over all documents (as integer)
         self.segment_unigrams = {}
         # number of all segments, the sum over all counts
@@ -846,7 +843,6 @@ class UnigramModel4Modes(UnigramModelModes):
             self.vocabulary[mode] = set()
 
     def __generate_vocabulary(self, chants, modes):
-        print("new generate vocabulary")
         for chant_str, mode in zip(chants, modes):
             self.__update_vocab(chant_str=chant_str, mode=self.mode_mapper[mode], char_id = 0)
 
@@ -899,7 +895,6 @@ class UnigramModel4Modes(UnigramModelModes):
 
     # ------------------------------- init segmentations -----------------------------
     def __gaus_rand_segments(self, chants, modes, mu, sigma):
-        print("new rand segments")
         rand_segments = []
         for chant_id, (chant, mode) in enumerate(zip(chants, modes)):
             new_chant_segments = []
@@ -930,7 +925,6 @@ class UnigramModel4Modes(UnigramModelModes):
         return rand_segments
 
     def __word_segments(self, modes):
-        print("new word segments")
         word_segments = load_word_segmentations()[:len(modes)]
         for chant_id, (chant, mode) in enumerate(zip(word_segments, modes)):
             self.chant_count[self.mode_mapper[mode]] += 1
@@ -951,7 +945,6 @@ class UnigramModel4Modes(UnigramModelModes):
 
     # -------------------------------- training ------------------------------
     def __train_iteration(self, segmented_chants, modes, k_best: int, alpha: float):
-        print("new train iteration")
         # Gibbs Sampling
         new_segmented_chants = [None for _ in range(len(segmented_chants))]
         rand_indices = np.arange(len(segmented_chants))
