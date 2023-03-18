@@ -314,7 +314,7 @@ class UnigramModelModes:
 
     def train(self, chants, modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
                          alpha = 1, k_best = 15, print_each = 1, train_proportion: float = 0.9,
-                         final_range_classifier = False):
+                         final_range_classifier = False, mode_priors_uniform = False):
         # Divide chants to train and dev datasets
         splitting_point = int(train_proportion*len(chants))
         train_chants, dev_chants = chants[:splitting_point], chants[splitting_point:]
@@ -332,13 +332,17 @@ class UnigramModelModes:
         chant_segmentation = init_segmentation
         for i in range(iterations):
             if i%print_each == 0:
-                self.__store_iteration_results(i, train_chants, train_modes, dev_chants, dev_modes, final_range_classifier)
+                self.__store_iteration_results(i, train_chants, train_modes, dev_chants, dev_modes,
+                                                final_range_classifier, mode_priors_uniform)
             chant_segmentation = self.__train_iteration(chant_segmentation, train_modes, k_best = k_best, alpha = alpha)
-        self.__store_iteration_results(iterations, train_chants, train_modes, dev_chants, dev_modes, final_range_classifier)
+        self.__store_iteration_results(iterations, train_chants, train_modes, dev_chants, dev_modes,
+                                        final_range_classifier, mode_priors_uniform)
         self.__plot_statistics()
 
-    def predict_segments(self, chants, k_best=15, alpha=1, final_range_classifier = False):
-        modes = self.predict_modes(chants, final_range_classifier = final_range_classifier)
+    def predict_segments(self, chants, k_best=15, alpha=1,
+                         final_range_classifier = False, mode_priors_uniform = True):
+        modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
+                                   mode_priors_uniform = mode_priors_uniform)
         final_segmentation = []
         entropy_sum = 0
         for chant_string, mode in zip(chants, modes):
@@ -352,7 +356,7 @@ class UnigramModelModes:
         return final_segmentation, perplexity
 
     def predict_modes(self, chants, k_best=15, alpha=1, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"], 
-                      final_range_classifier = False):
+                      final_range_classifier = False, mode_priors_uniform = True):
         """
         Using the Bayes Rule
         p(m|c') = (p(c'|m)*p(m))/(p(c')) ~ p(c'|m)*p(m)  ~ p(c'|m) for constant p(m) and p(c')
@@ -363,6 +367,9 @@ class UnigramModelModes:
             return FinalRangeClassifier.predict(chants=chants)
         else:
             final_modes = []
+            training_chants_num = 0
+            for mode in self.chant_count:
+                training_chants_num += len(self.chant_count[mode])
             for chant_string in chants:
                 chosen_mode = None
                 best_prob = -1
@@ -370,9 +377,13 @@ class UnigramModelModes:
                 for mode in mode_list:
                     _, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
                                                             k_best=k_best, alpha=alpha, argmax=True)
-                    if chant_prob > best_prob:
+                    if mode_priors_uniform:
+                        pm = 1.0/float(len(mode_list))
+                    else:
+                        pm = float(len(self.chant_count[mode]))/float(training_chants_num)
+                    if chant_prob*pm > best_prob:
                         chosen_mode = mode
-                        best_prob = chant_prob
+                        best_prob = chant_prob*pm
                 final_modes.append(chosen_mode)
             return final_modes
 
@@ -380,7 +391,7 @@ class UnigramModelModes:
 
     # --------------------------------- printers, plotters ----------------------------
     def __store_iteration_results(self, iteration, train_chants, train_modes, dev_chants, dev_modes,
-                                  final_range_classifier=False):
+                                  final_range_classifier=False, mode_priors_uniform = True):
         all_melodies = {}
         for mode in self.segment_unigrams:
             for segment in self.segment_unigrams[mode]:
@@ -389,8 +400,12 @@ class UnigramModelModes:
                 else:
                     all_melodies[segment] = 1
         top20_melodies = sorted(all_melodies, key=all_melodies.get, reverse=True)[:20]
-        train_segmentation, _ = self.predict_segments(train_chants, final_range_classifier)
-        dev_segmentation, dev_perplexity = self.predict_segments(dev_chants, final_range_classifier)
+        train_segmentation, _ = self.predict_segments(train_chants,
+                                        final_range_classifier = final_range_classifier,
+                                        mode_priors_uniform = mode_priors_uniform)
+        dev_segmentation, dev_perplexity = self.predict_segments(dev_chants,
+                                        final_range_classifier = final_range_classifier,
+                                        mode_priors_uniform = mode_priors_uniform)
         accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
                                                                                         dev_segmentation, dev_modes, top20_melodies)
         self.dev_statistics["accuracy"].append(accuracy*100)
