@@ -337,7 +337,7 @@ class UnigramModelModes:
         self.__plot_statistics()
 
     def predict_segments(self, chants, k_best=15, alpha=1):
-        modes = [] # ToDo, find modes own way
+        modes = self.predict_modes(chants)
         final_segmentation = []
         entropy_sum = 0
         for chant_string, mode in zip(chants, modes):
@@ -349,6 +349,28 @@ class UnigramModelModes:
                 entropy_sum -= chant_prob*np.log2(chant_prob)
         perplexity = np.exp2(entropy_sum)
         return final_segmentation, perplexity
+
+    def predict_modes(self, chants, k_best=15, alpha=1, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+        """
+        Using the Bayes Rule
+        p(m|c') = (p(c'|m)*p(m))/(p(c')) ~ p(c'|m)*p(m)  ~ p(c'|m) for constant p(m) and p(c')
+        m = argmax p(m|c') ... only when p(m) = 1/8 for all m
+        needs to be tested whether p(m) = priors
+        """
+        final_modes = []
+        for chant_string, mode in chants:
+            chosen_mode = None
+            best_prob = -1
+            assert type(chant_string) is str or type(chant_string) is np.str_
+            for mode in mode_list:
+                _, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
+                                                        k_best=k_best, alpha=alpha, argmax=True)
+                if chant_prob > best_prob:
+                    chosen_mode = mode
+                    best_prob = chant_prob
+            final_modes.append(chosen_mode)
+
+
 
     # --------------------------------- printers, plotters ----------------------------
     def __store_iteration_results(self, iteration, train_chants, train_modes, dev_chants, dev_modes):
