@@ -303,7 +303,6 @@ class UnigramModel:
         return final_segmentation, final_prob
 
 
-
 class UnigramModelModes:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
         random.seed(seed)
@@ -358,7 +357,7 @@ class UnigramModelModes:
         needs to be tested whether p(m) = priors
         """
         final_modes = []
-        for chant_string, mode in chants:
+        for chant_string in chants:
             chosen_mode = None
             best_prob = -1
             assert type(chant_string) is str or type(chant_string) is np.str_
@@ -369,6 +368,7 @@ class UnigramModelModes:
                     chosen_mode = mode
                     best_prob = chant_prob
             final_modes.append(chosen_mode)
+        return final_modes
 
 
 
