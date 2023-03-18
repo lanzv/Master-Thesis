@@ -184,7 +184,7 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
 
 def umm_modes_accuracy_pipeline(umm_model, train_chants, train_modes, test_chants, test_modes,
                                 train_proportion: float = 0.9, final_range_classifier = False,
-                                mode_priors_uniform = True):
+                                mode_priors_uniform = True, labels = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     # Divide chants to train and dev datasets
     splitting_point = int(train_proportion*len(train_chants))
     train_chants, dev_chants = train_chants[:splitting_point], train_chants[splitting_point:]
@@ -208,5 +208,6 @@ def umm_modes_accuracy_pipeline(umm_model, train_chants, train_modes, test_chant
     print()
     plot_umm_confusion_matries(train_modes, train_predictions,
                                dev_modes, dev_predictions,
-                               test_modes, test_predictions)
+                               test_modes, test_predictions,
+                               labels = labels)
     print("----------------------------------------------------------------------------------------------")
