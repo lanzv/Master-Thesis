@@ -211,3 +211,34 @@ def umm_modes_accuracy_pipeline(umm_model, train_chants, train_modes, test_chant
                                test_modes, test_predictions,
                                labels = labels)
     print("----------------------------------------------------------------------------------------------")
+
+
+def evaluation_trimmed_chants(X_train, y_train, X_test, y_test, train_perplexity, test_perplexity,
+        max_features_from_model = 100, max_features_additative = 100, include_additative = False):
+    """
+    Remove first and last segment (if possible) and call evaluation pipeline
+    """
+    trimmed_X_train = []
+    not_trimmed_train = 0
+    trimmed_X_test = []
+    not_trimmed_test = 0
+    # Trim train dataset
+    for chant in X_train:
+        if len(chant) >= 3:
+            trimmed_X_train.append(chant[1:-1])
+        else:
+            not_trimmed_train += 1
+    # Trim test dataset
+    for chant in X_test:
+        if len(chant) >= 3:
+            trimmed_X_test.append(chant[1:-1])
+        else:
+            not_trimmed_test += 1
+    print("------------------- Trimmed Evalution Pipeline -----------------")
+    print()
+    print("\t\t {} train chants are to short to not to be trimmed".format(not_trimmed_train))
+    print("\t\t {} test chants are to short to not to be trimmed".format(not_trimmed_test))
+    # call evaluation pipeline
+    return evaluation_pipeline(trimmed_X_train, y_train, trimmed_X_test, y_test,
+                               train_perplexity, test_perplexity,max_features_from_model,
+                               max_features_additative, include_additative)
