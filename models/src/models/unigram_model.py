@@ -314,7 +314,7 @@ class UnigramModelModes:
 
     def train(self, chants, modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
                          alpha = 1, k_best = 15, print_each = 1, train_proportion: float = 0.9,
-                         final_range_classifier = False, mode_priors_uniform = False):
+                         final_range_classifier = False, mode_priors_uniform = True):
         # Divide chants to train and dev datasets
         splitting_point = int(train_proportion*len(chants))
         train_chants, dev_chants = chants[:splitting_point], chants[splitting_point:]
@@ -369,7 +369,7 @@ class UnigramModelModes:
             final_modes = []
             training_chants_num = 0
             for mode in self.chant_count:
-                training_chants_num += len(self.chant_count[mode])
+                training_chants_num += self.chant_count[mode]
             for chant_string in chants:
                 chosen_mode = None
                 best_prob = -1
@@ -380,7 +380,7 @@ class UnigramModelModes:
                     if mode_priors_uniform:
                         pm = 1.0/float(len(mode_list))
                     else:
-                        pm = float(len(self.chant_count[mode]))/float(training_chants_num)
+                        pm = float(self.chant_count[mode])/float(training_chants_num)
                     if chant_prob*pm > best_prob:
                         chosen_mode = mode
                         best_prob = chant_prob*pm

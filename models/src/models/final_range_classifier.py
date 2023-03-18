@@ -11,7 +11,7 @@ class FinalRangeClassifier():
         return predicted_modes
 
     @staticmethod
-    def __process_chant(self, finalis, chant_string):
+    def __process_chant(finalis, chant_string):
         counter = Counter(chant_string)
         if finalis == 'd':
             dorian_sum = counter['d'] + counter['e'] + counter['f'] + counter['g'] + counter['h'] + counter['j']+ counter['k']+ counter['l']
@@ -31,7 +31,7 @@ class FinalRangeClassifier():
             lydian_sum = counter['f'] + counter['g'] + counter['h'] + counter['j']+ counter['k']+ counter['l'] + counter['m'] + counter['n'] 
             hyperlydian_sum = counter['c'] + counter['d'] + counter['e'] + counter['f']+ counter['g']+ counter['h'] + counter['j'] + counter['k']
             if hyperlydian_sum < lydian_sum:
-                return 5
+                return '5'
             else:
                 return '6'
         elif finalis == 'g':
