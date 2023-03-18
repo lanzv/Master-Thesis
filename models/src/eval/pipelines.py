@@ -202,9 +202,9 @@ def umm_modes_accuracy_pipeline(umm_model, train_chants, train_modes, test_chant
 
     print("------------------------ Unigram Model Modes - Mode Prediction Scores ------------------------")
     print()
-    print("\t\tTrain accuracy {:.2f}".format(accuracy_score(train_modes, train_predictions)))
-    print("\t\tDev accuracy {:.2f}".format(accuracy_score(dev_modes, dev_predictions)))
-    print("\t\tTest accuracy {:.2f}".format(accuracy_score(test_modes, test_predictions)))
+    print("\t\tTrain accuracy {:.2f}%".format(100*accuracy_score(train_modes, train_predictions)))
+    print("\t\tDev accuracy {:.2f}%".format(100*accuracy_score(dev_modes, dev_predictions)))
+    print("\t\tTest accuracy {:.2f}%".format(100*accuracy_score(test_modes, test_predictions)))
     print()
     plot_umm_confusion_matries(train_modes, train_predictions,
                                dev_modes, dev_predictions,
