@@ -36,3 +36,11 @@ def load_word_segmentations():
     for segments in pitch_repr["words"]:
         word_segmentation.append(segments.split(' '))
     return word_segmentation
+
+
+def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings-an.csv"):
+    chants = pd.read_csv(gregobase_phrases_csv)
+    word_segmentation = []
+    for segments in chants["chant_strings"]:
+        word_segmentation.append(segments.split('|'))
+    return word_segmentation
