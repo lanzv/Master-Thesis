@@ -101,9 +101,10 @@ class Chant:
             return self.chant_string[int(start_position):int(end_position)]
 
     def show(self):
+        segments = []
         for index in range(2, self.num_segments-1):
-            print(self.get_nth_word_string(index))
-            print(" / ")
+            segments.append(self.get_nth_word_string(index))
+        print(segments)
 
     def split_chant_with_num_segments(self, segment_lengths: list, actual_num_segments: int):
         num_segments_without_special_tokens = actual_num_segments

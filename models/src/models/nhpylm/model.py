@@ -4,6 +4,8 @@ from src.models.nhpylm.sample import Sampler
 from src.models.nhpylm.chant import Chant
 from src.models.nhpylm.trainer import Trainer
 from src.models.nhpylm.definitions import HPYLM_A, HPYLM_B, CHPYLM_BETA_STOP, CHPYLM_BETA_PASS
+import pickle
+import lzma
 
 """
 This is the struct that will serve as a container for the whole NHPYLM. it will be serialized after training.
@@ -24,6 +26,7 @@ class Model:
         self.set_initial_b(HPYLM_B)
         self.set_chpylm_beta_stop(CHPYLM_BETA_STOP)
         self.set_chpylm_beta_pass(CHPYLM_BETA_PASS)
+        self.pretrained = False
 
 
     def train(self, epochs = 20):
@@ -35,11 +38,14 @@ class Model:
             trainer.sample_lambda()
             # The accuracy is better after several iterations have been already done.
             if epoch > 3:
+                self.pretrained = True
+            if not self.pretrained:
                 trainer.update_p_k_given_chpylm()
             print("Iteration {}".format(epoch))
             if epoch % 10 == 0:
                 trainer.print_segmentations_train(10)
                 print("Perplexity_dev: {}".format(trainer.compute_perplexity_dev()))
+                self.save_model()
 
 
     def get_max_word_length(self):
@@ -90,3 +96,12 @@ class Model:
         self.npylm.extend_capacity(self.npylm, len(chant_string))
         chant = Chant(chant_string)
         return self.sampler.compute_log_forward_probability(chant, with_scaling)
+
+    def save_model(self, model_path = "./nhpylm_models/model.nhpylm"):
+        with lzma.open(model_path, "wb") as model_file:
+            pickle.dump(self, model_file)
+
+    def load_model(model_path = "./nhpylm_models/model.nhpylm") -> "Model":
+        with lzma.open(model_path, "rb") as model_file:
+            model = pickle.load(model_file)
+        return model

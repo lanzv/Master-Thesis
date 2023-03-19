@@ -288,7 +288,6 @@ class Trainer:
             segment_lengths = self.model.sampler.viterbi_decode(chant)
             chant.split_chant(segment_lengths)
             chant.show()
-            print("\n")
 
     def print_segmentations_train(self, num_to_print: int):
         return self.print_segmentations(num_to_print, self.dataset.train_chants, self.rand_indices_train)
