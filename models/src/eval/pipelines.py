@@ -33,7 +33,7 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     return accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies
 
 
-def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity, test_perplexity, mjwp_score,
+def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, test_perplexity=-1, mjwp_score=-1,
         max_features_from_model = 100, max_features_additative = 100, include_additative = True):
     """
     final segmentation is a list of list of segments

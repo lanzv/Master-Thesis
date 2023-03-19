@@ -280,7 +280,7 @@ class UnigramModel:
         probs = np.array([path.prob for path in graph[-1]])
         if len(probs) == 0:
         # too small chant that is not segmentable into self.min_size,..,self.max_size segments
-            return [chant_str]
+            return [chant_str], 0
         if not argmax:
             if probs.sum() == 0:
             # when probs.sum is too small, face it as a uniform distribution
@@ -643,7 +643,7 @@ class UnigramModelModes:
         probs = np.array([path.prob for path in graph[-1]])
         if len(probs) == 0:
         # too small chant that is not segmentable into self.min_size,..,self.max_size segments
-            return [chant_str]
+            return [chant_str], 0
         if not argmax:
             if probs.sum() == 0:
             # when probs.sum is too small, face it as a uniform distribution
@@ -1016,7 +1016,7 @@ class UnigramModel4Modes(UnigramModelModes):
         probs = np.array([path.prob for path in graph[-1]])
         if len(probs) == 0:
         # too small chant that is not segmentable into self.min_size,..,self.max_size segments
-            return [chant_str]
+            return [chant_str], 0
         if not argmax:
             if probs.sum() == 0:
             # when probs.sum is too small, face it as a uniform distribution

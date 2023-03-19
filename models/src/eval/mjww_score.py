@@ -34,7 +34,7 @@ def mjwp_score(model):
     total_segments = 0
     correct_segments = 0
     phrased_chants = load_phrase_segmentations()
-    segmented_chants = model.predict_segments([''.join(phrased_chant) for phrased_chant in phrased_chants])
+    segmented_chants, perplexity = model.predict_segments([''.join(phrased_chant) for phrased_chant in phrased_chants])
     for chant_segments, phrase_segmentation in zip(segmented_chants, phrased_chants):
         phrase_indices = set()
         i = 0
