@@ -33,7 +33,7 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     return accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies
 
 
-def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity, test_perplexity,
+def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity, test_perplexity, mjwp_score,
         max_features_from_model = 100, max_features_additative = 100, include_additative = True):
     """
     final segmentation is a list of list of segments
@@ -121,6 +121,9 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity, test
     print()
     print("\t\t Average Segment Length")
     print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
+    print()
+    print("\t\t Melody Justified With Phrases")
+    print("\t\t\t mjww: {:.2f}% of segments".format(mjwp_score*100))
     print()
     print("\t\t Melody Justified With Words")
     print("\t\t\t mjww: {:.2f}% of segments".format(mjww*100))
