@@ -101,7 +101,8 @@ class PYP():
         self.extend_tablegroups(dish)
         if self.parent != None:
             success = self.parent.add_customer(dish, G_0_or_parent_p_ws, d_array, theta_array, False, table_index_in_root)
-            assert success == True
+            if not success == True:
+                raise Exception("success != True")
         return None
 
     def extend_tablegroups(self, dish):
@@ -179,15 +180,18 @@ class PYP():
         # The tablegroup should always be found.
         tablegroup = self.tablegroups[dish]
 
-        assert table_index < len(tablegroup)
+        if not table_index < len(tablegroup):
+            raise Exception("table_index >= len(tablegroup)")
         tablegroup[table_index] -= 1
         self.ncustomers -= 1
-        assert tablegroup[table_index] >= 0
+        if not tablegroup[table_index] >= 0:
+            raise Exception("tablegroup[table_index] < 0")
         # If there are no customers anymore at this table, we need to remove this table.
         if tablegroup[table_index] == 0:
             if self.parent != None:
                 success = self.parent.remove_customer(dish, False, table_index_in_root)
-                assert success == True
+                if not success == True:
+                    raise Exception("success != True")
             del tablegroup[table_index]
             self.ntables -=1
 
@@ -198,7 +202,8 @@ class PYP():
         return True
 
     def remove_customer(self, dish, update_beta_count: bool, index_of_table_in_root: list) -> bool:
-        assert dish in self.tablegroups
+        if not dish in self.tablegroups:
+            raise Exception("dish not in self.tablegroups")
         tablegroup = np.array(self.tablegroups[dish])
         index_to_remove = np.random.choice(np.arange(0, len(tablegroup)), p=tablegroup/tablegroup.sum())
         self.remove_customer_from_table(dish, index_to_remove, index_of_table_in_root)
@@ -283,7 +288,8 @@ class PYP():
 
     def decrement_stop_count(self):
         self.stop_count -= 1
-        assert self.stop_count >= 0
+        if not self.stop_count >= 0:
+            raise Exception("self.stop_count < 0")
         if self.parent != None:
             self.parent.decrement_stop_count()
     
@@ -294,7 +300,8 @@ class PYP():
     
     def decrement_pass_count(self):
         self.pass_count -= 1
-        assert self.pass_count >= 0
+        if not self.pass_count >= 0:
+            raise Exception("self.pass_count < 0")
         if self.parent != None:
             self.parent.decrement_pass_count()
 
@@ -390,7 +397,8 @@ class PYP():
             sum = 0.0
             for i in range(1, self.ntables): # both rust and julia have ntables-1
                 denom = theta_u + d_u * float(i) 
-                assert denom > 0
+                if not denom > 0:
+                    raise Exception("denom <= 0")
                 prob = theta_u /denom
                 y_ui = float(np.random.binomial(n = 1, p = prob))
                 if is_one_minus:
@@ -414,7 +422,8 @@ class PYP():
                 if customercount >= 2:
                     # Expression (38)
                     for j in range(1, customercount): # 1...n-1
-                        assert float(j) - d_u > 0
+                        if not float(j) - d_u > 0:
+                            raise Exception("float(j) - d_u <= 0")
                         prob = (float(j) - 1)/(float(j) - d_u)
                         sample = float(np.random.binomial(n = 1, p = prob))
                         sum += 1 - sample

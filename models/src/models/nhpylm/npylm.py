@@ -94,10 +94,12 @@ class NPYLM:
         This function adds the nth segmented word in the chant to the NPYLM.
         """
         # The first two entries are always the BOS symbols.
-        assert(n >= 2)
+        if not (n >= 2):
+            raise Exception("n<2")
         token_n: int = chant.get_nth_word_id(n)
         pyp: "PYP" = self.find_node_by_tracing_back_context_from_index_n_chant(chant, n, self.whpylm_parent_p_w_cache, True, False)
-        assert pyp != None
+        if not pyp != None:
+            raise Exception("pyp = None")
         num_tables_before_addition: int = self.whpylm.root.ntables
         index_of_table_added_to_in_root: list =[-1]
         pyp.add_customer(token_n, self.whpylm_parent_p_w_cache, self.whpylm.d_array, self.whpylm.theta_array, True, index_of_table_added_to_in_root)
@@ -115,7 +117,8 @@ class NPYLM:
 
                 self.chpylm.root.add_customer(EOS_CHAR, self.chpylm.G_0, self.chpylm.d_array, self.chpylm.theta_array, True, index_of_table_added_to_in_root)
                 return True
-            assert(index_of_table_added_to_in_root[0] != -1)
+            if not (index_of_table_added_to_in_root[0] != -1):
+                raise Exception(index_of_table_added_to_in_root[0] != -1)
             # Get the depths recorded for each table in the tablegroup of token_n.
             # It may not exist yet so we'll have to check and create it if that's the case.
             if not token_n in self.recorded_depth_arrays_for_tablegroups_of_token:
@@ -123,13 +126,15 @@ class NPYLM:
             depth_arrays_for_the_tablegroup = self.recorded_depth_arrays_for_tablegroups_of_token[token_n]
 
             # This is a new table that didn't exist before *in the tablegroup for this token*.
-            assert len(depth_arrays_for_the_tablegroup) <= index_of_table_added_to_in_root[0]
+            if not len(depth_arrays_for_the_tablegroup) <= index_of_table_added_to_in_root[0]:
+                raise Exception("len(depth_arrays_for_the_tablegroup) > index_of_table_added_to_in_root[0]")
             # Variable to hold the depths of each character that was added to the CHPYLM as a part of the creation of this new table.
             # recorded_depth_array = Int[]
             # `word_end_index - word_begin_index + 2` is `length(word) - 1 + 2`, i.e. word_length_with_symbols
             recorded_depth_array = [0 for _ in range(word_end_index - word_begin_index + 3)]
             self.add_word_to_chpylm(chant.characters, word_begin_index, word_end_index, recorded_depth_array)
-            assert(len(recorded_depth_array) == word_end_index - word_begin_index + 3)
+            if not (len(recorded_depth_array) == word_end_index - word_begin_index + 3):
+                raise Exception("(len(recorded_depth_array)) != word_end_index-word_begin_index+3")
             # Therefore we push the result of depths for *this new table* into the array.
             depth_arrays_for_the_tablegroup.append(recorded_depth_array)
         return True
@@ -138,9 +143,11 @@ class NPYLM:
         Yeah OK so token_ids is just a temporary variable holding all the characters to be added into the chpylm? What a weird design... 
         Why can't we do better let's see how we might refactor this code later.
         """
-        assert word_end_index >= word_begin_index
+        if not word_end_index >= word_begin_index:
+            raise Exception("word_end_index < word_begin_index")
         # This is probably to avoid EOS?
-        assert word_end_index < self.max_chant_length
+        if not word_end_index < self.max_chant_length:
+            raise Exception("word_end_index >= self.max_chant_length")
         self.most_recent_word = NPYLM.produce_word_with_bow_and_eow(chant_as_chars, word_begin_index, word_end_index)
         # + 2 because of bow and eow
         word_length_with_symbols = word_end_index - word_begin_index + 1 + 2
@@ -152,10 +159,12 @@ class NPYLM:
             recorded_depths[n] = depth_n
 
     def remove_customer_at_index_n(self, chant: "Chant", n: int):
-        assert n >= 2
+        if not n >= 2:
+            raise Exception("n<2")
         token_n = chant.get_nth_word_id(n)
         pyp:"PYP"= self.find_node_by_tracing_back_context_from_index_n_word_ids(chant.word_ids, n, False, False)
-        assert pyp != None
+        if not pyp != None:
+            raise Exception("pyp = None")
         num_tables_before_removal: int = self.whpylm.root.ntables
         index_of_table_removed_from = [-1]
         word_begin_index = chant.segment_begin_positions[n]
@@ -173,10 +182,12 @@ class NPYLM:
                 # The char representation for EOS is what, "1"?
                 self.chpylm.root.remove_customer(EOS_CHAR, True, index_of_table_removed_from)
                 return True
-            assert index_of_table_removed_from[0] != -1
+            if not index_of_table_removed_from[0] != -1:
+                raise Exception("index_of_table_removed_from[0] = -1")
             depths = self.recorded_depth_arrays_for_tablegroups_of_token[token_n]
             recorded_depths = depths[index_of_table_removed_from[0]]
-            assert len(recorded_depths) > 0
+            if not len(recorded_depths) > 0:
+                raise Exception("len(recorded_depths) <= 0")
             self.remove_word_from_chpylm(chant.characters, word_begin_index, word_end_index, recorded_depths)
             # This entry is now removed.
             del depths[index_of_table_removed_from[0]]
@@ -185,20 +196,26 @@ class NPYLM:
         return True
 
     def remove_word_from_chpylm(self, chant_as_chars: list, word_begin_index: int, word_end_index: int, recorded_depths: list):
-        assert len(recorded_depths) > 0
-        assert word_end_index >= word_begin_index
-        assert word_end_index < self.max_chant_length
+        if not len(recorded_depths) > 0:
+            raise Exception("len(recorded_depths) <= 0")
+        if not word_end_index >= word_begin_index:
+            raise Exception("word_end_index < word_begin_index")
+        if not word_end_index < self.max_chant_length:
+            raise Exception("word_end_index >= self.max_chant_length")
         self.most_recent_word = NPYLM.produce_word_with_bow_and_eow(chant_as_chars, word_begin_index, word_end_index)
         # + 2 because of bow and eow
         word_length_with_symbols = word_end_index - word_begin_index + 1 + 2
-        assert len(recorded_depths) == word_length_with_symbols
+        if not len(recorded_depths) == word_length_with_symbols:
+            raise Exception("len(recorded_depths) != word_length_with_symbols")
         for n in range(word_length_with_symbols):
             self.chpylm.remove_customer_at_index_n(self.most_recent_word, n, recorded_depths[n])
 
     def find_node_by_tracing_back_context_from_index_n_word_ids(self, word_ids: list, n: int, generate_if_not_found: bool, return_middle_node: bool) -> "PYP":
         # TODO: These all need to change when the bigram model is supported.
-        assert n >= 2
-        assert n < len(word_ids)
+        if not n >= 2:
+            raise Exception("n < 2")
+        if not n < len(word_ids):
+            raise Exception("n >= len(word_ids)")
         cur_node = self.whpylm.root
         # TODO: Why only 2?
         for depth in range(1, 3):
@@ -213,17 +230,21 @@ class NPYLM:
                 return None
 
             cur_node = child
-        assert cur_node.depth == 2
+        if not cur_node.depth == 2:
+            raise Exception("cur_node.depth != 2")
         return cur_node
 
     def find_node_by_tracing_back_context_from_index_n_chant(self, chant: "Chant", n: int, parent_p_w_cache: list, generate_if_not_found: bool, return_middle_node: bool):
         """
         Used by add_customer
         """
-        assert n >= 2
+        if not n >= 2:
+            raise Exception("n < 2")
         # println("chant is $(chant), n is $(n), chant.num_segments is $(chant.num_segments)")
-        assert n < chant.num_segments
-        assert chant.segment_lengths[n] > 0
+        if not n < chant.num_segments:
+            raise Exception("n >= chant.num_segments")
+        if not chant.segment_lengths[n] > 0:
+            raise Exception("chant.segment_lengths[n] <= 0")
         word_begin_index = chant.segment_begin_positions[n]
         word_end_index = word_begin_index + chant.segment_lengths[n] - 1
         return self.find_node_by_tracing_back_context_from_index_n_both(chant.characters, chant.word_ids, n, word_begin_index, word_end_index, parent_p_w_cache, generate_if_not_found, return_middle_node) 
@@ -232,10 +253,14 @@ class NPYLM:
         """
         We should be filling the parent_p_w_cache while trying to find the node already. So if not there's some problem going on.
         """
-        assert n >= 2
-        assert n < len(word_ids)
-        assert word_begin_index >= 0
-        assert word_end_index >= word_begin_index
+        if not n >= 2:
+            raise Exception("n < 2")
+        if not n < len(word_ids):
+            raise Exception("n >= len(word_ids)")
+        if not word_begin_index >= 0:
+            raise Exception("word_begin_index < 0")
+        if not word_end_index >= word_begin_index:
+            raise Exception("word_end_index < word_begin_index")
         cur_node = self.whpylm.root
         word_n_id = word_ids[n]
         parent_p_w = self.compute_G_0_of_word_at_index_n(chant_as_chars, word_begin_index, word_end_index, word_n_id)
@@ -253,10 +278,12 @@ class NPYLM:
             if child == None and return_middle_node == True:
                 return cur_node
             # So the other possibility will never be triggered?
-            assert child != None
+            if not child != None:
+                raise Exception("child = None")
             parent_p_w = p_w
             cur_node = child
-        assert cur_node.depth == 2
+        if not cur_node.depth == 2:
+            raise Exception("cur_node.depth != 2")
         return cur_node
 
     def compute_G_0_of_word_at_index_n(self, chant_as_chars: list, word_begin_index: int, word_end_index: int, word_n_id) -> float:
@@ -265,9 +292,12 @@ class NPYLM:
             # println("The word is EOS, directly return")
             return self.chpylm.G_0
 
-        assert word_end_index < self.max_chant_length
-        assert word_begin_index >= 0
-        assert word_end_index >= word_begin_index
+        if not word_end_index < self.max_chant_length:
+            raise Exception("word_end_index >= self.max_chant_length")
+        if not word_begin_index >= 0:
+            raise Exception("word_begin_index < 0")
+        if not word_end_index >= word_begin_index:
+            raise Exception("word_end_index < word_begin_index")
         word_length = word_end_index - word_begin_index + 1
         # However, if the word does not exist in the cache, we'll then have to do the calculation anyways.
         if not word_n_id in self.whpylm_G_0_cache:
@@ -292,7 +322,8 @@ class NPYLM:
                 lmbda = self.lambda_for_types[t]
                 # Deduce the word length with the Poisson distribution
                 poisson_sample = NPYLM.sample_poisson_k_lambda(word_length, lmbda)
-                assert poisson_sample > 0
+                if not poisson_sample > 0:
+                    raise Exception("poisson_sample <= 0")
                 # This is expression (15) of the paper, where we calculate p(c1...ck)
                 # expression (5): p(c1...ck) returned from the CHPYLM is exactly the "G_0" of the WHPYLM, thus the naming.
                 # G_0 is the more appropriate variable naming as this is just the way it's written in the expressions.
@@ -352,9 +383,12 @@ class NPYLM:
         """
         This is the real "compute_p_w"... The above ones don't have much to do with p_w I reckon. They are about whole chants. Eh.
         """
-        assert n >= 2
-        assert n < chant.num_segments
-        assert chant.segment_lengths[n] > 0
+        if not n >= 2:
+            raise Exception("n < 2")
+        if not n < chant.num_segments:
+            raise Exception("m >= chant.num_segments")
+        if not chant.segment_lengths[n] > 0:
+            raise Exception("chant.segment_lengths[n] <= 0")
         word_begin_index = chant.segment_begin_positions[n]
         # I mean, why don't you just record the end index directly anyways. The current implementation is such a torture.
         word_end_index = word_begin_index + chant.segment_lengths[n] - 1
@@ -368,7 +402,8 @@ class NPYLM:
         # So apparently the parent_p_w_cache should be set while we're trying to find the node?
         # generate_if_not_found = false, return_middle_node = true
         node = self.find_node_by_tracing_back_context_from_index_n_both(chant_as_chars, word_ids, n, word_begin_position, word_end_position, self.whpylm_parent_p_w_cache, False, True)
-        assert node != None
+        if not node != None:
+            raise Exception("node = None")
         # println("Node is $node")
         parent_p_w = self.whpylm_parent_p_w_cache[node.depth]
         # println("The parent_p_w is $parent_p_w")

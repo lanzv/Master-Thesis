@@ -51,14 +51,16 @@ class CHPYLM(HPYLM):
         This is a version to be called from the NPYLM.
         If the parent_p_w_cache is already set, then update the path_nodes as well.
         """
-        assert(0 <= depth and depth <= n)
+        if not (0 <= depth and depth <= n):
+            raise Exception("0 > depth or depth > n")
         node = self.find_node_by_tracing_back_context_npylm(characters, n, depth, path_nodes)
         # Seems to be just a check
         if depth > 0:
             if (node.context != characters[n - depth]):
                 print("node.context is $(node.context), characters[n - depth] is $(characters[n - depth]), characters is $characters, n is $n, depth is $depth")
             # @assert(node.context == characters[n - depth])
-        assert(node.depth == depth)
+        if not (node.depth == depth):
+            raise Exception("node.depth != depth")
         char_n = characters[n]
         root_table_index = [0]
         return node.add_customer(char_n, parent_p_w_cache, self.d_array, self.theta_array, True, root_table_index)
@@ -71,13 +73,17 @@ class CHPYLM(HPYLM):
         - add this (originally nth) customer back again at the newly sampled depth, *incrementing* pass_count or stop_count along the (new) path
         This function removes the customer
         """
-        assert(0 <= depth and depth <= n)
+        if not (0 <= depth and depth <= n):
+            raise Exception("0 > depth or depth > n")
         node = self.find_node_by_tracing_back_context_remove(characters, n, depth, False, False)
-        assert node != None
+        if not node != None:
+            raise Exception("node = None")
         # Seems to be just a check
         if depth > 0:
-            assert(node.context == characters[n - depth])
-        assert(node.depth == depth)
+            if not (node.context == characters[n - depth]):
+                raise Exception("node.context != characters[n-depth]")
+        if not (node.depth == depth):
+            raise Exception("node.depth != depth")
         char_n = characters[n]
         root_table_index = [0]
         node.remove_customer(char_n, True, root_table_index)
@@ -120,9 +126,11 @@ class CHPYLM(HPYLM):
 
         # The search has ended for the whole depth.
         # In this situation the cur_node should have the same depth as the given depth.
-        assert(cur_node.depth == depth_of_n)
+        if not (cur_node.depth == depth_of_n):
+            raise Exception("cur_node.depth != depth_of_n")
         if depth_of_n > 0:
-            assert(cur_node.context == characters[n - depth_of_n])
+            if not (cur_node.context == characters[n - depth_of_n]):
+                raise Exception("cur.node.context != characters[n-depth_of_n]")
         return cur_node
 
     def find_node_by_tracing_back_context(self, characters: list, n: int, depth_of_n: int, parent_p_w_cache: list) -> "PYP":
@@ -245,7 +253,8 @@ class CHPYLM(HPYLM):
                     child = cur_node.find_child_pyp(cur_context_char)
                     cur_node = child
             depth += 1
-        assert p > 0.0
+        if not p > 0.0:
+            raise Exception("p <= 0.0")
         return p
 
     def sample_depth_at_index_n(self, characters: list, n: int, parent_p_w_cache: list, path_nodes: list) -> int:

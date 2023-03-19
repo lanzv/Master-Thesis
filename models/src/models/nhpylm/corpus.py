@@ -101,7 +101,8 @@ class Dataset():
         """
         Add a chant to the train or dev chant vector of the dataset
         """
-        assert(len(chant_string) > 0)
+        if not (len(chant_string) > 0):
+            raise Exception("len(chant_string) <= 0")
         for char in chant_string:
             self.vocabulary.add_character(char)
         chants.append(Chant(chant_string))

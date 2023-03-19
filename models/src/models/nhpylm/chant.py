@@ -59,11 +59,13 @@ class Chant:
         return self.num_segments - 3
 
     def get_nth_segment_length(self, n: int) -> int:
-        assert(n <= self.num_segments)
+        if not (n <= self.num_segments):
+            raise Exception("n > self.num_segments")
         return self.segment_lengths[n]
 
     def get_nth_word_id(self, n: int):
-        assert(n <= self.num_segments)
+        if not (n <= self.num_segments):
+            raise Exception("n > self.num_segments")
         return self.word_ids[n]
 
     def get_substr_word_id(self, start_index: int, end_index: int):
@@ -81,14 +83,16 @@ class Chant:
 
     def get_nth_word_string(self, n: int) -> str:
         # The last segment is <EOS>
-        assert(n < self.num_segments)
+        if not (n < self.num_segments):
+            raise Exception("n >= self.num_segments")
         # TODO: This is all hard-coded. We'll need to change them if we're to support bigrams.
         # Can't we make the code a bit more generic? Don't think it would be that hard eh.
         # There are two BOS in the beginning if we use 3-gram.
         if n < 2:
             return "<BOS>"
         else:
-            assert n < self.num_segments - 1
+            if not n < self.num_segments - 1:
+                raise Exception("n >= self.num_segments-1")
             start_position = self.segment_begin_positions[n]
             # OK I see. Somehow the "end_position" didn't - 1. What's this black magic?
             end_position = start_position + self.segment_lengths[n]
@@ -107,7 +111,8 @@ class Chant:
         sum_length = 0
         index = 0
         while index < num_segments_without_special_tokens:
-            assert segment_lengths[index] > 0
+            if not segment_lengths[index] > 0:
+                raise Exception("segment_lengths[index] <= 0")
             sum_length += segment_lengths[index]
 
             cur_length = segment_lengths[index]
@@ -119,7 +124,8 @@ class Chant:
             cur_start += cur_length
             index += 1
         # println("sum_length is $sum_length, length of chant_string is $(length(chant.chant_string)), chant is $(chant.chant_string)")
-        assert sum_length == len(self.chant_string)
+        if not sum_length == len(self.chant_string):
+            raise Exception("sum_length != len(self.chant_string)")
         # Also need to take care of EOS now that the actual string ended.
         self.segment_lengths[index + 2] = 1
         self.word_ids[index + 2] = EOS

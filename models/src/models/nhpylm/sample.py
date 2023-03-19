@@ -110,7 +110,8 @@ class Sampler:
                 for k in range(1, min(t, self.max_word_length)+1):
                     for j in range(0 if t == k else 1, min(t - k, self.max_word_length) + 1):
                         sum_alpha += self.alpha_tensor[t,k,j]
-                assert sum_alpha > 0.0
+                if not sum_alpha > 0.0:
+                    raise Exception("sum_alpha <= 0.0")
                 self.scaling_coefficients[t] = 1.0 / sum_alpha
                 for k in range(1, min(t, self.max_word_length) + 1):
                     for j in range(0 if t == k else 1, min(t - k, self.max_word_length) + 1):
@@ -125,10 +126,14 @@ class Sampler:
         """
         word_k_id = self.get_substring_word_id_at_t_k(chant, t, k)
         chant_as_chars = chant.characters
-        assert(t <= self.max_chant_length + 1)
-        assert(k <= self.max_word_length)
-        assert(j <= self.max_word_length)
-        assert(t - k >= 0)
+        if not (t <= self.max_chant_length + 1):
+            raise Exception("(t > self.max_chant_length + 1)")
+        if not (k <= self.max_word_length):
+            raise Exception("k > self.max_word_length")
+        if not (j <= self.max_word_length):
+            raise Exception("j > self.max_word_length")
+        if not (t - k >= 0):
+            raise Exception("t - k <= 0")
         # I'm really unsatisfied with the constant manual generation of BOS and EOS. I mean why not generate it already when first reading in the corpus? This can probably save tons of problems.
         # However, I can now also see why this might be necessary: i.e. so that BOS and EOS, which are essentially special characters, might not be accidentally considered a part of a word when we try to determine word boundaries, which would result in nonsensical results... Um let's see. Let me first port the code anyways.
 
@@ -140,7 +145,8 @@ class Sampler:
             # Compute the probability of this word with length k
             # Why do we - 1 in the end though?
             p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t - k, t - 1)
-            assert p_w_h > 0.0
+            if not p_w_h > 0.0:
+                raise Exception("p_w_h <= 0.0")
             # I think the scaling is to make sure that this thing doesn't underflow.
             # Store the values in the cache
             self.alpha_tensor[t,k,0] = p_w_h * prod_scaling
@@ -154,8 +160,10 @@ class Sampler:
             self.word_ids[2] = word_k_id
             # Probably of the word with length k, which is the last (3rd) word.
             p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t - k, t - 1)
-            assert p_w_h > 0.0
-            assert self.alpha_tensor[t-k,j,0] > 0.0
+            if not p_w_h > 0.0:
+                raise Exception("p_w_h <= 0.0")
+            if not self.alpha_tensor[t-k,j,0] > 0.0:
+                raise Exception("self.alpha_tensor[t-k,j,0] <= 0.0")
             # In this case, the expression becomes the following.
             self.alpha_tensor[t,k,j] = p_w_h * self.alpha_tensor[t - k,j,0] * prod_scaling
             # The last index here is i. i == 0.
@@ -176,14 +184,18 @@ class Sampler:
 
                 # This way of writing the code is still a bit messy. Let's see if we can do better then.
                 p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t - k, t - 1)
-                assert p_w_h > 0.0
-                assert i <= self.max_word_length
-                assert self.alpha_tensor[t-k,j,i] > 0.0
+                if not p_w_h > 0.0:
+                    raise Exception("p_w_h <= 0.0")
+                if not i <= self.max_word_length:
+                    raise Exception("i > self.max_word_length")
+                if not self.alpha_tensor[t-k,j,i] > 0.0:
+                    raise Exception("self.alpha_tensor[t-k,j,i]")
                 # Store the word possibility in the cache tensor.
                 self.p_w_h_cache[t,k,j,i] = p_w_h
                 temp = p_w_h * self.alpha_tensor[t - k,j,i]
                 sum += temp
-            assert sum > 0.0
+            if not sum > 0.0:
+                raise Exception("num <= 0.0")
             self.alpha_tensor[t,k,j] = sum * prod_scaling
 
     def backward_sampling(self, chant: "Chant"):
@@ -207,8 +219,10 @@ class Sampler:
             segment_lengths.reverse()
             return segment_lengths
 
-        assert(k[0] > 0 and j[0] > 0)
-        assert(j[0] <= self.max_word_length)
+        if not (k[0] > 0 and j[0] > 0):
+            raise Exception("k[0] <= 0 or j[0] <= 0")
+        if not (j[0] <= self.max_word_length):
+            raise Exception("j[0] > self.max_word_length")
 
         # Record the second-to-last word we just sampled.
         segment_lengths.append(j[0])
@@ -227,15 +241,19 @@ class Sampler:
             t -= k[0]
             if j[0] == 0:
                 # println("t is $(t)")
-                assert(t == 0)
+                if not (t == 0):
+                    raise Exception("t != 0")
             else:
-                assert(j[0] <= self.max_word_length)
+                if not (j[0] <= self.max_word_length):
+                    raise Exception("j[0] > self.max_word_length")
                 segment_lengths.append(j[0])
                 t -= j[0]
             sum_length += (k[0] + j[0])
             next_word_length = j[0]
-        assert(t == 0)
-        assert(sum_length == chant.length())
+        if not (t == 0):
+            raise Exception("t != 0")
+        if not (sum_length == chant.length()):
+            raise Exception("sum_length != chant.length()")
         # result = OffsetArray(reverse(segment_lengths), 0:length(segment_lengths) - 1)
         # println("In backward_sampling, chant is $chant, segment_lengths is $segment_lengths, result is $result")
         segment_lengths.reverse()
@@ -257,8 +275,10 @@ class Sampler:
                 # When we begin the backward sampling on a chant, note that the final token is always EOS. We have probabilities p(EOS | c^N_{N - k + 1} c^{N-k}_{N-k-j + 1}) * α[N][k][j])
                 word_t_id = EOS
                 if t < chant.length():
-                    assert(t + third_gram_length <= chant.length())
-                    assert(third_gram_length > 0)
+                    if not (t + third_gram_length <= chant.length()):
+                        raise Exception("t + third_gram_length >= chant.length()")
+                    if not (third_gram_length > 0):
+                        raise Exception("third_gram_length <= 0")
                     # Otherwise the final token is not EOS already but an actual word. Still the principles for sampling don't change.
                     word_t_id = self.get_substring_word_id_at_t_k(chant, t + third_gram_length, third_gram_length)
                 self.word_ids[0] = word_j_id
@@ -272,10 +292,12 @@ class Sampler:
                 else:
                     # In all other scenarios, we should have already cached this value.
                     p_w_h = self.p_w_h_cache[t + third_gram_length, third_gram_length, k, j]
-                assert(self.alpha_tensor[t,k,j] > 0)
+                if not (self.alpha_tensor[t,k,j] > 0):
+                    raise Exception("self.alpha_tensor[t, k, j] <= 0")
                 # p(3rd_gram | c^N_{N-k} c^{N-k}_{N-k-j}) * α[N][k][j])
                 p = p_w_h * self.alpha_tensor[t,k,j]
-                assert(p > 0)
+                if not (p > 0):
+                    raise Exception("p <= 0")
                 self.backward_sampling_table[table_index] = p
                 sum_p += p
                 # println("p_w_h is $(p_w_h), sampler.α_tensor[t,k,j] is $(sampler.α_tensor[t,k,j]), p is $(p), sum_p is $(sum_p)")
@@ -289,8 +311,10 @@ class Sampler:
                 word_k_id = self.get_substring_word_id_at_t_k(chant, t, k)
                 word_t_id = EOS
                 if t < chant.length():
-                    assert(t + third_gram_length <= chant.length())
-                    assert(third_gram_length > 0)
+                    if not (t + third_gram_length <= chant.length()):
+                        raise Exception("t + third_gram_length > chant.length()")
+                    if not (third_gram_length > 0):
+                        raise Exception("third_gram_length <= 0")
                     word_t_id = self.get_substring_word_id_at_t_k(chant, t + third_gram_length, third_gram_length)
                 self.word_ids[0] = word_j_id
                 self.word_ids[1] = word_k_id
@@ -302,17 +326,21 @@ class Sampler:
                 else:
                     # We should have already cached this value.
                     p_w_h = self.p_w_h_cache[t + third_gram_length, third_gram_length, k, j]
-                assert(self.alpha_tensor[t,k,j] > 0)
+                if not (self.alpha_tensor[t,k,j] > 0):
+                    raise Exception("self.alpha_tensor[t, k, j] <= 0")
                 # p(3rd_gram | c^N_{N-k} c^{N-k}_{N-k-j}) * α[N][k][j])
                 p = p_w_h * self.alpha_tensor[t,k,j]
-                assert(p > 0)
+                if not (p > 0):
+                    raise Exception("p <= 0")
                 self.backward_sampling_table[table_index] = p
                 sum_p += p
                 table_index += 1
 
 
-        assert(table_index > 0)
-        assert(table_index <= self.max_word_length * self.max_word_length)
+        if not (table_index > 0):
+            raise Exception("table_index <= 0")
+        if not (table_index <= self.max_word_length * self.max_word_length):
+            raise Exception("table_index > self.max_word_length * self.max_word_length")
 
         # Eventually, the table should have (min(t, sampler.max_word_length) * min(t - k, sampler.max_word_length)) + 1 entries
         # This is such a pain. We should definitely be able to simplify the code much more than this. Eh.
@@ -323,8 +351,10 @@ class Sampler:
         stack = 0.0
         for k in range(1, min(t, self.max_word_length)+1):
             for j in range(1, min(t - k, self.max_word_length)+1):
-                assert(index < table_index)
-                assert(self.backward_sampling_table[index] > 0.0)
+                if not (index < table_index):
+                    raise Exception("index >= table_index")
+                if not (self.backward_sampling_table[index] > 0.0):
+                    raise Exception("self.backward_sampling_table[index] <= 0.0")
                 # Each unique index corresponds to a unique [k, j] combination.
                 stack += self.backward_sampling_table[index] * normalizer
                 # println("randnum is $(randnum), stack is $(stack)")
@@ -337,8 +367,10 @@ class Sampler:
             # The special case where the first gram is BOS. The last entry of the table.
             if t == k:
                 # println("t == k triggered!")
-                assert(index < table_index)
-                assert(self.backward_sampling_table[index] > 0.0)
+                if not (index < table_index):
+                    raise Exception("index >= table_index")
+                if not (self.backward_sampling_table[index] > 0.0):
+                    raise Exception("self.backward_sampling_table[index] <= 0.0")
                 stack += self.backward_sampling_table[index] * normalizer
                 if randnum < stack:
                     sampled_k[0] = k
@@ -364,9 +396,12 @@ class Sampler:
         # TODO: OK so what's the difference between the viterbi methods and the original methods without viterbi? I'm kinda lost again. Guess I'll first have to look through the whole training and evaluation flows to look for clues then. Let's see.
         word_k_id = self.get_substring_word_id_at_t_k(chant, t, k)
         chant_as_chars = chant.characters
-        assert(t <= self.max_chant_length + 1)
-        assert(k <= self.max_word_length)
-        assert(j <= self.max_word_length)
+        if not (t <= self.max_chant_length + 1):
+            raise Exception("t > self.max_chant_length+1")
+        if not (k <= self.max_word_length):
+            raise Exception("k > self.max_word_length")
+        if not (j <= self.max_word_length):
+            raise Exception("j > self.max_word_length")
         # Special case 1: j == 0 means there's no actual *second* gram, i.e. the first two tokens are both BOS!
         if j == 0:
             self.word_ids[0] = BOS
@@ -375,7 +410,8 @@ class Sampler:
             # Compute the probability of this word with length k
             # Why do we - 1 in the end though? We probably shouldn't do so here since the indexing system is different. Eh.
             p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t - k, t - 1)
-            assert(p_w_h > 0.0)
+            if not (p_w_h > 0.0):
+                raise Exception("p_w_h <= 0.0")
             # I think the scaling is to make sure that this thing doesn't underflow.
             # Store the values in the cache
             self.alpha_tensor[t,k,0] = np.log(p_w_h)
@@ -390,8 +426,10 @@ class Sampler:
             self.word_ids[2] = word_k_id
             # Probability of the word with length k, which is the last (3rd) word.
             p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t - k, t - 1)
-            assert(p_w_h > 0.0)
-            assert(self.alpha_tensor[t-k,j,0] != 0.0)
+            if not (p_w_h > 0.0):
+                raise Exception("p_w_h <= 0.0")
+            if not (self.alpha_tensor[t-k,j,0] != 0.0):
+                raise Exception("self.alpha_tensor[t-k, j, 0] = 0.0")
             # In this case, the expression becomes the following.
             self.alpha_tensor[t,k,j] = np.log(p_w_h) + self.alpha_tensor[t - k,j,0]
             self.viterbi_backward_indices[t,k,j] = 0
@@ -411,18 +449,23 @@ class Sampler:
                 self.word_ids[2] = word_k_id
 
                 p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t - k, t - 1)
-                assert(p_w_h > 0.0)
-                assert(i <= self.max_word_length)
+                if not (p_w_h > 0.0):
+                    raise Exception("p_w_h <= 0")
+                if not (i <= self.max_word_length):
+                    raise Exception("i > self.max_word_length")
                 # Because it's a log value then.
-                assert(self.alpha_tensor[t-k,j,i] <= 0)
+                if not (self.alpha_tensor[t-k,j,i] <= 0):
+                    raise Exception("self.alpha_tensor[t-k, j, i] > 0")
                 temp = np.log(p_w_h) + self.alpha_tensor[t - k,j,i]
-                assert(temp <= 0)
+                if not (temp <= 0):
+                    raise Exception("temp > 0")
 
                 # We're trying to determine the i value (first gram) that maximizes the possibility
                 if (argmax == 0 or temp > max_log_p):
                     argmax = i
                     max_log_p = temp
-            assert(argmax > 0)
+            if not (argmax > 0):
+                raise Exception("argmax <= 0")
             self.alpha_tensor[t,k,j] = max_log_p
             # We use the viterbi_backward_indices matrix to store the i value that maximizes the possibility of the trigram.
             self.viterbi_backward_indices[t,k,j] = argmax
@@ -442,7 +485,8 @@ class Sampler:
         """
         This method is called when we know the third gram is EOS, so we're only sampling the first gram and second gram.
         """
-        assert(t == chant.length())
+        if not (t == chant.length()):
+            raise Exception("t != chant.length()")
         table_index = 0
         chant_as_chars = chant.characters
         chant_length = chant.length()
@@ -459,9 +503,11 @@ class Sampler:
                 self.word_ids[2] = EOS
                 # It's still the EOS. We just wrote it in a simpler way.
                 p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t, t)
-                assert self.alpha_tensor[t,k,j] <= 0
+                if not self.alpha_tensor[t,k,j] <= 0:
+                    raise Exception("self.alpha_tensor[t,k,j] > 0")
                 temp = np.log(p_w_h) + self.alpha_tensor[t,k,j]
-                assert temp <= 0
+                if not temp <= 0:
+                    raise Exception("temp > 0")
                 if (argmax_k[0] == 0 or temp > max_log_p):
                     max_log_p = temp
                     argmax_k[0] = k
@@ -478,10 +524,12 @@ class Sampler:
                 self.word_ids[1] = word_k_id
                 self.word_ids[2] = word_t_id
                 p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t, t)
-                assert self.alpha_tensor[t,k,0] <= 0
+                if not self.alpha_tensor[t,k,0] <= 0:
+                    raise Exception("self.alpja_tensor[t,k,0] > 0")
                 # p(3rd_gram | c^N_{N-k} c^{N-k}_{N-k-j}) * α[N][k][j])
                 temp = np.log(p_w_h) + self.alpha_tensor[t,k,0]
-                assert temp <= 0
+                if not temp <= 0:
+                    raise Exception("temp > 0")
                 if argmax_k[0] == 0 or temp > max_log_p:
                     max_log_p = temp
                     argmax_k[0] = k
@@ -496,7 +544,8 @@ class Sampler:
         self.viterbi_argmax_backward_sample_k_and_j_to_eos(chant, t, 1, kc, jc)
         k = kc[0]
         j = jc[0]
-        assert(k <= self.max_word_length)
+        if not (k <= self.max_word_length):
+            raise Exception("k > self.max_word_length")
         # I'm not sure yet why the segments array should contain their lengths instead of the word ids themselves. I guess it's just a way to increase efficiency and all that.
         segment_lengths.append(k)
         sum_length += k
@@ -507,13 +556,17 @@ class Sampler:
             return segment_lengths
 
 
-        assert(k > 0 and j > 0)
-        assert(j <= self.max_word_length)
+        if not (k > 0 and j > 0):
+            raise Exception("k <= 0 or j <= 0")
+        if not (j <= self.max_word_length):
+            raise Exception("j > self.max_word_length")
         segment_lengths.append(j)
         # We knew that i is the index that maximizes the possibility of the trigram
         i = self.viterbi_backward_indices[int(t),int(k),int(j)]
-        assert i >= 0
-        assert i <= self.max_word_length
+        if not i >= 0:
+            raise Exception("j < 0")
+        if not i <= self.max_word_length:
+            raise Exception("i > self.max_word_length")
         sum_length += j + i
 
         # Move the "chant end" forward
@@ -523,7 +576,8 @@ class Sampler:
 
         # The chant is already fully segmented.
         if i == 0:
-            assert sum_length == chant.length()
+            if not sum_length == chant.length():
+                raise Exception("sum_length != chant.length()")
             segment_lengths.reverse()
             return segment_lengths
 
@@ -533,17 +587,22 @@ class Sampler:
         # Repeatedly push forward the end, taking advantage of the already recorded viterbi indices.
         while (t > 0):
             i = self.viterbi_backward_indices[int(t),int(k),int(j)]
-            assert i >= 0
-            assert i <= self.max_word_length
+            if not i >= 0:
+                raise Exception("i < 0")
+            if not i <= self.max_word_length:
+                raise Exception("i > self.max_word_length")
             if (i != 0):
                 segment_lengths.append(i)
             t -= k
             k = j
             j = i
             sum_length += i
-        assert(t == 0)
-        assert sum_length == chant.length()
-        assert chant.length() > 0
+        if not (t == 0):
+            raise Exception("t != 0")
+        if not (sum_length == chant.length()):
+            raise Exception("sum_length != chant.length()")
+        if not chant.length() > 0:
+            raise Exception("chant.length() <= 0")
         segment_lengths.reverse()
         return segment_lengths
 
@@ -573,9 +632,11 @@ class Sampler:
             alpha_eos = 0.0
             # As described in the paper, we need to sum all possible previous permutations together in this case.
             for j in range(1, min(t - k, self.max_word_length)+1):
-                assert(self.alpha_tensor[t,k,j] > 0.0)
+                if not (self.alpha_tensor[t,k,j] > 0.0):
+                    raise Exception("self.alpha_tensor[t,k,j] <= 0.0")
                 alpha_eos += self.alpha_tensor[t,k,j]
-            assert(alpha_eos > 0.0)
+            if not (alpha_eos > 0.0):
+                raise Exception("alpha_eos <= 0.0")
             return np.log(alpha_eos)
         else:
             # If we use scaling, we stored the scaling coefficients as the inverse of the actual probabilities.
@@ -605,7 +666,8 @@ class Sampler:
                 self.word_ids[1] = self.get_substring_word_id_at_t_k(chant, t - k, j)
                 self.word_ids[2] = EOS
                 p_w_h = self.npylm.compute_p_w_of_nth_word_chars(chant_as_chars, self.word_ids, 2, t, t)
-                assert(p_w_h > 0.0)
+                if not (p_w_h > 0.0):
+                    raise Exception("p_w_h <= 0.0")
                 prob_sum += p_w_h * self.alpha_tensor[t-k,j,i]
             self.alpha_tensor[t,k,j] = prob_sum
             alpha_eos += prob_sum

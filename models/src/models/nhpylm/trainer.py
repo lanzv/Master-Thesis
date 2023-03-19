@@ -138,7 +138,8 @@ class Trainer:
             if cur_word_length == 0:
                 continue
 
-            assert cur_word_length <= max_word_length
+            if not cur_word_length <= max_word_length:
+                raise Exception("cur_word_length > max_word_length")
             num_words_of_length_k[cur_word_length] += 1
 
             # If all possible lengths have enough data generated, we can terminate the sampling early.
@@ -155,7 +156,8 @@ class Trainer:
             # Put in a Laplace smoothing over the final figures. Though seems that the divisor doesn't need this treatment anyways.
             # p_k_chpylm[k] = (num_words_of_length_k[k] + 1) / (num_words_sampled + max_word_length + 1)
             p_k_chpylm[k] = (num_words_of_length_k[k] + 1) / (num_words_sampled + max_word_length)
-            assert p_k_chpylm[k] > 0
+            if not p_k_chpylm[k] > 0:
+                raise Exception("p_k_chpylm[k] <= 0")
 
 
     def blocked_gibbs_sampling(self):
@@ -229,7 +231,8 @@ class Trainer:
                 for n in range(2, chant.num_segments):
                     self.model.npylm.add_customer_at_index_n(chant, n)
                 self.added_to_chpylm_train[chant_index] = True
-        assert self.model.npylm.whpylm.root.ntables <= self.model.npylm.chpylm.get_num_customers()
+        if not self.model.npylm.whpylm.root.ntables <= self.model.npylm.chpylm.get_num_customers():
+            raise Exception("self.model.npylm.whpylm.root.ntables > self.model.npylm.chpylm.get_num_customers()")
 
 
     def compute_perplexity(self, chants: list):
