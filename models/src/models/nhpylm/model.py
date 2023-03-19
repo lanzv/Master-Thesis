@@ -68,6 +68,14 @@ class Model:
     def set_chpylm_beta_pass(self, beta_pass:float):
         self.npylm.chpylm.beta_pass = beta_pass
 
+    def predict_segments(self, chants):
+        final_segmentation = []
+        for i, chant in enumerate(chants):
+            if i%1000 == 0:
+                print("Already segmented {} chants".format(i))
+            final_segmentation.append((self.segment_chant(chant)).split(' '))
+        return final_segmentation
+
     def segment_chant(self, chant_string: str):
         self.sampler.extend_capacity(self.npylm.max_word_length, len(chant_string))
         self.npylm.extend_capacity(len(chant_string))
