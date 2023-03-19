@@ -9,9 +9,9 @@ from src.models.nhpylm.chant import Chant
 
 class NPYLM:
 
-    def __init__(self, max_word_length: int, max_chant_length: int, G_0: float, initial_lambda_a: float, initial_lambda_b: float, chpylm_beta_stop: float, chpylm_beta_pass: float):
+    def __init__(self, min_word_length: int, max_word_length: int, max_chant_length: int, G_0: float, initial_lambda_a: float, initial_lambda_b: float, chpylm_beta_stop: float, chpylm_beta_pass: float):
         # The hierarhical Pitman-Yor model for words
-        self.whpylm: "WHPYLM" = WHPYLM(3) # trigram
+        self.whpylm: "WHPYLM" = WHPYLM(3) # 2 for bigram, 3 for trigram
         # The hierarhical Pitman-Yor model for characters
         self.chpylm: "CHPYLM" = CHPYLM(G_0, max_chant_length, chpylm_beta_stop, chpylm_beta_pass)
 
@@ -36,6 +36,7 @@ class NPYLM:
         self.lambda_for_types = [0.0 for _ in range(WORDTYPE_NUM_TYPES + 1)] # OffsetVector{Float64}
         # Probability of generating a word of length k from the CHPYLM
         self.p_k_chpylm = [1.0 / (max_word_length + 2) for _ in range(max_word_length + 2)] # .. trigram .. OffsetVector{Float64}
+        self.min_word_length = min_word_length
         self.max_word_length = max_word_length # Int
         self.max_chant_length = max_chant_length #Int
         # The shape parameter of the Gamma distribution for estimating the λ value for the Poisson distribution. (Expression (16) of the paper)

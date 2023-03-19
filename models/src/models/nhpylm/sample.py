@@ -6,7 +6,7 @@ from src.models.nhpylm.definitions import BOS, EOS, BOW, EOW
 This structs holds all the necessary fields for sampling chant segmentations using forward-backward inference.
 """
 class Sampler:
-    def __init__(self, npylm: "NPYLM", max_word_length: int, max_chant_length: int):
+    def __init__(self, npylm: "NPYLM", min_word_length: int, max_word_length: int, max_chant_length: int):
         self.npylm: "NPYLM" = npylm
         # The word_ids of the current 3-gram being calculated
         self.word_ids: list = [0 for _ in range(3)]
@@ -43,6 +43,7 @@ class Sampler:
         # I can probably make this one non-mutable if I change the representation of these two a bit. Let's see.
         # This is L in the paper, i.e. the maximum length allowed for a word.
         self.max_word_length: int = max_word_length
+        self.min_word_length: int = min_word_length
         # I feel that this is just a convenience variable to preallocate array space so that even the longest chant can be accomodated. I don't think the model itself has any sort of max length restriction on chants.
         self.max_chant_length: int = max_chant_length
 
