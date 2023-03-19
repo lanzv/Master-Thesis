@@ -6,6 +6,7 @@ from src.utils.loader import load_word_segmentations
 from src.eval.pipelines import single_iteration_pipeline
 from src.utils.plotters import plot_iteration_statistics
 from src.models.final_range_classifier import FinalRangeClassifier
+from src.eval.mjww_score import mjwp_score
 
 class UnigramModel:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
@@ -54,6 +55,9 @@ class UnigramModel:
                 entropy_sum -= chant_prob*np.log2(chant_prob)
         perplexity = np.exp2(entropy_sum)
         return final_segmentation, perplexity
+
+    def get_mjwp_score(self):
+        return mjwp_score(self)
 
     # --------------------------------- printers, plotters ----------------------------
     def __store_iteration_results(self, iteration, train_chants, train_modes, dev_chants, dev_modes):
@@ -387,7 +391,8 @@ class UnigramModelModes:
                 final_modes.append(chosen_mode)
             return final_modes
 
-
+    def get_mjwp_score(self):
+        return mjwp_score(self)
 
     # --------------------------------- printers, plotters ----------------------------
     def __store_iteration_results(self, iteration, train_chants, train_modes, dev_chants, dev_modes,
@@ -763,6 +768,8 @@ class UnigramModel4Modes(UnigramModelModes):
                 final_modes.append(chosen_mode)
             return final_modes
 
+    def get_mjwp_score(self):
+        return mjwp_score(self)
 
     # --------------------------------- printers, plotters ----------------------------
     def __store_iteration_results(self, iteration, train_chants, train_modes, dev_chants, dev_modes,
