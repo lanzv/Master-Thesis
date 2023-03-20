@@ -343,10 +343,11 @@ class UnigramModelModes:
                                         final_range_classifier, mode_priors_uniform)
         self.__plot_statistics()
 
-    def predict_segments(self, chants, k_best=15, alpha=1,
-                         final_range_classifier = False, mode_priors_uniform = True):
-        modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
-                                   mode_priors_uniform = mode_priors_uniform)
+    def predict_segments(self, chants, k_best=15, alpha=1, final_range_classifier = False,
+                         mode_priors_uniform = True, modes = None):
+        if modes == None:
+            modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
+                                        mode_priors_uniform = mode_priors_uniform)
         final_segmentation = []
         entropy_sum = 0
         for chant_string, mode in zip(chants, modes):
@@ -671,7 +672,7 @@ class UnigramModelModes:
 
 
 
-class UnigramModel4Modes(UnigramModelModes):
+class UnigramModel4Modes():
     mode_mapper = {
         "1": "1,2",
         "2": "1,2",
