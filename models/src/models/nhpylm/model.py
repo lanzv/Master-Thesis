@@ -45,7 +45,8 @@ class Model:
             if epoch % 10 == 0:
                 trainer.print_segmentations_train(10)
                 print("Perplexity_dev: {}".format(trainer.compute_perplexity_dev()))
-                self.save_model()
+
+            self.save_model()
 
 
     def get_max_word_length(self):
