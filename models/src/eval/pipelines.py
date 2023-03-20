@@ -229,14 +229,14 @@ def evaluation_trimmed_chants(X_train, y_train, X_test, y_test, train_perplexity
     not_trimmed_test = 0
     # Trim train dataset
     for chant, mode in zip(X_train, y_train):
-        if len(chant) >= 5:
+        if len(chant) >= 3:
             trimmed_X_train.append(chant[1:-1])
             trimmed_y_train.append(mode)
         else:
             not_trimmed_train += 1
     # Trim test dataset
     for chant, mode in zip(X_test, y_test):
-        if len(chant) >= 5:
+        if len(chant) >= 3:
             trimmed_X_test.append(chant[1:-1])
             trimmed_y_test.append(mode)
         else:
