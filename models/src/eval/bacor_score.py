@@ -127,7 +127,7 @@ def bacor_score(train_segmented_chants, train_modes,
 
     # feature selection
     top_melodies_from_model = features_from_model(
-        train_data, train_modes, test_data, test_modes, max_features = max_features_additative)
+        train_data, train_modes, test_data, test_modes, max_features = max_features_from_model)
     if include_additative:
         top_melodies_additative = features_by_additativ_approach(
             train_data, train_modes, test_data, test_modes, max_features = max_features_additative)
