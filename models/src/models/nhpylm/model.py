@@ -11,41 +11,39 @@ import lzma
 This is the struct that will serve as a container for the whole NHPYLM. it will be serialized after training.
 """
 class Model:
-    def __init__(self, dataset: "Dataset", max_word_length: int, initial_a=4.0, initial_b=1.0, chpylm_beta_stop=CHPYLM_BETA_STOP, chpylm_beta_pass=CHPYLM_BETA_PASS):
-        min_word_length: int = 1 # For now harcoded, it's not used in the code
+    def __init__(self, dataset: "Dataset", min_word_length: int, max_word_length: int, initial_a=4.0, initial_b=1.0, chpylm_beta_stop=CHPYLM_BETA_STOP, chpylm_beta_pass=CHPYLM_BETA_PASS, n_gram: int = 3):
         max_chant_length = dataset.max_chant_length
         # The G_0 probability for the character HPYLM, which depends on the number of different characters in the whole corpus.
         chpylm_G_0 = 1.0 / dataset.vocabulary.get_num_characters()
 
         # Need to do this because `Model` is immutable
-        self.npylm: "NPYLM" = NPYLM(min_word_length, max_word_length, max_chant_length, chpylm_G_0, initial_a, initial_b, chpylm_beta_stop, chpylm_beta_pass)
-        self.sampler: "Sampler" = Sampler(self.npylm, min_word_length, max_word_length, max_chant_length)
+        self.npylm: "NPYLM" = NPYLM(min_word_length, max_word_length, max_chant_length, chpylm_G_0, initial_a, initial_b, chpylm_beta_stop, chpylm_beta_pass, n_gram = n_gram)
+        self.sampler: "Sampler" = Sampler(self.npylm, min_word_length, max_word_length, max_chant_length, n_gram = n_gram)
 
         self.dataset = dataset
         self.set_initial_a(HPYLM_A)
         self.set_initial_b(HPYLM_B)
         self.set_chpylm_beta_stop(CHPYLM_BETA_STOP)
         self.set_chpylm_beta_pass(CHPYLM_BETA_PASS)
-        self.pretrained = False
-
+        self.iterations = 0
+        self.trainer = None
 
     def train(self, epochs = 20):
-        trainer = Trainer(self.dataset, self)
+        if self.trainer == None:
+            self.trainer = Trainer(self.dataset, self)
 
         for epoch in range(1, epochs + 1):
-            trainer.blocked_gibbs_sampling()
-            trainer.sample_hyperparameters()
-            trainer.sample_lambda()
+            self.trainer.blocked_gibbs_sampling()
+            self.trainer.sample_hyperparameters()
+            self.trainer.sample_lambda()
             # The accuracy is better after several iterations have been already done.
-            if epoch > 3:
-                self.pretrained = True
-            if not self.pretrained:
-                trainer.update_p_k_given_chpylm()
-            print("Iteration {}".format(epoch))
+            if self.iterations > 2:
+                self.trainer.update_p_k_given_chpylm()
+            print("Iteration {}".format(self.iterations+1))
             if epoch % 10 == 0:
-                trainer.print_segmentations_train(10)
-                print("Perplexity_dev: {}".format(trainer.compute_perplexity_dev()))
-
+                self.trainer.print_segmentations_train(10)
+                print("Perplexity_dev: {}".format(self.trainer.compute_perplexity_dev()))
+            self.iterations += 1
             self.save_model()
 
 

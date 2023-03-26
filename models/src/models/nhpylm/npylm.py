@@ -9,9 +9,10 @@ from src.models.nhpylm.chant import Chant
 
 class NPYLM:
 
-    def __init__(self, min_word_length: int, max_word_length: int, max_chant_length: int, G_0: float, initial_lambda_a: float, initial_lambda_b: float, chpylm_beta_stop: float, chpylm_beta_pass: float):
+    def __init__(self, min_word_length: int, max_word_length: int, max_chant_length: int, G_0: float, initial_lambda_a: float, initial_lambda_b: float, chpylm_beta_stop: float, chpylm_beta_pass: float, n_gram: int):
+        self.n_gram = n_gram
         # The hierarhical Pitman-Yor model for words
-        self.whpylm: "WHPYLM" = WHPYLM(3) # 2 for bigram, 3 for trigram
+        self.whpylm: "WHPYLM" = WHPYLM(n_gram) # 2 for bigram, 3 for trigram, others are not supported
         # The hierarhical Pitman-Yor model for characters
         self.chpylm: "CHPYLM" = CHPYLM(G_0, max_chant_length, chpylm_beta_stop, chpylm_beta_pass)
 
@@ -94,8 +95,8 @@ class NPYLM:
         This function adds the nth segmented word in the chant to the NPYLM.
         """
         # The first two entries are always the BOS symbols.
-        if not (n >= 2):
-            raise Exception("n<2")
+        if not (n >= self.n_gram-1):
+            raise Exception("n<n_gram-1")
         token_n: int = chant.get_nth_word_id(n)
         pyp: "PYP" = self.find_node_by_tracing_back_context_from_index_n_chant(chant, n, self.whpylm_parent_p_w_cache, True, False)
         if not pyp != None:
@@ -218,7 +219,7 @@ class NPYLM:
             raise Exception("n >= len(word_ids)")
         cur_node = self.whpylm.root
         # TODO: Why only 2?
-        for depth in range(1, 3):
+        for depth in range(1, self.n_gram):
             # There are currently two BOS tokens.
             context = BOS
             if n - depth >= 0:
@@ -230,16 +231,16 @@ class NPYLM:
                 return None
 
             cur_node = child
-        if not cur_node.depth == 2:
-            raise Exception("cur_node.depth != 2")
+        if not cur_node.depth == self.n_gram-1:
+            raise Exception("cur_node.depth != n_gram-1")
         return cur_node
 
     def find_node_by_tracing_back_context_from_index_n_chant(self, chant: "Chant", n: int, parent_p_w_cache: list, generate_if_not_found: bool, return_middle_node: bool):
         """
         Used by add_customer
         """
-        if not n >= 2:
-            raise Exception("n < 2")
+        if not n >= self.n_gram-1:
+            raise Exception("n < n_gram-1")
         # println("chant is $(chant), n is $(n), chant.num_segments is $(chant.num_segments)")
         if not n < chant.num_segments:
             raise Exception("n >= chant.num_segments")
@@ -253,8 +254,8 @@ class NPYLM:
         """
         We should be filling the parent_p_w_cache while trying to find the node already. So if not there's some problem going on.
         """
-        if not n >= 2:
-            raise Exception("n < 2")
+        if not n >= self.n_gram-1:
+            raise Exception("n < n_gram-1")
         if not n < len(word_ids):
             raise Exception("n >= len(word_ids)")
         if not word_begin_index >= 0:
@@ -266,7 +267,7 @@ class NPYLM:
         parent_p_w = self.compute_G_0_of_word_at_index_n(chant_as_chars, word_begin_index, word_end_index, word_n_id)
         # println("The first parent_p_w is $parent_p_w")
         parent_p_w_cache[0] = parent_p_w
-        for depth in range(1, 3):
+        for depth in range(1, self.n_gram):
             context = BOS
             if n - depth >= 0:
                 context = word_ids[n - depth]
@@ -282,8 +283,8 @@ class NPYLM:
                 raise Exception("child = None")
             parent_p_w = p_w
             cur_node = child
-        if not cur_node.depth == 2:
-            raise Exception("cur_node.depth != 2")
+        if not cur_node.depth == self.n_gram-1:
+            raise Exception("cur_node.depth != n_gram-1")
         return cur_node
 
     def compute_G_0_of_word_at_index_n(self, chant_as_chars: list, word_begin_index: int, word_end_index: int, word_n_id) -> float:
@@ -386,7 +387,7 @@ class NPYLM:
         if not n >= 2:
             raise Exception("n < 2")
         if not n < chant.num_segments:
-            raise Exception("m >= chant.num_segments")
+            raise Exception("n >= chant.num_segments")
         if not chant.segment_lengths[n] > 0:
             raise Exception("chant.segment_lengths[n] <= 0")
         word_begin_index = chant.segment_begin_positions[n]
