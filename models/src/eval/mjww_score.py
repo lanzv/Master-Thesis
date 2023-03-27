@@ -20,7 +20,7 @@ def mjww_score(segmented_chants):
             i += len(segment)
             if i in word_indices:
                 correct_segments += 1
-        total_segments += len(chant_segments)
+        total_segments += len(word_segmentation)
 
     return float(correct_segments)/float(total_segments)
 
