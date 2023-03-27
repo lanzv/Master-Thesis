@@ -217,7 +217,7 @@ def umm_modes_accuracy_pipeline(umm_model, train_chants, train_modes, test_chant
 
 
 def evaluation_trimmed_chants(X_train, y_train, X_test, y_test, train_perplexity = -1, test_perplexity = -1, mjwp = -1,
-        max_features_from_model = 100, max_features_additative = 100, include_additative = False):
+        max_features_from_model = 100, max_features_additative = 100, include_additative = False, left_trim = 1, right_trim = 1):
     """
     Remove first and last segment (if possible) and call evaluation pipeline
     """
@@ -229,15 +229,21 @@ def evaluation_trimmed_chants(X_train, y_train, X_test, y_test, train_perplexity
     not_trimmed_test = 0
     # Trim train dataset
     for chant, mode in zip(X_train, y_train):
-        if len(chant) >= 3:
-            trimmed_X_train.append(chant[1:-1])
+        if len(chant) >= 1 + left_trim + right_trim:
+            if right_trim == 0:
+                trimmed_X_train.append(chant[left_trim:])
+            else:
+                trimmed_X_train.append(chant[left_trim:-right_trim])
             trimmed_y_train.append(mode)
         else:
             not_trimmed_train += 1
     # Trim test dataset
     for chant, mode in zip(X_test, y_test):
-        if len(chant) >= 3:
-            trimmed_X_test.append(chant[1:-1])
+        if len(chant) >= 1 + left_trim + right_trim:
+            if right_trim == 0:
+                trimmed_X_test.append(chant[left_trim:])
+            else:
+                trimmed_X_test.append(chant[left_trim:-right_trim])
             trimmed_y_test.append(mode)
         else:
             not_trimmed_test += 1
