@@ -1,6 +1,7 @@
 import numpy as np
 from pandas import DataFrame
 from src.utils.plotters import plot_mode_segment_statistics, plot_unique_segments_densities
+from decimal import Decimal, ROUND_HALF_UP
 
 def get_vocabulary_size(segmentation: list) -> int:
     """
@@ -132,16 +133,27 @@ def get_unique_segment_densities(segmentation: list, modes: list, mode_list = ["
     # Get Density Data
     # Prepare Density
     densities = {}
+    num_chants = {}
+    densities_scale = 400
     for mode in mode_list:
-        densities[mode] = np.zeros((100))
+        num_chants[mode] = 0
+        densities[mode] = np.zeros((densities_scale)) # 100% in 400 cells -> 4 cells ~ 1%
     # Get Percentage distribution of unique segments
     for chant, mode in zip(segmentation, modes):
         chant_len = len(''.join(chant))
-        actual_position = 1
-        for i, segment in enumerate(chant):
-            if segment in unique_values[mode]:
-                for j in range(len(segment)):
-                    densities[mode][int(((actual_position + j)/chant_len)*100)-1] += 1
-            actual_position += len(segment)
-
+        actual_position = 0
+        tone_size = float(densities_scale)/float(chant_len)
+        segment_pointer = 0
+        num_chants[mode] += 1
+        for i in range(1, densities_scale+1):
+            while i > Decimal((actual_position + len(chant[segment_pointer]))*tone_size).quantize(0, ROUND_HALF_UP):
+                actual_position += len(chant[segment_pointer])
+                segment_pointer += 1
+                if segment_pointer == len(chant):
+                    print(segment_pointer, chant_len, tone_size, actual_position, i, i/tone_size)
+            if chant[segment_pointer] in unique_values[mode]:
+                densities[mode][i-1] += 1
+    for mode in mode_list:
+        densities[mode] /= num_chants[mode]
+        densities[mode] *= 100
     return densities
