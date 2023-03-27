@@ -2,6 +2,18 @@ import re
 
 
 def round_md_file(input_file_path="./input.MD", output_file_path="./output.MD"):
+    """
+    Process the MarkDown file and change all values in tables and round them on 2 decimal places.
+    First, values are multplied by 100 and the suffix '%' is added. Second, the round function is applied.
+    Save the result to new markdown file.
+
+    Parameters
+    ----------
+    input_file_path : str
+        path to markdown file of not rounded numbers
+    output_file_path : str
+        path to markdown file that will be copy of the input markdown file but with rounded percentage values
+    """
     f = open(input_file_path, "r")
     content = f.read()
     new_content = content[ : : -1 ][ : : -1 ]

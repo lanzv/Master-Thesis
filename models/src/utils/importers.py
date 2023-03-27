@@ -4,7 +4,9 @@ import shutil
 
 def download_gabc2volpiano():
     """
-    the final code will be placed in gabc2volpiano folder
+    Function to download extra github python files of gabc2volpiano project.
+    The project is meant to convert gabc format into volpiano format.
+    It is not implemented as python library .. so we have to install it this way.
     """
     Repo.clone_from("https://github.com/bacor/gabc2volpiano.git", "./temp")
 
