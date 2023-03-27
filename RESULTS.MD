@@ -23,6 +23,31 @@
 | _UMM 3-5-100-rand_   | _97.81_                | _97.81_          | _36.62_      | _71.82_      | _5.90_              | **_15 711_**        | _4.60_                     |
 | _UMM 3-5-100-words_  | **_97.84_**            | **_97.83_**      | _36.86_      | _71.91_      | _5.87_              | _15 735_            | **_4.59_**                 |
 
+## Trimmed results on UMM
+- mode based unigram model using Bayesien rule to predict modes without uniform mode distriution
+- min size = 3, max size = 5, iterations = 5
+- left value tells us how many segments are trimmed from beggining
+- right value tells us how many segments are trimmed from the end
+
+
+|                  | test accuracy (%) | test f1 (%) | test vocabulary size |
+|------------------|-------------------|-------------|----------------------|
+| left=1, right=0  | 92.83             | 92.83       | 8603                 |
+| left=2, right=0  | 92.05             | 92.04       | 8235                 |
+| left=3, right=0  | 91.87             | 91.84       | 7774                 |
+| left=5, right=0  | 91.63             | 91.61       | 6825                 |
+| left=10, right=0 | 90.08             | 90.00       | 4451                 |
+| left=0, right=1  | 92.23             | 92.23       | 8762                 |
+| left=0, right=2  | 89.91             | 89.84       | 8462                 |
+| left=0, right=3  | 88.70             | 88.61       | 8065                 |
+| left=0, right=5  | 88.27             | 88.17       | 7094                 |
+| left=0, right=10 | 85.24             | 84.98       | 4711                 |
+| left=1, right=1  | 90.94             | 90.92       | 8441                 |
+| left=2, right=2  | 84.69             | 84.53       | 7749                 |
+| left=3, right=3  | 78.07             | 77.65       | 6840                 |
+| left=5, right=5  | 72.98             | 72.42       | 4946                 |
+| left=0, right=0  | 93.72             | 93.73       | 8921                 |
+
 
 ## Segmentation Statistics
 ### Unigram Model - Iteration Statistics
