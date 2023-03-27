@@ -62,8 +62,25 @@ class UnigramModel:
     # --------------------------------- printers, plotters ----------------------------
     def __store_iteration_results(self, iteration, train_chants, train_modes, dev_chants, dev_modes):
         top20_melodies = sorted(self.segment_unigrams, key=self.segment_unigrams.get, reverse=True)[:20]
-        train_segmentation, _ = self.predict_segments(train_chants)
+        train_segmentation, train_perplexity = self.predict_segments(train_chants)
         dev_segmentation, dev_perplexity = self.predict_segments(dev_chants)
+
+        # Train results
+        accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
+                                                                                                train_segmentation, train_modes, top20_melodies)
+        self.train_statistics["accuracy"].append(accuracy*100)
+        self.train_statistics["f1"].append(f1*100)
+        self.train_statistics["mjww"].append(mjww*100)
+        self.train_statistics["wtmf"].append(wtmf*100)
+        self.train_statistics["wufpc"].append(wufpc)
+        self.train_statistics["vocab_size"].append(vocab_size)
+        self.train_statistics["avg_segment_len"].append(avg_segment_len)
+        self.train_statistics["perplexity"].append(train_perplexity)
+        self.train_statistics["iterations"].append(iteration)
+        print("{}. Iteration \t train accuracy: {:.2f}%, train f1: {:.2f}%, train perplexity {:.6f}, train vocabulary size: {}, train avg segment len: {:.2f}, train mjww: {:.2f}%, train wtmf: {:.2f}%, train wufpc: {:.2f} pitches\t\t {}"
+            .format(iteration, accuracy*100, f1*100, train_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc, top_melodies))
+
+        # Dev results
         accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
                                                                                         dev_segmentation, dev_modes, top20_melodies)
         self.dev_statistics["accuracy"].append(accuracy*100)
@@ -75,11 +92,24 @@ class UnigramModel:
         self.dev_statistics["avg_segment_len"].append(avg_segment_len)
         self.dev_statistics["perplexity"].append(dev_perplexity)
         self.dev_statistics["iterations"].append(iteration)
-        
-        print("{}. Iteration \t dev accuracy: {:.2f}%, dev f1: {:.2f}%, dev perplexity {:.6f}, dev vocabulary size: {}, dev avg segment len: {:.2f}, dev mjww: {:.2f}%, dev wtmf: {:.2f}%, dev wufpc: {:.2f} pitches\t\t {}"
-            .format(iteration, accuracy*100, f1*100, dev_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc, top_melodies))
+
+        print("             \t dev   accuracy: {:.2f}%, dev   f1: {:.2f}%, dev   perplexity {:.6f}, dev   vocabulary size: {}, dev   avg segment len: {:.2f}, dev   mjww: {:.2f}%, dev   wtmf: {:.2f}%, dev   wufpc: {:.2f} pitches"
+            .format(accuracy*100, f1*100, dev_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc))
 
     def __plot_statistics(self):
+        # Training statistics
+        statistics_to_plot = {
+            "Train Bacor - not tuned - Accuracy (%)": (self.train_statistics["iterations"], self.train_statistics["accuracy"]),
+            "Train Bacor - not tuned - F1 (%)": (self.train_statistics["iterations"], self.train_statistics["f1"]),
+            "Train Perplexity": (self.train_statistics["iterations"], self.train_statistics["perplexity"]),
+            "Train Vocabulary Size": (self.train_statistics["iterations"], self.train_statistics["vocab_size"]),
+            "Train Average Segment Length": (self.train_statistics["iterations"], self.train_statistics["avg_segment_len"]),
+            "Train Melody Justified With Words (%)": (self.train_statistics["iterations"], self.train_statistics["mjww"]),
+            "Train Weighted Top Mode Frequency (%)": (self.train_statistics["iterations"], self.train_statistics["wtmf"]),
+            "Train Weighted Unique Final Pitch Count": (self.train_statistics["iterations"], self.train_statistics["wufpc"])
+        }
+        plot_iteration_statistics(statistics_to_plot)
+        # Dev statistics
         statistics_to_plot = {
             "Dev Bacor - not tuned - Accuracy (%)": (self.dev_statistics["iterations"], self.dev_statistics["accuracy"]),
             "Dev Bacor - not tuned - F1 (%)": (self.dev_statistics["iterations"], self.dev_statistics["f1"]),
@@ -118,6 +148,18 @@ class UnigramModel:
             "perplexity": [],
             "iterations": []
         }
+        self.train_statistics = {
+            "accuracy": [],
+            "f1": [],
+            "mjww": [],
+            "wtmf": [],
+            "wufpc": [],
+            "vocab_size": [],
+            "avg_segment_len": [],
+            "perplexity": [],
+            "iterations": []
+        }
+
 
     def __generate_vocabulary(self, chants):
         self.vocabulary = set()
@@ -406,12 +448,29 @@ class UnigramModelModes:
                 else:
                     all_melodies[segment] = 1
         top20_melodies = sorted(all_melodies, key=all_melodies.get, reverse=True)[:20]
-        train_segmentation, _ = self.predict_segments(train_chants,
+        train_segmentation, train_perplexity = self.predict_segments(train_chants,
                                         final_range_classifier = final_range_classifier,
                                         mode_priors_uniform = mode_priors_uniform)
         dev_segmentation, dev_perplexity = self.predict_segments(dev_chants,
                                         final_range_classifier = final_range_classifier,
                                         mode_priors_uniform = mode_priors_uniform)
+
+        # Train results
+        accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
+                                                                                                train_segmentation, train_modes, top20_melodies)
+        self.train_statistics["accuracy"].append(accuracy*100)
+        self.train_statistics["f1"].append(f1*100)
+        self.train_statistics["mjww"].append(mjww*100)
+        self.train_statistics["wtmf"].append(wtmf*100)
+        self.train_statistics["wufpc"].append(wufpc)
+        self.train_statistics["vocab_size"].append(vocab_size)
+        self.train_statistics["avg_segment_len"].append(avg_segment_len)
+        self.train_statistics["perplexity"].append(train_perplexity)
+        self.train_statistics["iterations"].append(iteration)
+        print("{}. Iteration \t train accuracy: {:.2f}%, train f1: {:.2f}%, train perplexity {:.6f}, train vocabulary size: {}, train avg segment len: {:.2f}, train mjww: {:.2f}%, train wtmf: {:.2f}%, train wufpc: {:.2f} pitches\t\t {}"
+            .format(iteration, accuracy*100, f1*100, train_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc, top_melodies))
+
+        # Dev results
         accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
                                                                                         dev_segmentation, dev_modes, top20_melodies)
         self.dev_statistics["accuracy"].append(accuracy*100)
@@ -424,11 +483,24 @@ class UnigramModelModes:
         self.dev_statistics["perplexity"].append(dev_perplexity)
         self.dev_statistics["iterations"].append(iteration)
 
-        print("{}. Iteration \t dev accuracy: {:.2f}%, dev f1: {:.2f}%, dev perplexity {:.6f}, dev vocabulary size: {}, dev avg segment len: {:.2f}, dev mjww: {:.2f}%, dev wtmf: {:.2f}%, dev wufpc: {:.2f} pitches\t\t {}"
-            .format(iteration, accuracy*100, f1*100, dev_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc, top_melodies))
+        print("             \t dev   accuracy: {:.2f}%, dev   f1: {:.2f}%, dev   perplexity {:.6f}, dev   vocabulary size: {}, dev   avg segment len: {:.2f}, dev   mjww: {:.2f}%, dev   wtmf: {:.2f}%, dev   wufpc: {:.2f} pitches"
+            .format(accuracy*100, f1*100, dev_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc))
 
 
     def __plot_statistics(self):
+        # Training statistics
+        statistics_to_plot = {
+            "Train Bacor - not tuned - Accuracy (%)": (self.train_statistics["iterations"], self.train_statistics["accuracy"]),
+            "Train Bacor - not tuned - F1 (%)": (self.train_statistics["iterations"], self.train_statistics["f1"]),
+            "Train Perplexity": (self.train_statistics["iterations"], self.train_statistics["perplexity"]),
+            "Train Vocabulary Size": (self.train_statistics["iterations"], self.train_statistics["vocab_size"]),
+            "Train Average Segment Length": (self.train_statistics["iterations"], self.train_statistics["avg_segment_len"]),
+            "Train Melody Justified With Words (%)": (self.train_statistics["iterations"], self.train_statistics["mjww"]),
+            "Train Weighted Top Mode Frequency (%)": (self.train_statistics["iterations"], self.train_statistics["wtmf"]),
+            "Train Weighted Unique Final Pitch Count": (self.train_statistics["iterations"], self.train_statistics["wufpc"])
+        }
+        plot_iteration_statistics(statistics_to_plot)
+        # Dev statistics
         statistics_to_plot = {
             "Dev Bacor - not tuned - Accuracy (%)": (self.dev_statistics["iterations"], self.dev_statistics["accuracy"]),
             "Dev Bacor - not tuned - F1 (%)": (self.dev_statistics["iterations"], self.dev_statistics["f1"]),
@@ -456,6 +528,17 @@ class UnigramModelModes:
         self.vocabulary = {}
         # Statistics
         self.dev_statistics = {
+            "accuracy": [],
+            "f1": [],
+            "mjww": [],
+            "wtmf": [],
+            "wufpc": [],
+            "vocab_size": [],
+            "avg_segment_len": [],
+            "perplexity": [],
+            "iterations": []
+        }
+        self.train_statistics = {
             "accuracy": [],
             "f1": [],
             "mjww": [],
@@ -783,12 +866,29 @@ class UnigramModel4Modes():
                 else:
                     all_melodies[segment] = 1
         top20_melodies = sorted(all_melodies, key=all_melodies.get, reverse=True)[:20]
-        train_segmentation, _ = self.predict_segments(train_chants,
+        train_segmentation, train_perplexity = self.predict_segments(train_chants,
                                         final_range_classifier = final_range_classifier,
                                         mode_priors_uniform = mode_priors_uniform)
         dev_segmentation, dev_perplexity = self.predict_segments(dev_chants,
                                         final_range_classifier = final_range_classifier,
                                         mode_priors_uniform = mode_priors_uniform)
+
+        # Train results
+        accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
+                                                                                                train_segmentation, train_modes, top20_melodies)
+        self.train_statistics["accuracy"].append(accuracy*100)
+        self.train_statistics["f1"].append(f1*100)
+        self.train_statistics["mjww"].append(mjww*100)
+        self.train_statistics["wtmf"].append(wtmf*100)
+        self.train_statistics["wufpc"].append(wufpc)
+        self.train_statistics["vocab_size"].append(vocab_size)
+        self.train_statistics["avg_segment_len"].append(avg_segment_len)
+        self.train_statistics["perplexity"].append(train_perplexity)
+        self.train_statistics["iterations"].append(iteration)
+        print("{}. Iteration \t train accuracy: {:.2f}%, train f1: {:.2f}%, train perplexity {:.6f}, train vocabulary size: {}, train avg segment len: {:.2f}, train mjww: {:.2f}%, train wtmf: {:.2f}%, train wufpc: {:.2f} pitches\t\t {}"
+            .format(iteration, accuracy*100, f1*100, train_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc, top_melodies))
+
+        # Dev results
         accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies = single_iteration_pipeline(train_segmentation, train_modes, 
                                                                                         dev_segmentation, dev_modes, top20_melodies)
         self.dev_statistics["accuracy"].append(accuracy*100)
@@ -801,11 +901,23 @@ class UnigramModel4Modes():
         self.dev_statistics["perplexity"].append(dev_perplexity)
         self.dev_statistics["iterations"].append(iteration)
 
-        print("{}. Iteration \t dev accuracy: {:.2f}%, dev f1: {:.2f}%, dev perplexity {:.6f}, dev vocabulary size: {}, dev avg segment len: {:.2f}, dev mjww: {:.2f}%, dev wtmf: {:.2f}%, dev wufpc: {:.2f} pitches\t\t {}"
-            .format(iteration, accuracy*100, f1*100, dev_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc, top_melodies))
-
+        print("             \t dev   accuracy: {:.2f}%, dev   f1: {:.2f}%, dev   perplexity {:.6f}, dev   vocabulary size: {}, dev   avg segment len: {:.2f}, dev   mjww: {:.2f}%, dev   wtmf: {:.2f}%, dev   wufpc: {:.2f} pitches"
+            .format(accuracy*100, f1*100, dev_perplexity, vocab_size, avg_segment_len, mjww*100, wtmf*100, wufpc))
 
     def __plot_statistics(self):
+        # Training statistics
+        statistics_to_plot = {
+            "Train Bacor - not tuned - Accuracy (%)": (self.train_statistics["iterations"], self.train_statistics["accuracy"]),
+            "Train Bacor - not tuned - F1 (%)": (self.train_statistics["iterations"], self.train_statistics["f1"]),
+            "Train Perplexity": (self.train_statistics["iterations"], self.train_statistics["perplexity"]),
+            "Train Vocabulary Size": (self.train_statistics["iterations"], self.train_statistics["vocab_size"]),
+            "Train Average Segment Length": (self.train_statistics["iterations"], self.train_statistics["avg_segment_len"]),
+            "Train Melody Justified With Words (%)": (self.train_statistics["iterations"], self.train_statistics["mjww"]),
+            "Train Weighted Top Mode Frequency (%)": (self.train_statistics["iterations"], self.train_statistics["wtmf"]),
+            "Train Weighted Unique Final Pitch Count": (self.train_statistics["iterations"], self.train_statistics["wufpc"])
+        }
+        plot_iteration_statistics(statistics_to_plot)
+        # Dev statistics
         statistics_to_plot = {
             "Dev Bacor - not tuned - Accuracy (%)": (self.dev_statistics["iterations"], self.dev_statistics["accuracy"]),
             "Dev Bacor - not tuned - F1 (%)": (self.dev_statistics["iterations"], self.dev_statistics["f1"]),
@@ -833,6 +945,17 @@ class UnigramModel4Modes():
         self.vocabulary = {}
         # Statistics
         self.dev_statistics = {
+            "accuracy": [],
+            "f1": [],
+            "mjww": [],
+            "wtmf": [],
+            "wufpc": [],
+            "vocab_size": [],
+            "avg_segment_len": [],
+            "perplexity": [],
+            "iterations": []
+        }
+        self.train_statistics = {
             "accuracy": [],
             "f1": [],
             "mjww": [],
