@@ -790,6 +790,8 @@ class Sampler:
         max_log_p = 0.0
         argmax_k[0] = 0
         for k in range(self.min_word_length, min(t, self.max_word_length) + 1):
+            if (not k == t) and t - k < self.min_word_length:
+                    continue
             word_k_id = self.get_substring_word_id_at_t_k(chant, t, k)
             # When we begin the backward sampling on a chant, note that the final token is always EOS. We have probabilities p(EOS | c^N_{N-k}) * α[N][k])
             self.word_ids[0] = word_k_id
