@@ -149,8 +149,6 @@ def get_unique_segment_densities(segmentation: list, modes: list, mode_list = ["
             while i > Decimal((actual_position + len(chant[segment_pointer]))*tone_size).quantize(0, ROUND_HALF_UP):
                 actual_position += len(chant[segment_pointer])
                 segment_pointer += 1
-                if segment_pointer == len(chant):
-                    print(segment_pointer, chant_len, tone_size, actual_position, i, i/tone_size)
             if chant[segment_pointer] in unique_values[mode]:
                 densities[mode][i-1] += 1
     for mode in mode_list:
