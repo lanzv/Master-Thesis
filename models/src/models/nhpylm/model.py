@@ -44,7 +44,7 @@ class Model:
                 self.trainer.print_segmentations_train(10)
                 print("Perplexity_dev: {}".format(self.trainer.compute_perplexity_dev()))
             self.iterations += 1
-            self.save_model()
+            self.save_model("./nhpylm_models/model{}_{}_{}.nhpylm".format(self.sampler.min_word_length, self.sampler.max_word_length, self.iterations))
 
 
     def get_max_word_length(self):
