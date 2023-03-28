@@ -6,15 +6,38 @@ from sklearn.pipeline import Pipeline
 
 def list2string(segmented_chants):
     """
-    [["aaa", "bbb", "ccc"]] -> ["aaa bbb ccc"]
+    Convert chant segments in list to chant segments in string for all chants.
+    New chant representation is a string of segments separated by spaces.
+    E.g. [["aaa", "bbb", "ccc"]] -> ["aaa bbb ccc"]
+
+    Parameters
+    ----------
+    segmented_chants : list of lists of strings
+        list of chants, each chant is represented as list of segments
+    Returns
+    -------
+    string_segmentations : list of strings
+        list of chants, each chant is represented as string, where segments are separated by spaces
     """
     string_segmentations = []
     for chant_segments in segmented_chants:
         string_segmentations.append(' '.join(chant_segments))
     return string_segmentations
 
+
+
+
 def get_bacor_model():
-    "The model is not tuned, bacor's model is"
+    """
+    Get the BACOR Linear SVC model with their hyperparameters and TfidfVectorizer.
+    Hyperparameters are not tuned. We use this model only for fast iteraion evaluation.
+    For the final evlauation score is used the BACOR model version which is tuned.
+
+    Returns
+    -------
+    pipeline : Pipeline
+        sklearn pipeline of TfidfVectorizer and LinearSVC, basically pipeline of BACOR model
+    """
     tfidf_params = dict(
         # Defaults
         strip_accents=None,
@@ -41,16 +64,47 @@ def get_bacor_model():
     ])
 
 
-def get_topmelodies_frequency(train_segmented_chants, train_modes,
+
+
+
+def get_topsegments_frequency(train_segmented_chants, train_modes,
                             test_segmented_chants, test_modes,
-                            top_melodies: list, ignore_segments: bool = False):
-    top_melodies_set = set(top_melodies)
+                            top_segments: list, ignore_segments: bool = False):
+    """
+    Get frequency dataframe of top segments (that could be get from feature extraction methods)
+    over all training and testing segmented chants. The freuqency tells the dominancy of some
+    modes considering top segments (top SVC features).
+
+    Parameters
+    ----------
+    train_segmented_chants : list of lists of strings
+        list of segmented training chants represented as list of segments
+    train_modes : list of lists of chars
+        list of training chant modes
+    test_segmented_chants : list of lists of strings
+        list of segmented testing chants represented as list of segments
+    test_modes : list of lists of chars
+        list of testing chant modes
+    top_segments : list of strings
+        list of segments that are chosen from feature selection pipeline
+    ignore_segments : bool
+        in case of True, check segments frequency based on segmentation
+        in case of False, check segments frequency based on the occurencies in the original melody
+            (where the knowledge of the segmentation is not used)
+    Returns
+    -------
+    df : DataFrame
+        dataframe of frequency_matrix of segments and their frequencies in modes that should sum up to 1
+        considering one segment and all modes, index is a mode list ["1", .., "8"], columns is a list of
+        segments with the information of the overall occurence number over all modes
+    """
+    top_segment_set = set(top_segments)
     melody_frequencies = {}
     # collect training data
     for segments, mode in zip(train_segmented_chants, train_modes):
         if ignore_segments:
             chant = ''.join(segments)
-            for melody in top_melodies_set:
+            for melody in top_segment_set:
                 if melody in chant:
                     if not melody in melody_frequencies:
                         melody_frequencies[melody] = {}
@@ -59,7 +113,7 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                     melody_frequencies[melody][mode] += 1
         else:
             for segment in segments:
-                if segment in top_melodies_set:
+                if segment in top_segment_set:
                     if not segment in melody_frequencies:
                         melody_frequencies[segment] = {}
                     if not mode in melody_frequencies[segment]:
@@ -70,7 +124,7 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
     for segments, mode in zip(test_segmented_chants, test_modes):
         if ignore_segments:
             chant = ''.join(segments)
-            for melody in top_melodies_set:
+            for melody in top_segment_set:
                 if melody in chant:
                     if not melody in melody_frequencies:
                         melody_frequencies[melody] = {}
@@ -79,7 +133,7 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
                     melody_frequencies[melody][mode] += 1
         else:
             for segment in segments:
-                if segment in top_melodies_set:
+                if segment in top_segment_set:
                     if not segment in melody_frequencies:
                         melody_frequencies[segment] = {}
                     if not mode in melody_frequencies[segment]:
@@ -91,8 +145,8 @@ def get_topmelodies_frequency(train_segmented_chants, train_modes,
     # Create DataFrame
     index = ["1", "2", "3", "4", "5", "6", "7", "8"]
     columns = []
-    frequency_matrix = np.zeros((len(index), len(top_melodies)))
-    for i, melody in enumerate(top_melodies):
+    frequency_matrix = np.zeros((len(index), len(top_segments)))
+    for i, melody in enumerate(top_segments):
         for j, mode in enumerate(index):
             if mode in melody_frequencies[melody]:
                 frequency_matrix[j, i] = melody_frequencies[melody][mode]

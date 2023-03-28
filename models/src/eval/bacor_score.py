@@ -1,9 +1,6 @@
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.svm import LinearSVC
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.pipeline import Pipeline
 from sklearn.utils.fixes import loguniform
 import numpy as np
 import logging
@@ -11,7 +8,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import accuracy_score
-from src.utils.eval_helpers import list2string, get_topmelodies_frequency, get_bacor_model
+from src.utils.eval_helpers import list2string, get_topsegments_frequency, get_bacor_model
 from src.eval.feature_extractions import features_by_additativ_approach, features_from_model
 
 class _BacorModel:
@@ -133,12 +130,12 @@ def bacor_score(train_segmented_chants, train_modes,
             train_data, train_modes, test_data, test_modes, max_features = max_features_additative)
 
     # get melody-mode frequencies
-    melody_mode_frequencies_from_model = get_topmelodies_frequency(
+    melody_mode_frequencies_from_model = get_topsegments_frequency(
         train_segmented_chants, train_modes, test_segmented_chants, test_modes,
         top_melodies_from_model
     )
     if include_additative:
-        melody_mode_frequencies_additative = get_topmelodies_frequency(
+        melody_mode_frequencies_additative = get_topsegments_frequency(
             train_segmented_chants, train_modes, test_segmented_chants, test_modes,
             top_melodies_additative
         )

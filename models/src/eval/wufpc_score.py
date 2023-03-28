@@ -2,8 +2,19 @@ def wufpc_score(segmented_chants):
     """
     Weighted Unique Final Pitch Count Score
 
-    Average number of melodies unique final pitches for single chant.
+    Average number of segment unique final pitches for single chant.
     Each chant is weighted by its number of segments.
+    Final score is computed as
+    wufpc = (1/(total_segment_num)) * Sum_c(unique_final_pitches_num_c*num_segments_c)
+
+    Parameters
+    ----------
+    segmented_chants : list of lists of strings
+        list of chants, each chant is represented as list of segments
+    Returns
+    -------
+    wufpc_score : float
+        wufpc score
     """
     total_pitches = 0 # weighted pitches of each chant summed together
     total_segments = 0 # weighted total chants

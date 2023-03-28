@@ -1,8 +1,19 @@
 def wtmf_score(segmented_chants, modes):
     """
     Weighted Top Mode Frequency score
+    Average of top mode frequencies of all segments.
+    wtmf = (1/all_segments_num) * Sum_s(occurences_of_segments_in_its_max_mode)
 
-    Average of top mode frequencies of all melodies.
+    Parameters
+    ----------
+    segmented_chants : list of lists of strings
+        list of chants, each chant is represented as list of segments
+    modes : list of chars
+        list of modes of all chants
+    Returns
+    -------
+    wtmf_score : float
+        wtmf score
     """
     melody_frequencies = {}
     used_modes = set()
