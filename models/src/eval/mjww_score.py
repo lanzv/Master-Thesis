@@ -1,6 +1,6 @@
 from src.utils.loader import load_word_segmentations, load_phrase_segmentations
 
-def mjww_score(segmented_chants):
+def mjww_score(segmented_chants, chant_offset = 0):
     """
     Melody Justified With Words score
     Frequency of words that end with end of any segment.
@@ -10,6 +10,8 @@ def mjww_score(segmented_chants):
     ----------
     segmented_chants : list of lists of strings
         list of chants, each chant is represented as list of segments
+    chant_offset : int
+        offset of word segmented chants, to map the same chants of both, segmented_chants and word segmentations
     Returns
     -------
     mjww_score : float
@@ -17,7 +19,7 @@ def mjww_score(segmented_chants):
     """
     total_segments = 0
     correct_segments = 0
-    words = load_word_segmentations()
+    words = load_word_segmentations()[chant_offset:]
     for chant_segments, word_segmentation in zip(segmented_chants, words):
         word_indices = set()
         i = 0

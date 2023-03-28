@@ -20,7 +20,7 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     accuracy = accuracy_score(y_test, predictions)
     f1 = f1_score(y_test, predictions, average='weighted')
     # Melody Justified With Words score
-    mjww = mjww_score(dev_segmentation)
+    mjww = mjww_score(dev_segmentation, len(train_segmentation))
     # Weighted Top Mode Frequency score
     wtmf = wtmf_score(dev_segmentation, dev_modes)
     # Weighted Unique Final Pitch Count score
@@ -95,7 +95,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     )
 
     # Melody Justified With Words score
-    mjww = mjww_score(X_test)
+    mjww = mjww_score(X_test, len(X_train))
     # Weighted Top Mode Frequency score
     wtmf = wtmf_score(X_test, y_test)
     # Weighted Unique Final Pitch Count score
