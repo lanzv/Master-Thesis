@@ -3,15 +3,30 @@ from pandas import DataFrame
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
-
-
-
 def plot_mode_segment_statistics(
         shared_dataframe: DataFrame,
         distinct_dataframe: DataFrame,
         vocabulary_sizes_dataframe: DataFrame,
         unique_dataframe: DataFrame):
-    
+    """
+    Plot statisics of modes and unique segments of segmented chants.
+    There are 4 confusion matrices, two 8x8, two 8x1.
+    First chart - shared segments over modes (the upper triangular matrix is all we need - the rest is a copy)
+    Second chart - distinct segments over modes (-||-)
+    Third chart - vocabulary size of each mode
+    Fourth chart - unique vocabulary of the specific mode
+
+    Parameters
+    ----------
+    shared_dataframe : DataFrame
+        dataframe of columns and index, both [1..8], and table 8x8 with computed shared segments
+    distinct_dataframe : DataFrame
+        dataframe of columns and index, both [1..8], and table 8x8 with computed distinct segments
+    vocabulary_sizes_dataframe : DataFrame
+        dataframe of columns and index, [1..8], and 8x1 table with computed vocabulary sizes
+    unique_dataframe : DataFrame
+        dataframe of columns and index, [1..8], and 8x1 table with computed vocabulary sizes
+    """
     figure, axis = plt.subplots(1, 4)
 
     figure.set_size_inches(25, 5)
@@ -61,7 +76,25 @@ def plot_mode_segment_statistics(
     plt.show()
 
 
+
+
+
 def plot_unique_segments_densities(densities: dict, labels = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    """
+    Plot 8 densities charts (both x,y scales are measured in percentes) of segment uniqueness.
+    Each chart is mapped to one mode. The chart shows us the statistics about unique segments, whether
+    there are statistically more unique segments at beggining or end or in the middle of chants.
+
+    Parameters
+    ----------
+    densities : dictionary
+        dictionary of modes of numpy arrays - size of each array is 400, which corresponds to 100%
+        (index 0 corresponds to 0%, index 3 corresponds to 1% ... ), value at each index contains the
+        percentage ratio of num_unique_segments/num_all_segments at the specific part (% of the whole chant)
+        of chant.
+    labels : list
+        list of modes
+    """
     figure, axis = plt.subplots(1, len(labels))
     for i, label in enumerate(labels):
         axis[i].plot(np.arange(0.25, 100.25, 0.25), densities[label])
@@ -72,7 +105,22 @@ def plot_unique_segments_densities(densities: dict, labels = ["1", "2", "3", "4"
     plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0.2, hspace=0.2)
     plt.show()
 
-def plot_melody_mode_frequencies(frequencies: DataFrame):
+
+
+
+def plot_segment_mode_frequencies(frequencies: DataFrame):
+    """
+    Plot confusion matrix of segments get from feature extraction.
+    The matrix will show the information about segment occurences over all modes of selected segments.
+    All columns should be summed up to 1 in the comming frequencies argument.
+
+    Parameters
+    ----------
+    frequencies : DataFrame
+        DataFrame of index [1, ..., 8], columns ["asasd 2500", ...] (first value is segment, second value is
+        number of occurences over all segments), data (frequencies of mode occurences of each selected segment
+        that the sum of them should give 1)
+    """
     f = plt.figure()
     f.set_figwidth(len(frequencies.columns)*2)
     f.set_figheight(len(frequencies.index)*2)
@@ -81,7 +129,19 @@ def plot_melody_mode_frequencies(frequencies: DataFrame):
     plt.xticks(np.arange(0.5, len(frequencies.columns), 1), frequencies.columns)
     plt.show()
 
+
+
+
 def plot_iteration_statistics(statistics_to_plot):
+    """
+    Plot charts for all scores that are computed during model training over specified iterations.
+
+    Parameters
+    ----------
+    statistics_to_plot : dictionary
+        dictionary where key is a chart label, value is a tuple
+        of two arrays - 1. iterations we are printing 2. score progress, ([5, 10, 15], [0.3, 0.4, 0.5])
+    """
     figure, axis = plt.subplots(1, len(statistics_to_plot))
     for i, title in enumerate(statistics_to_plot):
         x, y = statistics_to_plot[title]
@@ -91,7 +151,32 @@ def plot_iteration_statistics(statistics_to_plot):
     plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0.2, hspace=0.2)
     plt.show()
 
+
+
+
 def plot_umm_confusion_matries(train_true, train_pred, dev_true, dev_pred, test_true, test_pred, labels):
+    """
+    Plot confusion matrices of train, dev and test datasets of predicted/true modes.
+    The function is implemented mainly for the UMM mode prediction
+    (based on Bayessian rule or other classifier).
+
+    Parameters
+    ----------
+    train_true : list of chars
+        list of true modes of training data
+    train_pred : list of chars
+        list of predicted modes of training data
+    dev_true : list of chars
+        list of true modes of dev data
+    dev_pred : list of chars
+        list of predicted modes of dev data
+    test_true : list of chars
+        list of true modes of testing data
+    test_pred : list of chars
+        list of predicted modes of testing data
+    labels : list of chars
+        list of modes [1, 2, 3, 4, .., 8]
+    """
     print("Train UMM modes accuracy")
     cm = confusion_matrix(train_true, train_pred, labels=labels)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm,

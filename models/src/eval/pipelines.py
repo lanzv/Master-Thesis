@@ -2,7 +2,7 @@ from src.eval.bacor_score import bacor_score
 from src.eval.mjww_score import mjww_score
 from src.eval.wufpc_score import wufpc_score
 from src.eval.wtmf_score import wtmf_score
-from src.utils.plotters import plot_melody_mode_frequencies, plot_umm_confusion_matries
+from src.utils.plotters import plot_segment_mode_frequencies, plot_umm_confusion_matries
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from src.utils.eval_helpers import list2string, get_bacor_model
@@ -137,10 +137,10 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("--------------------------------------------------------------------------")
 
     print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
-    plot_melody_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
+    plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
     if include_additative:
         print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
-        plot_melody_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
+        plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
     print()
     print()
     print("------------------------- Train + Test data charts ----------------------------")
@@ -166,10 +166,10 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
 
     # print scores
     print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
-    plot_melody_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
+    plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
     if include_additative:
         print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
-        plot_melody_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
+        plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
 
     print("Train scores \n\t Precision: {:.2f}% \n\t Recall: {:.2f}% \n\t F1: {:.2f}% \n\t Accuracy: {:.2f}%"
         .format(scores["train"]["precision"]*100,
