@@ -8,29 +8,40 @@ from sklearn.metrics import accuracy_score
 from src.utils.eval_helpers import list2string, get_bacor_model
 from src.eval.segment_statistics import get_average_segment_length, get_vocabulary_size, show_mode_segment_statistics
 
-def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation, dev_modes, top_melodies):
+def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation, dev_modes):
     X_train, y_train = train_segmentation, train_modes
     X_test, y_test = dev_segmentation, dev_modes
 
-    # bacor score
+    # bacor model
     train_data, test_data = list2string(X_train), list2string(X_test)
     bacor_model = get_bacor_model()
     bacor_model.fit(train_data, y_train)
-    predictions = bacor_model.predict(test_data)
-    accuracy = accuracy_score(y_test, predictions)
-    f1 = f1_score(y_test, predictions, average='weighted')
+    train_predictions = bacor_model.predict(train_data)
+    dev_predictions = bacor_model.predict(test_data)
+    # Bacor Accuracy
+    train_accuracy = accuracy_score(y_train, train_predictions)
+    dev_accuracy = accuracy_score(y_test, dev_predictions)
+    # Bacor F1
+    train_f1 = f1_score(y_train, train_predictions, average='weighted')
+    dev_f1 = f1_score(y_test, dev_predictions, average='weighted')
     # Melody Justified With Words score
-    mjww = mjww_score(dev_segmentation, len(train_segmentation))
+    train_mjww = mjww_score(train_segmentation)
+    dev_mjww = mjww_score(dev_segmentation, len(train_segmentation))
     # Weighted Top Mode Frequency score
-    wtmf = wtmf_score(dev_segmentation, dev_modes)
+    train_wtmf = wtmf_score(train_segmentation, train_modes)
+    dev_wtmf = wtmf_score(dev_segmentation, dev_modes)
     # Weighted Unique Final Pitch Count score
-    wufpc = wufpc_score(dev_segmentation)
+    train_wufpc = wufpc_score(train_segmentation)
+    dev_wufpc = wufpc_score(dev_segmentation)
     # Vocabulary Size
-    vocab_size = get_vocabulary_size(dev_segmentation)
+    train_vocab_size = get_vocabulary_size(train_segmentation)
+    dev_vocab_size = get_vocabulary_size(dev_segmentation)
     # Average Segment Length
-    avg_segment_len = get_average_segment_length(dev_segmentation)
+    train_avg_segment_len = get_average_segment_length(train_segmentation)
+    dev_avg_segment_len = get_average_segment_length(dev_segmentation)
 
-    return accuracy, f1, mjww, wtmf, wufpc, vocab_size, avg_segment_len, top_melodies
+    return train_accuracy, train_f1, train_mjww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len,\
+        dev_accuracy, dev_f1, dev_mjww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len
 
 
 def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, test_perplexity=-1, mjwp_score=-1,
