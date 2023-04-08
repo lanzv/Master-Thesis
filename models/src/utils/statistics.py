@@ -44,7 +44,7 @@ class IterationStatistics():
         # Get Train and Dev results
         train_accuracy, train_f1, train_mjww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len, \
         dev_accuracy, dev_f1, dev_mjww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len \
-            = single_iteration_pipeline(train_segments, self.train_modes, dev_segments, self.train_modes)
+            = single_iteration_pipeline(train_segments, self.train_modes, dev_segments, self.dev_modes)
     
         
         # Store data
