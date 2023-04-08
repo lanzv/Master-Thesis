@@ -42,15 +42,15 @@ class UnigramModel:
 
     def predict_segments(self, chants, k_best=15, alpha=1):
         final_segmentation = []
-        entropy_sum = 0
+        log_prob_sum = 0
         for chant_string in chants:
             assert type(chant_string) is str or type(chant_string) is np.str_
             new_segments, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string],
                                                       k_best=k_best, alpha=alpha, argmax=True)
             final_segmentation.append(new_segments)
             if chant_prob > 0:
-                entropy_sum -= chant_prob*np.log2(chant_prob)
-        perplexity = np.exp2(entropy_sum)
+                log_prob_sum += np.log(chant_prob)
+        perplexity = np.exp(-log_prob_sum/len(chants))
         return final_segmentation, perplexity
 
     def get_mjwp_score(self):
@@ -304,15 +304,15 @@ class UnigramModelModes:
             modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
                                         mode_priors_uniform = mode_priors_uniform)
         final_segmentation = []
-        entropy_sum = 0
+        log_prob_sum = 0
         for chant_string, mode in zip(chants, modes):
             assert type(chant_string) is str or type(chant_string) is np.str_
             new_segments, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
                                                       k_best=k_best, alpha=alpha, argmax=True)
             final_segmentation.append(new_segments)
             if chant_prob > 0:
-                entropy_sum -= chant_prob*np.log2(chant_prob)
-        perplexity = np.exp2(entropy_sum)
+                log_prob_sum += np.log(chant_prob)
+        perplexity = np.exp(-log_prob_sum/len(chants))
         return final_segmentation, perplexity
 
     def predict_modes(self, chants, k_best=15, alpha=1, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"], 
