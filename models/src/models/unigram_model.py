@@ -349,7 +349,11 @@ class UnigramModelModes:
                         chosen_mode = mode
                         best_prob = chant_prob*pm
                 final_modes.append(chosen_mode)
-                mode_probs.append(best_prob/pc) # (chant_prob*pm)/pc ~ (p(c'|m)*p(m))/(p(c'))
+                if pc != 0:
+                    mode_probs.append(best_prob/pc) # (chant_prob*pm)/pc ~ (p(c'|m)*p(m))/(p(c'))
+                else:
+                    assert best_prob == 0
+                    mode_probs.append(0.0)
             return final_modes, mode_probs
 
     def get_mjwp_score(self):
