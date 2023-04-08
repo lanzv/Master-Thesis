@@ -32,7 +32,7 @@ class IterationStatistics():
         self.train_modes = train_modes
         self.dev_modes = dev_modes
         # Print head of statistics table
-        print("Iteration (train / dev) |  bacor accuracy   |      bacor f1     |           perplexity          |   vocab size  | avg segment len |       mjww        |        wtmf       |              wufpc            |")
+        print("Iteration (train / dev) |  bacor accuracy   |      bacor f1     |   vocab size  | avg segment len |       mjww        |        wtmf       |              wufpc            |           perplexity          |")
 
     def add_new_iteration(self, iteration: int, 
                           train_segments: list, dev_segments: list,
@@ -68,16 +68,16 @@ class IterationStatistics():
         self.dev_statistics["perplexity"].append(dev_perplexity)
         self.dev_statistics["iterations"].append(iteration)
 
-        print("      {:>3d}.              | {:>6.2f}% / {:>6.2f}% | {:>6.2f}% / {:>6.2f}% | {:>13.2f} / {:>13.2f} | {:>5d} / {:>5d} |  {:>5.2f} / {:>5.2f}  | {:>6.2f}% / {:>6.2f}% | {:>6.2f}% / {:>6.2f}% | {:>5.2f} pitches / {:>5.2f} pitches |"
+        print("      {:>3d}.              | {:>6.2f}% / {:>6.2f}% | {:>6.2f}% / {:>6.2f}% | {:>5d} / {:>5d} |  {:>5.2f} / {:>5.2f}  | {:>6.2f}% / {:>6.2f}% | {:>6.2f}% / {:>6.2f}% | {:>5.2f} pitches / {:>5.2f} pitches | {:>13.2f} / {:>13.2f} |"
               .format(iteration, 
                     train_accuracy*100, dev_accuracy*100,
                     train_f1*100, dev_f1*100,
-                    train_perplexity, dev_perplexity,
                     train_vocab_size, dev_vocab_size,
                     train_avg_segment_len, dev_avg_segment_len,
                     train_mjww*100, dev_mjww*100,
                     train_wtmf*100, dev_wtmf*100,
-                    train_wufpc, dev_wufpc))
+                    train_wufpc, dev_wufpc,
+                    train_perplexity, dev_perplexity))
     
     def plot_all_statistics(self):
         """
