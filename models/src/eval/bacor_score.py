@@ -104,7 +104,8 @@ def bacor_score(train_segmented_chants, train_modes,
                test_segmented_chants, test_modes, seed = 0,
                max_features_from_model = 100,
                max_features_additative = 100,
-               include_additative = True):
+               include_additative = True,
+               fe_occurence_coef = 1):
     model = _BacorModel()
     # set seed
     np.random.seed(seed)
@@ -124,7 +125,7 @@ def bacor_score(train_segmented_chants, train_modes,
 
     # feature selection
     top_melodies_from_model = features_from_model(
-        train_data, train_modes, test_data, test_modes, max_features = max_features_from_model)
+        train_data, train_modes, test_data, test_modes, max_features = max_features_from_model, occurence_coef=fe_occurence_coef)
     if include_additative:
         top_melodies_additative = features_by_additativ_approach(
             train_data, train_modes, test_data, test_modes, max_features = max_features_additative)

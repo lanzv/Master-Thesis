@@ -47,7 +47,7 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
 
 
 def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, test_perplexity=-1, mjwp_score=-1,
-        max_features_from_model = 100, max_features_additative = 100, include_additative = True):
+        max_features_from_model = 100, max_features_additative = 100, include_additative = True, fe_occurence_coef=1):
     """
     final segmentation is a list of list of segments
     """
@@ -61,7 +61,8 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
         X_train, y_train, X_train, y_train,
         max_features_from_model = max_features_from_model,
         max_features_additative = max_features_additative,
-        include_additative = include_additative
+        include_additative = include_additative,
+        fe_occurence_coef = fe_occurence_coef
     )
     # Melody Justified With Words score
     mjww_words, mjww_segments, mjww_average = mjww_score(X_train)
@@ -114,7 +115,8 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
         X_train, y_train, X_test, y_test,
         max_features_from_model = max_features_from_model,
         max_features_additative = max_features_additative,
-        include_additative = include_additative
+        include_additative = include_additative,
+        fe_occurence_coef = fe_occurence_coef
     )
 
     # Melody Justified With Words score
@@ -182,7 +184,8 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
 
 
 def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159,
-        max_features_from_model = 100, max_features_additative = 100, include_additative = True):
+        max_features_from_model = 100, max_features_additative = 100, include_additative = True,
+        fe_occurence_coef = 1):
     X_train, y_train = final_segmentation[:train_len], modes[:train_len]
     X_test, y_test = final_segmentation[train_len:], modes[train_len:]
     assert len(X_test) == test_len and len(y_test) == test_len
@@ -192,7 +195,8 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
         X_train, y_train, X_test, y_test,
         max_features_from_model = max_features_from_model,
         max_features_additative = max_features_additative,
-        include_additative = include_additative
+        include_additative = include_additative,
+        fe_occurence_coef = fe_occurence_coef
     )
 
     # print scores
