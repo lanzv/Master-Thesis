@@ -3,6 +3,7 @@ from src.eval.mjww_score import mjww_score
 from src.eval.wufpc_score import wufpc_score
 from src.eval.wtmf_score import wtmf_score
 from src.eval.naive_bayes_score import nb_score
+from src.eval.vocab_levenshtein_score import vocab_levenshtein_score
 from src.eval.feature_extractions import show_topsegments_densities
 from src.utils.plotters import plot_segment_mode_frequencies, plot_umm_confusion_matries
 from sklearn.metrics import f1_score
@@ -41,9 +42,12 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     # Average Segment Length
     train_avg_segment_len = get_average_segment_length(train_segmentation)
     dev_avg_segment_len = get_average_segment_length(dev_segmentation)
+    # Average Segment Length
+    train_vocab_levenhstein = vocab_levenshtein_score(train_segmentation)
+    dev_vocab_levenhstein = vocab_levenshtein_score(dev_segmentation)
 
-    return train_accuracy, train_f1, train_mjww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len,\
-        dev_accuracy, dev_f1, dev_mjww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len
+    return train_accuracy, train_f1, train_mjww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len, train_vocab_levenhstein,\
+        dev_accuracy, dev_f1, dev_mjww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len, dev_vocab_levenhstein
 
 
 def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, test_perplexity=-1, mjwp_score=-1,
@@ -74,6 +78,8 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     vocab_size = get_vocabulary_size(X_train)
     # Average Segment Length
     avg_segment_len = get_average_segment_length(X_train)
+    # Vocab Levenshtein Score
+    vocab_levenshtein = vocab_levenshtein_score(X_train)
 
 
     # Print scores
@@ -106,6 +112,9 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print()
     print("\t\t Weighted Unique Final Pitch Count")
     print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(wufpc))
+    print()
+    print("\t\t Vocabulary Levenhstein Score")
+    print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(vocab_levenshtein))
     show_mode_segment_statistics(X_train, y_train)
     print("--------------------------------------------------------------------------")
 
@@ -129,6 +138,8 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     vocab_size = get_vocabulary_size(X_test)
     # Average Segment Length
     avg_segment_len = get_average_segment_length(X_test)
+    # Vocab Levenshtein Score
+    vocab_levenshtein = vocab_levenshtein_score(X_test)
 
 
     # Print scores
@@ -164,6 +175,9 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print()
     print("\t\t Weighted Unique Final Pitch Count")
     print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(wufpc))
+    print()
+    print("\t\t Vocabulary Levenhstein Score")
+    print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(vocab_levenshtein))
     show_mode_segment_statistics(X_test, y_test)
     print("--------------------------------------------------------------------------")
 
