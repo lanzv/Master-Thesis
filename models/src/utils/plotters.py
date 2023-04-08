@@ -107,6 +107,36 @@ def plot_unique_segments_densities(densities: dict, labels = ["1", "2", "3", "4"
 
 
 
+def plot_topsegments_densities(densities: dict, labels = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    """
+    Plot 8 densities charts (both x,y scales are measured in percentes) of top segment picked from
+    Feature Extraction. Each chart is mapped to one mode. The chart shows us the statistics about 
+    top segments, whether there are statistically more important segments at beggining or end or 
+    in the middle of chants.
+
+    Parameters
+    ----------
+    densities : dictionary
+        dictionary of modes of numpy arrays - size of each array is 400, which corresponds to 100%
+        (index 0 corresponds to 0%, index 3 corresponds to 1% ... ), value at each index contains the
+        percentage ratio of num_top_segments/num_all_segments at the specific part (% of the whole chant)
+        of chant.
+    labels : list
+        list of modes
+    """
+    figure, axis = plt.subplots(1, len(labels))
+    for i, label in enumerate(labels):
+        axis[i].plot(np.arange(0.25, 100.25, 0.25), densities[label])
+        axis[i].set_title("Density of top segments for mode {}".format(label))
+        axis[i].set_xlabel("chant position (%)")
+        axis[i].set_ylabel("unique occurences (%)")
+    figure.set_size_inches(40, 5)
+    plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0.2, hspace=0.2)
+    plt.show()
+
+
+
+
 
 def plot_segment_mode_frequencies(frequencies: DataFrame):
     """

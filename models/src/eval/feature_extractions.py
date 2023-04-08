@@ -5,11 +5,17 @@ from sklearn.feature_selection import SequentialFeatureSelector
 from src.utils.eval_helpers import list2string, get_bacor_model
 from sklearn.metrics import f1_score, accuracy_score
 import pandas as pd
+import numpy as np
+from src.utils.plotters import plot_topsegments_densities
+from decimal import Decimal, ROUND_HALF_UP
 
 # BACOR feature selection functions
 # model is a pipeline of TFIDF vectorizer and SVC linear classifier)
 
 def features_from_model(X_train, y_train, X_test, y_test, max_features = None):
+    """
+    ToDo
+    """
     bacor_model = get_bacor_model()
 
     selector = SelectFromModel(estimator=bacor_model.steps[1][1], max_features = max_features)
@@ -59,6 +65,9 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None):
 
 
 def features_by_additativ_approach(X_train, y_train, X_test, y_test, max_features = "auto"):
+    """
+    ToDo
+    """
     # Define bacor model without tuning
     bacor_model = get_bacor_model()
 
@@ -110,3 +119,50 @@ def features_by_additativ_approach(X_train, y_train, X_test, y_test, max_feature
 
 
     return top_melodies
+
+
+
+
+def show_topsegments_densities(segmented_chants: list, modes: list, topsegments: set, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    """
+    Compute percentage of top important segments in the chant position over all modes.
+    Plot charts visualizaing positions of important segments.
+
+    Parameters
+    ----------
+    segmented_chants: list of list of strings
+        list of segmented chants represented as a list of segments
+        example: [["asda", "asdasd", "as", "ds"]]
+    modes : list of strings
+        list of modes
+    topsegments : set of strings
+        top segments we want density charts of
+    mode_list : list of strings
+        list of modes we are considering
+    """
+    # Get Density Data
+    # Prepare Density
+    densities = {}
+    num_chants = {}
+    densities_scale = 400
+    for mode in mode_list:
+        num_chants[mode] = 0
+        densities[mode] = np.zeros((densities_scale)) # 100% in 400 cells -> 4 cells ~ 1%
+    # Get Percentage distribution of unique segments
+    for chant, mode in zip(segmented_chants, modes):
+        chant_len = len(''.join(chant))
+        actual_position = 0
+        tone_size = float(densities_scale)/float(chant_len)
+        segment_pointer = 0
+        num_chants[mode] += 1
+        for i in range(1, densities_scale+1):
+            while i > Decimal((actual_position + len(chant[segment_pointer]))*tone_size).quantize(0, ROUND_HALF_UP):
+                actual_position += len(chant[segment_pointer])
+                segment_pointer += 1
+            if chant[segment_pointer] in topsegments[mode]:
+                densities[mode][i-1] += 1
+    for mode in mode_list:
+        densities[mode] /= num_chants[mode]
+        densities[mode] *= 100
+
+    plot_topsegments_densities(densities, mode_list)
