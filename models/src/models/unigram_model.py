@@ -34,7 +34,7 @@ class UnigramModel:
         chant_segmentation = init_segmentation
         for i in range(iterations):
             if i%print_each == 0:
-                self.__show_iteration_statistics(statistics, i+1, train_chants, dev_chants)
+                self.__show_iteration_statistics(statistics, i, train_chants, dev_chants)
             chant_segmentation = self.__train_iteration(chant_segmentation, k_best = k_best, alpha = alpha)
         
         self.__show_iteration_statistics(statistics, i+1, train_chants, dev_chants)
@@ -292,7 +292,7 @@ class UnigramModelModes:
         chant_segmentation = init_segmentation
         for i in range(iterations):
             if i%print_each == 0:
-                self.__show_iteration_statistics(statistics, i+1, train_chants, dev_chants, final_range_classifier, mode_priors_uniform)
+                self.__show_iteration_statistics(statistics, i, train_chants, dev_chants, final_range_classifier, mode_priors_uniform)
             chant_segmentation = self.__train_iteration(chant_segmentation, train_modes, k_best = k_best, alpha = alpha)
 
         self.__show_iteration_statistics(statistics, i+1, train_chants, dev_chants, final_range_classifier, mode_priors_uniform)
