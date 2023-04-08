@@ -1,7 +1,7 @@
 from npylm cimport NPYLM, SHPYLMNode, THPYLMNode
 import numpy as np
 cimport numpy as np
-cdef void apply_hyperparameters_learning(NPYLM npylm, list train_chants)
+cdef void apply_hyperparameters_learning(NPYLM npylm, list train_chants, bint d_theta_learning, bint poisson_learning)
 cdef void update_poisson_lambda(NPYLM npylm, list train_chants)
 cdef void update_poisson_k_probs(NPYLM npylm, int segment_samples = *)
 

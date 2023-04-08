@@ -7,7 +7,8 @@ from libc.math cimport log
 np.import_array()
 DTYPE = np.float64
 
-cdef void apply_hyperparameters_learning(NPYLM npylm, list train_chants):
+cdef void apply_hyperparameters_learning(NPYLM npylm, list train_chants, 
+                                        bint d_theta_learning, bint poisson_learning):
     """
     Learn 
         - theta of all depths for both SHPYLM, THPYLM
@@ -20,11 +21,17 @@ cdef void apply_hyperparameters_learning(NPYLM npylm, list train_chants):
         npylm wich we want to update and learn hyperparameters 
     train_chants : list of Chants
         list of training chants represented as Chants, mainly for the poisson lambda calculation
+    d_theta_learning : bint
+        boolean whether we want to include the d and theta learning
+    poisson_learning : bint
+        boolean whether we want to include the poisson lambda and len k prob
     """
-    update_poisson_lambda(npylm, train_chants)
-    update_poisson_k_probs(npylm)
-    update_shpylm_d_theta(npylm)
-    update_thpylm_d_theta(npylm)
+    if poisson_learning:
+        update_poisson_lambda(npylm, train_chants)
+        update_poisson_k_probs(npylm)
+    if d_theta_learning:
+        update_shpylm_d_theta(npylm)
+        update_thpylm_d_theta(npylm)
 
 cdef void update_poisson_lambda(NPYLM npylm, list train_chants):
     """

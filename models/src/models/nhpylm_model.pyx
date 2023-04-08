@@ -4,8 +4,7 @@ from nhpylm.hyperparameters cimport apply_hyperparameters_learning
 from nhpylm.npylm cimport NPYLM
 from nhpylm.chant cimport Chant
 from libc.math cimport exp
-import pickle
-import lzma
+import logging
 from src.utils.statistics import IterationStatistics
 from src.eval.mjww_score import mjwp_score
 
@@ -69,9 +68,11 @@ cdef class NHPYLMModel:
         self.d_b = d_b
         self.theta_alpha = theta_alpha
         self.theta_beta = theta_beta
+        logging.info("The NHPYLM model was initialized with max segment size {}".format(max_segment_size))
 
 
-    cpdef void train(self, list train_data, list dev_data, list train_modes, list dev_modes, int epochs):
+    cpdef void train(self, list train_data, list dev_data, list train_modes, list dev_modes, 
+                    int epochs, bint d_theta_learning, bint poisson_learning):
         """
         Perform the training process of the NHPYLM model. 
         ToDo
@@ -93,6 +94,7 @@ cdef class NHPYLMModel:
         cdef list train_segments, dev_segments
         cdef float train_perplexity, dev_perplexity
         cdef Chant chant
+        logging.info("NHPYLM train - {} train chants, {} dev chants.".format(len(train_data), len(dev_data)))
         cdef object statistics = IterationStatistics(train_modes=train_modes, dev_modes=dev_modes)
 
         # Prepare Chants
@@ -115,7 +117,7 @@ cdef class NHPYLMModel:
         # Training
         for i in range(epochs):
             blocked_gibbs_iteration(self.npylm, train_chants)
-            apply_hyperparameters_learning(self.npylm, train_chants)
+            apply_hyperparameters_learning(self.npylm, train_chants, d_theta_learning, poisson_learning)
             
             # Store and print iteration statistics
             train_segments, train_perplexity = self.predict_segments(train_data)
