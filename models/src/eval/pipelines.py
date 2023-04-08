@@ -2,6 +2,7 @@ from src.eval.bacor_score import bacor_score
 from src.eval.mjww_score import mjww_score
 from src.eval.wufpc_score import wufpc_score
 from src.eval.wtmf_score import wtmf_score
+from src.eval.naive_bayes_score import nb_score
 from src.utils.plotters import plot_segment_mode_frequencies, plot_umm_confusion_matries
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
@@ -49,6 +50,11 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     """
     final segmentation is a list of list of segments
     """
+    # Compute NB scores
+    train_nb_accuracy, train_nb_f1, test_nb_accuracy, test_nb_f1 = \
+        nb_score(X_train, X_test, y_train, y_test)
+
+
     # Train dataset
     bacor, selected_features, trained_model = bacor_score(
         X_train, y_train, X_train, y_train,
@@ -56,7 +62,6 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
         max_features_additative = max_features_additative,
         include_additative = include_additative
     )
-
     # Melody Justified With Words score
     mjww_words, mjww_segments, mjww_average = mjww_score(X_train)
     # Weighted Top Mode Frequency score
@@ -75,6 +80,10 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t bacor accuracy and f1")
     print("\t\t\t accuracy: {:.2f}%".format(bacor["test"]["accuracy"]*100))
     print("\t\t\t f1: {:.2f}%".format(bacor["test"]["f1"]*100))
+    print()
+    print("\t\t NB accuracy and f1")
+    print("\t\t\t accuracy: {:.2f}%".format(train_nb_accuracy*100))
+    print("\t\t\t f1: {:.2f}%".format(train_nb_f1*100))
     print()
     print("\t\t Perplexity")
     print("\t\t\t {:.6f}".format(train_perplexity))
@@ -125,6 +134,10 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t bacor accuracy and f1")
     print("\t\t\t accuracy: {:.2f}%".format(bacor["test"]["accuracy"]*100))
     print("\t\t\t f1: {:.2f}%".format(bacor["test"]["f1"]*100))
+    print()
+    print("\t\t NB accuracy and f1")
+    print("\t\t\t accuracy: {:.2f}%".format(test_nb_accuracy*100))
+    print("\t\t\t f1: {:.2f}%".format(test_nb_f1*100))
     print()
     print("\t\t Perplexity")
     print("\t\t\t {:.6f}".format(test_perplexity))
