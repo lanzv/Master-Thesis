@@ -25,8 +25,8 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     train_f1 = f1_score(y_train, train_predictions, average='weighted')
     dev_f1 = f1_score(y_test, dev_predictions, average='weighted')
     # Melody Justified With Words score
-    train_mjww = mjww_score(train_segmentation)
-    dev_mjww = mjww_score(dev_segmentation, len(train_segmentation))
+    train_mjww, _, _ = mjww_score(train_segmentation)
+    dev_mjww, _, _ = mjww_score(dev_segmentation, len(train_segmentation))
     # Weighted Top Mode Frequency score
     train_wtmf = wtmf_score(train_segmentation, train_modes)
     dev_wtmf = wtmf_score(dev_segmentation, dev_modes)
@@ -58,7 +58,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     )
 
     # Melody Justified With Words score
-    mjww = mjww_score(X_train)
+    mjww_words, mjww_segments, mjww_average = mjww_score(X_train)
     # Weighted Top Mode Frequency score
     wtmf = wtmf_score(X_train, y_train)
     # Weighted Unique Final Pitch Count score
@@ -86,7 +86,9 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
     print()
     print("\t\t Melody Justified With Words")
-    print("\t\t\t mjww: {:.2f}% of segments".format(mjww*100))
+    print("\t\t\t words justification: {:.2f}% of segments".format(mjww_words*100))
+    print("\t\t\t segments justification: {:.2f}% of segments".format(mjww_segments*100))
+    print("\t\t\t average justification: {:.2f}% of segments".format(mjww_average*100))
     print()
     print("\t\t Weighted Top Mode Frequency")
     print("\t\t\t wtmf: {:.2f}% of melodies".format(wtmf*100))
@@ -106,7 +108,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     )
 
     # Melody Justified With Words score
-    mjww = mjww_score(X_test, len(X_train))
+    mjww_words, mjww_segments, mjww_average = mjww_score(X_test, len(X_train))
     # Weighted Top Mode Frequency score
     wtmf = wtmf_score(X_test, y_test)
     # Weighted Unique Final Pitch Count score
@@ -137,7 +139,9 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t\t mjww: {:.2f}% of segments".format(mjwp_score*100))
     print()
     print("\t\t Melody Justified With Words")
-    print("\t\t\t mjww: {:.2f}% of segments".format(mjww*100))
+    print("\t\t\t words justification: {:.2f}% of segments".format(mjww_words*100))
+    print("\t\t\t segments justification: {:.2f}% of segments".format(mjww_segments*100))
+    print("\t\t\t average justification: {:.2f}% of segments".format(mjww_average*100))
     print()
     print("\t\t Weighted Top Mode Frequency")
     print("\t\t\t wtmf: {:.2f}% of melodies".format(wtmf*100))

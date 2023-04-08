@@ -4,7 +4,9 @@ def mjww_score(segmented_chants, chant_offset = 0):
     """
     Melody Justified With Words score
     Frequency of words that end with end of any segment.
-    mjww = (1/word_segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
+    mjww_words = (1/word_segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
+    mjww_segments = (1/segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
+    mjww_average = (mjww_words+mjww_segments)/2
 
     Parameters
     ----------
@@ -14,9 +16,14 @@ def mjww_score(segmented_chants, chant_offset = 0):
         offset of word segmented chants, to map the same chants of both, segmented_chants and word segmentations
     Returns
     -------
-    mjww_score : float
-        mjww score
+    mjww_words : float
+        mjww score - how many words are justified correctly with segments
+    mjww_segments : float
+        mjww score - how many segments are justified correctly with words
+    mjww_average : float
+        mjww score - average of both mjww_words and mjww_segments
     """
+    total_words = 0
     total_segments = 0
     correct_segments = 0
     words = load_word_segmentations()[chant_offset:]
@@ -26,14 +33,20 @@ def mjww_score(segmented_chants, chant_offset = 0):
         for word in word_segmentation:
             i += len(word)
             word_indices.add(i)
+        total_words += len(word_segmentation)
         i = 0
         for segment in chant_segments:
             i += len(segment)
             if i in word_indices:
                 correct_segments += 1
-        total_segments += len(word_segmentation)
+        total_segments += len(chant_segments)
 
-    return float(correct_segments)/float(total_segments)
+    # Compute all scores
+    mjww_words = float(correct_segments)/float(total_segments)
+    mjww_segments = float(correct_segments)/float(total_words)
+    mjww_average = (mjww_words + mjww_segments)/2.0
+
+    return mjww_words, mjww_segments, mjww_average
 
 
 def mjwp_score(model):
@@ -51,7 +64,7 @@ def mjwp_score(model):
     mjwp_score : float
         mjwp score
     """
-    total_segments = 0
+    total_phrases = 0
     correct_segments = 0
     phrased_chants = load_phrase_segmentations()
     segmented_chants, perplexity = model.predict_segments([''.join(phrased_chant) for phrased_chant in phrased_chants])
@@ -66,6 +79,6 @@ def mjwp_score(model):
             i += len(segment)
             if i in phrase_indices:
                 correct_segments += 1
-        total_segments += len(phrase_segmentation)
+        total_phrases += len(phrase_segmentation)
 
-    return float(correct_segments)/float(total_segments)
+    return float(correct_segments)/float(total_phrases)
