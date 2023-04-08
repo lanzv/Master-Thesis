@@ -12,8 +12,6 @@ import pandas as pd
 def features_from_model(X_train, y_train, X_test, y_test, max_features = None):
     bacor_model = get_bacor_model()
 
-    if max_features != None:
-        max_features *= 10
     selector = SelectFromModel(estimator=bacor_model.steps[1][1], max_features = max_features)
     X_vectorized = bacor_model.steps[0][1].fit_transform(X_train)
     X_df = pd.DataFrame(X_vectorized.toarray(), columns = bacor_model.steps[0][1].get_feature_names_out())
@@ -30,10 +28,7 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None):
                     melodies[segment] += 1
                 else:
                     melodies[segment] = 1
-    if max_features == None:
-        top_melodies = sorted(melodies, key=melodies.get, reverse=True)
-    else:
-        top_melodies = sorted(melodies, key=melodies.get, reverse=True)[:int(max_features/10)]
+    top_melodies = sorted(melodies, key=melodies.get, reverse=True)
     logging.info("From model approach Train data - First feature occurences: {} , Last feature occurences: {}".format(melodies[top_melodies[0]], melodies[top_melodies[-1]]))
 
 
