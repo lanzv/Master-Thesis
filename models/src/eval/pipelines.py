@@ -228,13 +228,13 @@ def umm_modes_accuracy_pipeline(umm_model, train_chants, train_modes, test_chant
     train_chants, dev_chants = train_chants[:splitting_point], train_chants[splitting_point:]
     train_modes, dev_modes = train_modes[:splitting_point], train_modes[splitting_point:]
 
-    train_predictions = umm_model.predict_modes(train_chants,
+    train_predictions, _ = umm_model.predict_modes(train_chants,
                             final_range_classifier = final_range_classifier,
                             mode_priors_uniform = mode_priors_uniform)
-    dev_predictions = umm_model.predict_modes(dev_chants,
+    dev_predictions, _ = umm_model.predict_modes(dev_chants,
                             final_range_classifier = final_range_classifier,
                             mode_priors_uniform = mode_priors_uniform)
-    test_predictions = umm_model.predict_modes(test_chants,
+    test_predictions, _ = umm_model.predict_modes(test_chants,
                             final_range_classifier = final_range_classifier,
                             mode_priors_uniform = mode_priors_uniform)
 

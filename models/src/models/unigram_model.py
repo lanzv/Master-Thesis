@@ -300,18 +300,19 @@ class UnigramModelModes:
 
     def predict_segments(self, chants, k_best=15, alpha=1, final_range_classifier = False,
                          mode_priors_uniform = True, modes = None):
+        mode_probs = [1 for _ in range(len(chants))]
         if modes == None:
-            modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
+            modes, mode_probs = self.predict_modes(chants, final_range_classifier = final_range_classifier,
                                         mode_priors_uniform = mode_priors_uniform)
         final_segmentation = []
         log_prob_sum = 0
-        for chant_string, mode in zip(chants, modes):
+        for chant_string, mode, mode_prob in zip(chants, modes, mode_probs):
             assert type(chant_string) is str or type(chant_string) is np.str_
             new_segments, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
                                                       k_best=k_best, alpha=alpha, argmax=True)
             final_segmentation.append(new_segments)
             if chant_prob > 0:
-                log_prob_sum += np.log(chant_prob)
+                log_prob_sum += np.log(mode_prob*chant_prob)
         perplexity = np.exp(-log_prob_sum/len(chants))
         return final_segmentation, perplexity
 
@@ -324,19 +325,22 @@ class UnigramModelModes:
         needs to be tested whether p(m) = priors
         """
         if final_range_classifier:
-            return FinalRangeClassifier.predict(chants=chants)
+            return FinalRangeClassifier.predict(chants=chants), [1 for _ in range(len(chants))]
         else:
             final_modes = []
+            mode_probs = []
             training_chants_num = 0
             for mode in self.chant_count:
                 training_chants_num += self.chant_count[mode]
             for chant_string in chants:
                 chosen_mode = None
                 best_prob = -1
+                pc = 0.0
                 assert type(chant_string) is str or type(chant_string) is np.str_
                 for mode in mode_list:
                     _, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
                                                             k_best=k_best, alpha=alpha, argmax=True)
+                    pc += chant_prob
                     if mode_priors_uniform:
                         pm = 1.0/float(len(mode_list))
                     else:
@@ -345,7 +349,8 @@ class UnigramModelModes:
                         chosen_mode = mode
                         best_prob = chant_prob*pm
                 final_modes.append(chosen_mode)
-            return final_modes
+                mode_probs.append(best_prob/pc) # (chant_prob*pm)/pc ~ (p(c'|m)*p(m))/(p(c'))
+            return final_modes, mode_probs
 
     def get_mjwp_score(self):
         return mjwp_score(self)
