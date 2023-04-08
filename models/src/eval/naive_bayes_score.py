@@ -43,6 +43,7 @@ def nb_score(train_segments, test_segments, train_modes, test_modes):
                 ngram_range=(1,1),
                 max_df=1.0,
                 min_df=1,
+                max_features=5000,
                 use_idf=True,
                 smooth_idf=True,
                 sublinear_tf=False,

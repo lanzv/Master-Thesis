@@ -28,7 +28,7 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None, o
 
     # Extract top features
     selected_features = set(selector.get_feature_names_out())
-    logging.info("From model approach - Selected features: {} (only 10% of them will be chosen)".format(len(selected_features)))
+    logging.info("From model approach - Selected features: {} (only 1/{} of them will be chosen)".format(len(selected_features), occurence_coef))
     melodies = {}
     for chant in X_train:
         for segment in chant.split():
