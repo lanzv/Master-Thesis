@@ -1,6 +1,6 @@
 from npylm cimport NPYLM, SHPYLMNode, STables, THPYLMNode, TTables
 from chant cimport Chant, BOS, EOS
-from random_utils cimport random_choice
+from random_utils cimport random_choice, bernoulli
 import numpy as np
 cimport numpy as np
 from libc.math cimport log
@@ -224,7 +224,7 @@ cdef float __get_shpylm_1_minus_y_ui(SHPYLMNode node):
         for i in range(1,node.t_h):
             prob = npylm.shpylm_thetas[node.depth] / \
                     (npylm.shpylm_thetas[node.depth] + npylm.shpylm_ds[node.depth] * i)
-            final_sum += 1-np.random.binomial(p=prob, n=1)
+            final_sum += 1-bernoulli(prob)
     return final_sum
 
 cdef float __get_shpylm_1_minus_z_uwkj_sum(SHPYLMNode node):
@@ -254,7 +254,7 @@ cdef float __get_shpylm_1_minus_z_uwkj_sum(SHPYLMNode node):
             if c_whk >= 2:
                 for j in range(1,c_whk):
                     prob = (j - 1) / (j - npylm.shpylm_ds[node.depth])
-                    final_sum += 1 - np.random.binomial(p=prob, n=1)
+                    final_sum += 1 - bernoulli(prob)
     return final_sum
 
 cdef float __get_shpylm_y_ui_sum(SHPYLMNode node):
@@ -278,7 +278,7 @@ cdef float __get_shpylm_y_ui_sum(SHPYLMNode node):
         for i in range(1,node.t_h):
             prob = npylm.shpylm_thetas[node.depth] / \
                     (npylm.shpylm_thetas[node.depth] + npylm.shpylm_ds[node.depth] * i)
-            final_sum += np.random.binomial(p=prob, n=1)
+            final_sum += bernoulli(prob)
     return final_sum
 
 cdef float __get_shpylm_logx_u(SHPYLMNode node):
@@ -406,7 +406,7 @@ cdef float __get_thpylm_1_minus_y_ui(THPYLMNode node):
         for i in range(1,node.t_h):
             prob = npylm.thpylm_thetas[node.depth] / \
                     (npylm.thpylm_thetas[node.depth] + npylm.thpylm_ds[node.depth] * i)
-            final_sum += 1-np.random.binomial(p=prob, n=1)
+            final_sum += 1-bernoulli(prob)
     return final_sum
 
 cdef float __get_thpylm_1_minus_z_uwkj_sum(THPYLMNode node):
@@ -436,7 +436,7 @@ cdef float __get_thpylm_1_minus_z_uwkj_sum(THPYLMNode node):
             if c_whk >= 2:
                 for j in range(1,c_whk):
                     prob = (j - 1) / (j - npylm.thpylm_ds[node.depth])
-                    final_sum += 1 - np.random.binomial(p=prob, n=1)
+                    final_sum += 1 - bernoulli(prob)
     return final_sum
 
 cdef float __get_thpylm_y_ui_sum(THPYLMNode node):
@@ -460,7 +460,7 @@ cdef float __get_thpylm_y_ui_sum(THPYLMNode node):
         for i in range(1,node.t_h):
             prob = npylm.thpylm_thetas[node.depth] / \
                     (npylm.thpylm_thetas[node.depth] + npylm.thpylm_ds[node.depth] * i)
-            final_sum += np.random.binomial(p=prob, n=1)
+            final_sum += bernoulli(prob)
     return final_sum
 
 cdef float __get_thpylm_logx_u(THPYLMNode node):

@@ -65,7 +65,27 @@ cdef float poisson(int k, float lam):
         k_factorial = 1
         for i in range(1, k+1):
             k_factorial *= i
-    
+
     poisson = exp(-lam)*((pow(lam, k))/(k_factorial))
 
     return poisson
+
+cdef int bernoulli(float prob):
+    """
+    Bernoulli distribution. 
+    Return 1 with probability prob, return 0 with probability 1-prob.
+
+    Parameters
+    ----------
+    prob : float
+        probability of sampling 1
+    Returns
+    -------
+    bernoulli : int
+        sampled 1 or 0, depending on the prob
+    """
+    cdef float random_number = float(rand())/float(RAND_MAX)
+    if random_number < prob:
+        return 1
+    else:
+        return 0
