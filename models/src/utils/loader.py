@@ -82,7 +82,25 @@ def load_word_segmentations():
     return word_segmentation
 
 
-def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings-an.csv"):
+def load_syllable_segmentations():
+    """
+    The function will load syllable segmentations from cantus corpus using the bacor's prefiltered datasets.
+    The function rely on {train,test}-chants.csv files and {train,test}-representation-pitch.csv
+    files to be in working directory.
+
+    Returns
+    -------
+    syllable_segmentation : list of lists of strings
+        syllable segmentation of each chant, e.g. [["asda", "ddd", "a", "aaa"], ["dddg", "khk"]]
+    """
+    _, pitch_repr = load_chants()
+    syllable_segmentation = []
+    for segments in pitch_repr["syllables"]:
+        syllable_segmentation.append(segments.split(' '))
+    return syllable_segmentation
+
+
+def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings.csv"):
     """
     The function will load phrase segmentation from preprocessed gregobase dataset.
     Chants have to be converted from gabc format into melody string, where '|' means the end of phrase.
