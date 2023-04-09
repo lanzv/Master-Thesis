@@ -34,6 +34,8 @@ class RandomModel():
         -------
         rand_segments : list of list of strings
             list of chants represnted as list of string segments
+        perplexity : float
+            we ignore the value in this model since we cannot compute the perplexity of random model
         """
         rand_segments = []
         for chant in chants:
@@ -48,7 +50,7 @@ class RandomModel():
                 # Update i index
                 i = k
             rand_segments.append(new_chant_segments)
-        return rand_segments
+        return rand_segments, -1
 
     def get_mjwp_score(self):
         """
