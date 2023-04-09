@@ -225,3 +225,46 @@ def plot_umm_confusion_matries(train_true, train_pred, dev_true, dev_pred, test_
                                   display_labels=labels)
     disp.plot()
     plt.show()
+
+
+
+def plot_trimmed_segments(trimmed_scores):
+    """
+    Plot charts of trimmed segments. Visualize comparison of trimming from left, right or both sides.
+    First, plot accuracy.
+    Second, plot F1.
+
+    Parameters
+    ----------
+    trimmed_scores : dict
+        dict that contains seven keys: 'trimmed segments', 'left accuracy', 'right accuracy, 'both sides accuracy',
+        'left f1', 'right f1, 'both sides f1', each their values are lists of scores, only trimmed segments is a list
+        of number of trimmed segments
+    """
+    # Plot accuracy
+    # create data
+    x = trimmed_scores["trimmed segments"]
+    y_left = trimmed_scores["left accuracy"]
+    y_right = trimmed_scores["right accuracy"]
+    y_both = trimmed_scores["both sides accuracy"]
+    
+    # plot lines
+    plt.plot(x, y_left, label = "left trimmed")
+    plt.plot(x, y_right, label = "right trimmed")
+    plt.plot(x, y_both, label = "both side trimmed")
+    plt.legend()
+    plt.show()
+
+    # Plot F1
+    # create data
+    x = trimmed_scores["trimmed segments"]
+    y_left = trimmed_scores["left f1"]
+    y_right = trimmed_scores["right f1"]
+    y_both = trimmed_scores["both sides f1"]
+    
+    # plot lines
+    plt.plot(x, y_left, label = "left trimmed")
+    plt.plot(x, y_right, label = "right trimmed")
+    plt.plot(x, y_both, label = "both side trimmed")
+    plt.legend()
+    plt.show()

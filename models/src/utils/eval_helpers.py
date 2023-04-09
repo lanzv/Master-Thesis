@@ -3,6 +3,8 @@ from pandas import DataFrame
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.pipeline import Pipeline
+from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
 
 def list2string(segmented_chants):
     """
@@ -63,7 +65,35 @@ def get_bacor_model():
         ('clf', LinearSVC(**svc_params)),
     ])
 
+def get_bacor_nottuned_scores(train_chants, train_modes, test_chants, test_modes):
+    """
+    Convert chant segments to string representation and train the bacor model without tuning.
+    Compute accuracy and f1 of test dataset.
 
+    Parameters
+    ---------
+    train_chants : list of list of strings
+        train chants represented as list of string segments
+    train_modes : list of strings
+        train modes
+    test_chants : list of list of strings
+        test chants represented as list of string segments
+    test_modes : list of strings
+        test modes
+    Returns
+    -------
+    test_accuracy : float
+        accuracy score of testing dataset of BACOR SVC model
+    test_f1 : float
+        f1 score of testing dataset of BACOR SVC model
+    """
+    train_data, test_data = list2string(train_chants), list2string(test_chants)
+    bacor_model = get_bacor_model()
+    bacor_model.fit(train_data, train_modes)
+    test_predictions = bacor_model.predict(test_data)
+    test_accuracy = accuracy_score(test_modes, test_predictions)
+    test_f1 = f1_score(test_modes, test_predictions, average='weighted')
+    return test_accuracy, test_f1
 
 
 
