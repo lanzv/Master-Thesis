@@ -14,7 +14,29 @@ from decimal import Decimal, ROUND_HALF_UP
 
 def features_from_model(X_train, y_train, X_test, y_test, max_features = None, occurence_coef=1):
     """
-    ToDo
+    Fit the SVC model, with no tuning, find the top max_features*occurence_coef features with highest coeficients.
+    Take the top max_features of them with the higher occurence number in trainin dataset.
+    Also try to fit the model again with reduced features by these new top_melodies and log the result.
+
+    Parameters
+    ----------
+    X_train : list of strings
+        list of train chants represented as a string with segments separated by spaces
+    y_train :  list of strings
+        list of training modes
+    X_test : list of strings
+        list of train chants represented as a string with segments separated by spaces
+    y_test : list of strings
+        list of testing modes
+    max_features : int
+        maximum number of features to get from feature extraction
+    occurence_coef :  int
+        find the fe_occurence_coef times more best features from model then max_features_from_model says, 
+        after that pick only max_features_from_model features with the most occurences
+    Returns
+    -------
+    top_melodies : list of strings
+        list of top max_features or len(vocabulary) melodies selected by this method
     """
     bacor_model = get_bacor_model()
 
@@ -72,7 +94,27 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None, o
 
 def features_by_additativ_approach(X_train, y_train, X_test, y_test, max_features = "auto"):
     """
-    ToDo
+    Fit the SVC model, with no tuning, find the top max_features using additative feature extraction.
+    The model will try all posibilities and pick the one with the highest final score. Then, the model
+    tries to find the next feature ect...
+    Also try to fit the model again with reduced features by these new top_melodies and log the result.
+
+    Parameters
+    ----------
+    X_train : list of strings
+        list of train chants represented as a string with segments separated by spaces
+    y_train :  list of strings
+        list of training modes
+    X_test : list of strings
+        list of train chants represented as a string with segments separated by spaces
+    y_test : list of strings
+        list of testing modes
+    max_features : int
+        maximum number of features to get from feature extraction
+    Returns
+    -------
+    top_melodies : list of strings
+        list of top max_features or len(vocabulary) melodies selected by this method
     """
     # Define bacor model without tuning
     bacor_model = get_bacor_model()

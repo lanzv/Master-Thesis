@@ -5,8 +5,17 @@ from decimal import Decimal, ROUND_HALF_UP
 
 def get_vocabulary_size(segmentation: list) -> int:
     """
-    segmentation is a  list of lists of segments
-    [["asda", "asdasd", "as", "ds"]]
+    Function to get vocabulary of segmented chants and return the size of that vocabulary.
+
+    Parameters
+    ----------
+    segmentation : list of list of strings
+        list of train chants represented as list of string segments
+        [["asda", "asdasd", "as", "ds"]]
+    Returns
+    -------
+    vocabulary_size : int
+        vocabulary size
     """
     vocabulary = set()
     for chant in segmentation:
@@ -16,8 +25,17 @@ def get_vocabulary_size(segmentation: list) -> int:
 
 def get_average_segment_length(segmentation: list) -> float:
     """
-    segmentation is a list of lists of segments
-    [["asda", "asdasd", "as", "ds"]]
+    Function to get average segment length over all segmented chants.
+
+    Parameters
+    ----------
+    segmentation : list of list of strings
+        list of train chants represented as list of string segments
+        [["asda", "asdasd", "as", "ds"]]
+    Returns
+    -------
+    average_segment_length : float
+        average segment length
     """
     all_segments = 0
     segment_length_sum = 0
@@ -28,6 +46,23 @@ def get_average_segment_length(segmentation: list) -> float:
     return float(segment_length_sum)/float(all_segments)
 
 def show_mode_segment_statistics(segmentation, modes, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    """
+    Plot statistics about segments in respect to single modes.
+         - number of shared segments
+         - number of distinct segments
+         - number of vocabulary segments 
+         - number of unqiue segments
+
+    Parameters
+    ----------
+    segmentation : list of list of strings
+        list of train chants represented as list of string segments
+        [["asda", "asdasd", "as", "ds"]]
+    modes : list of strings
+        list of train modes
+    mode_list : list of strings
+        list of all unique modes we have in dataset
+    """
     shared_dataframe, distinct_dataframe = get_2d_statistic_matrices(segmentation, modes, mode_list)
     unique_dataframe, vocabulary_sizes_dataframe = get_1d_statistic_matrices(segmentation, modes, mode_list)
     densities_dict = get_unique_segment_densities(segmentation, modes)
@@ -38,8 +73,23 @@ def show_mode_segment_statistics(segmentation, modes, mode_list = ["1", "2", "3"
 
 def get_2d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     """
-    segmentation is a list of lists of segments
-    [["asda", "asdasd", "as", "ds"]]
+    Get DataFrames of shared and distinct segments between each pair of mode's vocabularies.
+
+    Parameters
+    ----------
+    segmentation : list of list of strings
+        list of train chants represented as list of string segments
+        [["asda", "asdasd", "as", "ds"]]
+    modes : list of strings
+        list of train modes
+    mode_list : list of strings
+        list of all unique modes we have in dataset
+    Returns
+    -------
+    shared_df : DataFrame
+        dataframe .. n x n table, n=len(mode_list), where each cell i,j is a number of shared segments between ith and jth modes
+    distinct_df : DataFrame
+        dataframe .. n x n table, n=len(mode_list), where each cell i,j is a number of distinct segments between ith and jth modes
     """
     # Dictionary of all unique segments that occure in the specific mode
     mode_unique_segments = {}
@@ -73,8 +123,24 @@ def get_2d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1",
 
 def get_1d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     """
-    segmentation is a list of lists of segments
-    [["asda", "asdasd", "as", "ds"]]
+    Get DataFrames of unique segments of each mode vocabulary (that is not in a vocabulary of any of other modes)
+    and the other dataframe of vocabulary sizes of each mode.
+
+    Parameters
+    ----------
+    segmentation : list of list of strings
+        list of train chants represented as list of string segments
+        [["asda", "asdasd", "as", "ds"]]
+    modes : list of strings
+        list of train modes
+    mode_list : list of strings
+        list of all unique modes we have in dataset
+    Returns
+    -------
+    unique_df : DataFrame
+        dataframe .. 1 x n table, n=len(mode_list), where each cell is a number of unique segments that are not in other mode's vocabularies
+    vocab_df : DataFrame
+        dataframe .. 1 x n table, n=len(mode_list), where each cell is a size of mode's vocabulary
     """
     # Dictionary of all unique segments that occure in the specific mode
     mode_unique_segments = {}
@@ -107,8 +173,24 @@ def get_1d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1",
 
 def get_unique_segment_densities(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     """
-    segmentation is a list of lists of segments
-    [["asda", "asdasd", "as", "ds"]]
+    Compute densities of unique segments considering each position of modes (proportionally).
+    The goal is to find out if there are more unique segments at beggining, or in the middle or at the end.
+
+    Parameters
+    ----------
+    segmentation : list of list of strings
+        list of train chants represented as list of string segments
+        [["asda", "asdasd", "as", "ds"]]
+    modes : list of strings
+        list of train modes
+    mode_list : list of strings
+        list of all unique modes we have in dataset
+    Returns
+    -------
+    densities : dict
+        dict with keys of all modes, value is always a list of 400 elements, where 
+        each has a percentage (%) of that in that position of chant were unique segments
+        over all chants of that mode. Index 399 stands for 100%, 199 stands for 50%, etc..
     """
     # Preprocess data
     # Dictionary of all unique segments that occure in the specific mode
