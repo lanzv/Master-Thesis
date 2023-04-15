@@ -274,3 +274,31 @@ def plot_trimmed_segments(trimmed_scores):
     plt.xticks(x)
     plt.legend()
     plt.show()
+
+
+def plot_mode_frequencies(frequencies_data: dict, mode_labels = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    """
+    Plot 8 charts (one for each given mode). Each chart contain gray line of occurences over all modes and the blue line
+    of occurences over chants just in one mode. The X axe stands for segments, the Y axe stands for number of occurences.
+
+    Parameters
+    ----------
+    frequencies_data : dict
+        dictionary of 9 keys: "all", "1", "2", .. "8", each contains value of another dict with values
+        "groups", "frequencies", where groups is a list of segments, frequencies is a list of frequencies over all given
+        chants of specific segments at the same position in groups.
+    mode_labels : list of strings
+        unique list of modes used in dataset
+    """
+    figure, axis = plt.subplots(len(mode_labels), 1)
+    figure.set_figwidth(35)
+    figure.set_figheight(25)
+    figure.tight_layout(pad=5.0)
+    x = np.arange(len(frequencies_data["all"]["groups"]))
+    for i, mode in enumerate(mode_labels):
+        axis[i].plot(x, frequencies_data["all"]["frequencies"], label = "all", color='gray', lw = 0.4)
+        axis[i].plot(x, frequencies_data[mode]["frequencies"], label = mode, lw = 1)
+        axis[i].set_title("mode {} occurences".format(mode))
+        axis[i].set_xlabel("vocabulary segments")
+        axis[i].set_ylabel("segment occurences")
+    plt.show()

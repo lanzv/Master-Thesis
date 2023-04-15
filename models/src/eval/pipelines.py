@@ -1,7 +1,7 @@
 from src.eval.bacor_score import bacor_score
 from src.eval.mjww_score import mjww_score
 from src.eval.wufpc_score import wufpc_score
-from src.eval.wtmf_score import wtmf_score
+from src.eval.wtmf_score import wtmf_score, show_mode_segment_frequencies
 from src.eval.naive_bayes_score import nb_score
 from src.eval.vocab_levenshtein_score import vocab_levenshtein_score
 from src.eval.feature_extractions import show_topsegments_densities
@@ -112,6 +112,10 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     trained_model : LinearSVC
         bacor's fitted and tuned model used for bacor accuracy and f1
     """
+    print()
+    print()
+    print()
+    print()
     # Compute NB scores
     train_nb_accuracy, train_nb_f1, test_nb_accuracy, test_nb_f1 = \
         nb_score(X_train, X_test, y_train, y_test)
@@ -173,8 +177,12 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t Vocabulary Levenhstein Score")
     print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(vocab_levenshtein))
     show_mode_segment_statistics(X_train, y_train)
+    show_mode_segment_frequencies(X_train, y_train)
     print("--------------------------------------------------------------------------")
-
+    print()
+    print()
+    print()
+    print()
     # Test dataset
     # bacor score
     bacor, selected_features, trained_model = bacor_score(
@@ -236,7 +244,12 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t Vocabulary Levenhstein Score")
     print("\t\t\t wufpc: {:.2f} final pitches for a chant".format(vocab_levenshtein))
     show_mode_segment_statistics(X_test, y_test)
+    show_mode_segment_frequencies(X_test, y_test)
     print("--------------------------------------------------------------------------")
+    print()
+    print()
+    print()
+    print()
 
     print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
     plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
@@ -245,6 +258,9 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
         print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
         plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
         show_topsegments_densities(X_train+X_test, y_train+y_test, set(selected_features["additative"]["top_melodies"]))
+
+    print()
+    print()
     print()
     print()
     print("------------------------- Train + Test data charts ----------------------------")
