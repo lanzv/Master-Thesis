@@ -8,7 +8,7 @@ from src.eval.feature_extractions import show_topsegments_densities
 from src.utils.plotters import plot_segment_mode_frequencies, plot_umm_confusion_matries, plot_trimmed_segments
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
-from src.utils.eval_helpers import list2string, get_bacor_model, get_bacor_nottuned_scores
+from src.utils.eval_helpers import list2string, get_bacor_model, get_bacor_nottuned_scores, get_random_reduced_list
 from src.eval.segment_statistics import get_average_segment_length, get_vocabulary_size, show_mode_segment_statistics
 
 def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation, dev_modes):
@@ -421,22 +421,27 @@ def evaluation_trimmed_chants(X_train, y_train, X_test, y_test, max_segment_pair
         "right accuracy" : [],
         "right f1" : [],
         "both sides accuracy" : [],
-        "both sides f1" : []
+        "both sides f1" : [],
+        "random segments accuracy" : [],
+        "random segments f1" : []
     }
     for i in range(max_segment_pairs+1):
         left_trimmed_X_train = []
         right_trimmed_X_train = []
         both_trimmed_X_train = []
+        rand_trimmed_X_train = []
         trimmed_y_train = []
         not_trimmed_train = 0
         left_trimmed_X_test = []
         right_trimmed_X_test = []
         both_trimmed_X_test = []
+        rand_trimmed_X_test = []
         trimmed_y_test = []
         not_trimmed_test = 0
         # Trim train dataset
         for chant, mode in zip(X_train, y_train):
             if len(chant) >= 1 + 2*i:
+                rand_trimmed_X_train.append(get_random_reduced_list(chant, 2*i))
                 left_trimmed_X_train.append(chant[2*i:])
                 if i == 0:
                     right_trimmed_X_train.append(chant)
@@ -450,6 +455,7 @@ def evaluation_trimmed_chants(X_train, y_train, X_test, y_test, max_segment_pair
         # Trim test dataset
         for chant, mode in zip(X_test, y_test):
             if len(chant) >= 1 + 2*i:
+                rand_trimmed_X_test.append(get_random_reduced_list(chant, 2*i))
                 left_trimmed_X_test.append(chant[2*i:])
                 if i == 0:
                     right_trimmed_X_test.append(chant)
@@ -464,6 +470,7 @@ def evaluation_trimmed_chants(X_train, y_train, X_test, y_test, max_segment_pair
         left_accuracy, left_f1 = get_bacor_nottuned_scores(left_trimmed_X_train, trimmed_y_train, left_trimmed_X_test, trimmed_y_test)
         right_accuracy, right_f1 = get_bacor_nottuned_scores(right_trimmed_X_train, trimmed_y_train, right_trimmed_X_test, trimmed_y_test)
         both_accuracy, both_f1 = get_bacor_nottuned_scores(both_trimmed_X_train, trimmed_y_train, both_trimmed_X_test, trimmed_y_test)
+        rand_accuracy, rand_f1 = get_bacor_nottuned_scores(rand_trimmed_X_train, trimmed_y_train, rand_trimmed_X_test, trimmed_y_test)
         trimmed_scores["trimmed segments"].append(i*2)
         trimmed_scores["left accuracy"].append(left_accuracy)
         trimmed_scores["left f1"].append(left_f1)
@@ -471,9 +478,11 @@ def evaluation_trimmed_chants(X_train, y_train, X_test, y_test, max_segment_pair
         trimmed_scores["right f1"].append(right_f1)
         trimmed_scores["both sides accuracy"].append(both_accuracy)
         trimmed_scores["both sides f1"].append(both_f1)
+        trimmed_scores["random segments accuracy"].append(rand_accuracy)
+        trimmed_scores["random segments f1"].append(rand_f1)
 
         print("\t\t {} train chants are too short to not to be trimmed".format(not_trimmed_train))
         print("\t\t {} test chants are too short to not to be trimmed".format(not_trimmed_test))
-        print("\t\t {} trimmed segments, Left accuracy: {:.2f}%, Left f1: {:.2f}%, Right accuracy: {:.2f}%, Right f1: {:.2f}%, Both accuracy: {:.2f}%, Both f1: {:.2f}%"
-              .format(i*2, 100*left_accuracy, 100*left_f1, 100*right_accuracy, 100*right_f1, 100*both_accuracy, 100*both_f1))
+        print("\t\t {} trimmed segments, Left accuracy: {:.2f}%, Left f1: {:.2f}%, Right accuracy: {:.2f}%, Right f1: {:.2f}%, Both accuracy: {:.2f}%, Both f1: {:.2f}%, Rand accuracy: {:.2f}%, Rand f1: {:.2f}%"
+              .format(i*2, 100*left_accuracy, 100*left_f1, 100*right_accuracy, 100*right_f1, 100*both_accuracy, 100*both_f1, 100*rand_accuracy, 100*rand_f1))
     plot_trimmed_segments(trimmed_scores)
