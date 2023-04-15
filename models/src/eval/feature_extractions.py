@@ -2,7 +2,7 @@
 from sklearn.feature_selection import SelectFromModel
 import logging
 from sklearn.feature_selection import SequentialFeatureSelector
-from src.utils.eval_helpers import list2string, get_bacor_model
+from src.utils.eval_helpers import list2string, get_bacor_model, get_nb_model
 from sklearn.metrics import f1_score, accuracy_score
 import pandas as pd
 import numpy as np
@@ -50,7 +50,8 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None, o
 
     # Extract top features
     selected_features = set(selector.get_feature_names_out())
-    logging.info("From model approach - Selected features: {} (only 1/{} of them will be chosen)".format(len(selected_features), occurence_coef))
+    if max_features != None:
+        logging.info("From model approach - Selected features: {} (only {} of them will be chosen)".format(len(selected_features), int(max_features/occurence_coef)))
     melodies = {}
     for chant in X_train:
         for segment in chant.split():
@@ -85,9 +86,13 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None, o
     train_data, test_data = list2string(X_train_new), list2string(X_test_new)
     bacor_model = get_bacor_model()
     bacor_model.fit(train_data, y_train)
-    predictions = bacor_model.predict(test_data)
-    logging.info("From model approach - reduced accuracy: {:.2f}%, reduced f1: {:.2f}%".format(
-        accuracy_score(y_test, predictions)*100, f1_score(y_test, predictions, average='weighted')*100
+    bacor_predictions = bacor_model.predict(test_data)
+    nb_model = get_nb_model()
+    nb_model.fit(train_data, y_train)
+    nb_predictions = nb_model.predict(test_data)
+    logging.info("From model approach - reduced bacor accuracy: {:.2f}%, reduced bacor f1: {:.2f}% - reduced NB accuracy: {:.2f}%, reduced NB f1: {:.2f}%".format(
+        accuracy_score(y_test, bacor_predictions)*100, f1_score(y_test, bacor_predictions, average='weighted')*100,
+        accuracy_score(y_test, nb_predictions)*100, f1_score(y_test, nb_predictions, average='weighted')*100
     ))
     return top_melodies
 

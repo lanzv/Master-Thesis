@@ -1,7 +1,5 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import Pipeline
+from src.utils.eval_helpers import get_nb_model
 from src.utils.eval_helpers import list2string
 
 
@@ -38,19 +36,7 @@ def nb_score(train_segments, test_segments, train_modes, test_modes):
     train_data = list2string(train_segments)
     test_data = list2string(test_segments)
     # Fit and eval naive bayes
-    pipe = Pipeline([('tfidf', TfidfVectorizer(strip_accents=None,
-                stop_words=None,
-                ngram_range=(1,1),
-                max_df=1.0,
-                min_df=1,
-                max_features=5000,
-                use_idf=True,
-                smooth_idf=True,
-                sublinear_tf=False,
-                lowercase=False,
-                analyzer='word',
-                token_pattern=r'[^ ]+')),
-                        ('clf', MultinomialNB(alpha=0))])
+    pipe = get_nb_model()
     pipe.fit(train_data, train_modes)
     # Predict
     train_predictions = pipe.predict(train_data)

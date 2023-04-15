@@ -5,6 +5,8 @@ from sklearn.svm import LinearSVC
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
+from sklearn.naive_bayes import MultinomialNB
+import random
 
 def list2string(segmented_chants):
     """
@@ -64,6 +66,30 @@ def get_bacor_model():
         ('vect', TfidfVectorizer(**tfidf_params)),
         ('clf', LinearSVC(**svc_params)),
     ])
+
+def get_nb_model():
+    """
+    Get Multinomial Naive Bayes model with the Tfidf Vectorizer as part of the pipeline.
+
+    Returns
+    -------
+    pipeline : Pipeline
+        sklearn pipeline of TfidfVectorizer and Multinomial Naive Bayes
+    """
+    pipeline = Pipeline([('tfidf', TfidfVectorizer(strip_accents=None,
+                stop_words=None,
+                ngram_range=(1,1),
+                max_df=1.0,
+                min_df=1,
+                max_features=5000,
+                use_idf=True,
+                smooth_idf=True,
+                sublinear_tf=False,
+                lowercase=False,
+                analyzer='word',
+                token_pattern=r'[^ ]+')),
+                ('clf', MultinomialNB(alpha=0))])
+    return pipeline
 
 def get_bacor_nottuned_scores(train_chants, train_modes, test_chants, test_modes):
     """
@@ -189,3 +215,25 @@ def get_topsegments_frequency(train_segmented_chants, train_modes,
     df = DataFrame(frequency_matrix, index=index, columns=columns)
 
     return df
+
+
+def get_random_reduced_list(array: list, k: int):
+    """
+    Create a copy of the comming list and remove from it k random elements.
+
+    Parameters
+    ----------
+    array : list
+        the original list we want the reduced version of
+    k : int
+        number of elements to randomly ignore
+    Returns
+    -------
+    final_array : list
+        reduced array by k random elements
+    """
+    final_array = array.copy()
+    for _ in range(k):
+        rand_ind =  random.randint(0, len(final_array)-1)
+        final_array = [ele for ele_ind, ele in enumerate(final_array) if ele_ind != rand_ind]
+    return final_array
