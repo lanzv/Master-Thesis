@@ -1,5 +1,5 @@
 cdef str BOC = "<boc>" # beginning of chant
-cdef str EOC = "$" # end of chant, because of the code logic, it needs to be only one character long
+cdef str EOC = "<eoc>" # end of chant
 cdef str BOS = "<bos>" # beginning of segment
 cdef str EOS = "<eos>" # end of segment
 

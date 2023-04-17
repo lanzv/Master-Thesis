@@ -23,9 +23,9 @@ cdef int random_choice(list probabilities):
     cdef float prob_sum = 0.0
     cdef float left_border = 0.0
     cdef float normalized_p
+
     for p in probabilities:
         prob_sum += p
-
     if prob_sum == 0:
         # Uniform distribution
         for i in range(len(probabilities)):

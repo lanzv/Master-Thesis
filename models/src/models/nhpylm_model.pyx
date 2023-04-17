@@ -74,16 +74,26 @@ cdef class NHPYLMModel:
     cpdef void train(self, list train_data, list dev_data, list train_modes, list dev_modes, 
                     int epochs, bint d_theta_learning, bint poisson_learning):
         """
-        Perform the training process of the NHPYLM model. 
-        ToDo
+        Perform the training process of the NHPYLM model. Each iteration print current statistics.
+        For those statistics, gold modes are used.
+        Apply the hyperparameter learning after each iteration. Function parameters specify those learnings.
+
         Parameters
         ----------
-        training_chants : list of strings
+        train_data : list of strings
             list of training chants, each represented as a string
-        dev_chants : list of strings
+        dev_data : list of strings
             list of dev chants, each represented as a string
+        train_modes : list of strings
+            list of train modes used for statistics evaluation
+        dev_modes : list of strings
+            list of dev modes used for statistics evaluation
         epochs : int
             number of training epochs
+        d_theta_learning : boolean
+            whether we want to apply d theta learning after each epoch or not
+        poisson_learning : boolean
+            whether we want to apply poisson learning or not
         """
         cdef int i
         cdef str chant_str
@@ -111,6 +121,7 @@ cdef class NHPYLMModel:
                             train_tone_vocabulary,
                             self.beta_stops, self.beta_passes,
                             self.d_a, self.d_b, self.theta_alpha, self.theta_beta)
+
         for chant in train_chants:
             self.npylm.add_chant(chant)
 
@@ -152,6 +163,11 @@ cdef class NHPYLMModel:
 
     cpdef float get_mjwp_score(self):
         """
-        ToDo
+        Use mjwp_score function to compute mjwp score of this model.
+
+        Returns
+        -------
+        mjwp_score : float
+            melody justified with phrase score
         """
         return mjwp_score(self)

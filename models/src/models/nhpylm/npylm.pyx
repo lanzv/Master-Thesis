@@ -77,7 +77,7 @@ cdef class NPYLM():
         self.thpylm_max_depth = -1
         self.thpylm_ds = []
         self.thpylm_thetas = []
-        self.poisson_k_probs = [1.0/max_segment_size for _ in range(max_segment_size)]
+        self.poisson_k_probs = [1.0/(max_segment_size+2) for _ in range(max_segment_size)]
         self.poisson_lambda = np.random.gamma(init_a, 1/init_b)
         self.beta_stops = beta_stops
         self.beta_passes = beta_passes
@@ -116,7 +116,7 @@ cdef class NPYLM():
         pwhcomma = self.get_G0_probability(EOC)
         added_table = self.shpylm_root.add_segment(EOC, [chant.segmentation[-1]], pwhcomma) # Last bigram
         if added_table:
-            self.add_segment_to_thpylm(EOC)
+            self.thpylm_root.add_tone(EOC, [], 1.0/len(self.tone_vocabulary))
 
     cdef void remove_chant(self, Chant chant):
         """
@@ -144,7 +144,7 @@ cdef class NPYLM():
 
         removed_table = self.shpylm_root.remove_segment(EOC, [chant.segmentation[-1]]) # Last bigram
         if removed_table:
-            self.remove_segment_from_thpylm(EOC)
+            self.thpylm_root.remove_tone(EOC, [])
 
 
     cdef void add_segment_to_thpylm(self, str segment):
@@ -165,7 +165,7 @@ cdef class NPYLM():
         cdef int i, ngram
         cdef list context_lengths = []
         cdef THPYLMNode thpylm_root = self.thpylm_root
-        for i in range(1, len(segment_tones)):
+        for i in range(0, len(segment_tones)):
             ngram = self.thpylm_root.sample_context_length(segment_tones[i], segment_tones[:i], 
                                                             1.0/len(self.tone_vocabulary))
             context_lengths.append(ngram)
@@ -197,7 +197,7 @@ cdef class NPYLM():
         cdef list segment_tones = [BOS]+[*segment]+[EOS]
         cdef int i, ngram
         cdef int k_index = self.last_removed_shpylm_table_index
-        for i, ngram in zip(range(1, len(segment_tones)), self.root_tables_context_lengths[segment][k_index]):
+        for i, ngram in zip(range(0, len(segment_tones)), self.root_tables_context_lengths[segment][k_index]):
             self.thpylm_root.remove_tone(segment_tones[i], segment_tones[i-ngram:i])
         
         # Remove the context length set from the mapping
@@ -208,7 +208,8 @@ cdef class NPYLM():
 
     cdef float get_G0_probability(self, str segment):
         """
-        Compute G0 probability of given segment.
+        When segment is EOC, just return 1/|V|.
+        Otherwise compute G0 probability of given segment.
         The result probability is a product of all tone probabilities based on the
         full previous context that is provided in comming 'segment' string.
         As a init p(w|h') is used the 1/V, where V is the size of tone vocabulary.
@@ -224,13 +225,15 @@ cdef class NPYLM():
         ----------
         segment : str
             segment as a string, each tone or special sign needs to be stored as a single character
-            (!!<boc> or <eoc> are always 5 special signs/tones long segments, not one!!)
         Returns
         -------
         prob : float
             G0 probability, the probability with a lower context than the SHPYLM root - probability of
             segment 's' given the SHPYLM tree
         """
+        if segment == EOC:
+            return 1.0/len(self.tone_vocabulary)
+
         # First, get prob from tone HPYLM
         cdef float prob = 1.0
         cdef list segment_tones = [BOS] + [*segment] + [EOS]
@@ -494,7 +497,6 @@ cdef class SHPYLMNode():
         prob : float
             the p(w|h) probability 
         """
-        
         cdef float prob = pwhcomma
         cdef SHPYLMNode context_child
         cdef STables seg_tables
@@ -580,7 +582,7 @@ cdef class STables():
         """
         Remove customer from restaurant.
         Choose the table with probability distribution
-        (c_hwk-d) for kth table (c_whk is a count of customers with segment w, context h, that are sitting at table k)
+        (c_hwk) for kth table (c_whk is a count of customers with segment w, context h, that are sitting at table k)
         and remove the customer from it.
 
         If the table gets empty, remove it.
@@ -596,10 +598,9 @@ cdef class STables():
         cdef int c_hwk # customer count at table 'k'
         cdef list posibilities = []
         cdef bint removed_table = False
-        cdef float d = self.hpylmnode.npylm.shpylm_ds[self.hpylmnode.depth]
 
         for c_hwk in self.tables:
-            posibilities.append(c_hwk - d)
+            posibilities.append(c_hwk) # during the adding process, the minus discount factor is included
         table_k = random_choice(posibilities)
         self.hpylmnode.npylm.last_removed_shpylm_table_index = table_k
 
@@ -678,6 +679,7 @@ cdef class THPYLMNode():
         if depth >= len(npylm.thpylm_ds) and depth >= len(npylm.thpylm_thetas):
             npylm.thpylm_ds.append(npylm.init_d)
             npylm.thpylm_thetas.append(npylm.init_theta)
+            
 
     cdef bint add_tone(self, str tone, list context, float pwhcomma):
         """
@@ -700,7 +702,7 @@ cdef class THPYLMNode():
             boolean that says whether the new table was created in this node or not
         """
         cdef bint new_table = False
-        cdef bint new_prev_table = True
+        cdef bint new_prev_table = False
         cdef TTables tone_restaurant
         cdef THPYLMNode context_child
         cdef float pwh
@@ -726,10 +728,7 @@ cdef class THPYLMNode():
             else:
                 context_child =  self.children[context[-1]]
             new_prev_table = context_child.add_tone(tone, context[:-1], pwh)
-
-
-        # If new table was generated in the lower level, add the customer here
-        if new_prev_table:
+        else:
             if tone in self.c_wh and tone in self.tables:
                 self.c_wh[tone] += 1
                 tone_restaurant = self.tables[tone]
@@ -747,6 +746,21 @@ cdef class THPYLMNode():
             while parent != None:
                 parent.passes += 1
                 parent = parent.parent
+
+
+        # If new table was generated in the lower level, add the customer here
+        if new_prev_table:
+            if tone in self.c_wh and tone in self.tables:
+                self.c_wh[tone] += 1
+                tone_restaurant = self.tables[tone]
+            else:
+                self.c_wh[tone] = 1
+                tone_restaurant = TTables(tone, self)
+                self.tables[tone] = tone_restaurant
+            self.c_h += 1
+            new_table = tone_restaurant.add_customer(pwhcomma, self.t_h)
+            if new_table:
+                self.t_h += 1
 
         return new_table
         
@@ -774,7 +788,7 @@ cdef class THPYLMNode():
         """
         cdef THPYLMNode context_child
         cdef bint removed_table = False
-        cdef bint removed_prev_table = True
+        cdef bint removed_prev_table = False
         cdef TTables tone_restaurant
 
         # Propagate removing to the next level
@@ -783,10 +797,7 @@ cdef class THPYLMNode():
             removed_prev_table = context_child.remove_tone(tone, context[:-1])
             if context_child.t_h == 0:
                 self.children.pop(context[-1])
-
-
-        # Remove customer from table on this level
-        if removed_prev_table:
+        else:
             self.c_wh[tone] -= 1
             self.c_h -= 1
             tone_restaurant = self.tables[tone]
@@ -802,6 +813,18 @@ cdef class THPYLMNode():
             while parent != None:
                 parent.passes -= 1
                 parent = parent.parent
+
+        # Remove customer from table on this level
+        if removed_prev_table:
+            self.c_wh[tone] -= 1
+            self.c_h -= 1
+            tone_restaurant = self.tables[tone]
+            removed_table = tone_restaurant.remove_customer()
+            if self.c_wh[tone] == 0 or len(tone_restaurant.tables) == 0:
+                self.c_wh.pop(tone)
+                self.tables.pop(tone)
+            if removed_table:
+                self.t_h -= 1
 
         return removed_table
 
@@ -903,6 +926,8 @@ cdef class THPYLMNode():
         sampled_length : int
             context length that was sampled based on conditional probability distribution for the specific tone and its context
         """
+        if len(context) == 0:
+            return 0
         cdef list sample_prob_table = []
         self.__fill_sample_prob_table(sample_prob_table, tone, context, pwhcomma, 1)
         return random_choice(sample_prob_table)
@@ -951,7 +976,6 @@ cdef class THPYLMNode():
                 (self.stops + self.npylm.beta_stops + self.passes + self.npylm.beta_passes)
         pass_prob = (self.passes + self.npylm.beta_passes)/\
                 (self.stops + self.npylm.beta_stops + self.passes + self.npylm.beta_passes)
-
         # Compute current p(w|h), then get the next p(w|h) with bigger context, 
         # then apply stop and pass probabilities into equation and send it to the
         # previous layer.
@@ -962,15 +986,15 @@ cdef class THPYLMNode():
         else:
             # For not existing tone in tables, use only the second part of equation
             pwh = ((theta + d*self.t_h)/(theta + self.c_h)) * pwhcomma
-        
         sample_prob_table.append(pwh*stop_prob*prev_pass_product)
-        
+
         if len(context) > 0 and context[-1] in self.children:
             context_child = self.children[context[-1]]
             context_child.__fill_sample_prob_table(sample_prob_table, tone, context[:-1], pwh, prev_pass_product*pass_prob)
         else:
             # In the case of not existing context in tree, use the Beta priors
             new_stop_prob = (self.npylm.beta_stops/(self.npylm.beta_stops + self.npylm.beta_passes))
+            prev_pass_product *= pass_prob
             for _ in context:
                 sample_prob_table.append(new_stop_prob * prev_pass_product * pwh)
                 prev_pass_product *= (self.npylm.beta_passes/(self.npylm.beta_stops + self.npylm.beta_passes))    
@@ -1048,7 +1072,7 @@ cdef class TTables():
         """
         Remove customer from restaurant.
         Choose the table with probability distribution
-        (c_hwk-d) for kth table (c_whk is a count of customers with tone w, context h, that are sitting at table k)
+        (c_hwk) for kth table (c_whk is a count of customers with tone w, context h, that are sitting at table k)
         and remove the customer from it.
 
         If the table gets empty, remove it.
@@ -1062,10 +1086,9 @@ cdef class TTables():
         cdef int c_hwk # customer count at table 'k'
         cdef list posibilities = []
         cdef bint removed_table = False
-        cdef float d = self.hpylmnode.npylm.thpylm_ds[self.hpylmnode.depth]
 
         for c_hwk in self.tables:
-            posibilities.append(c_hwk - d)
+            posibilities.append(c_hwk) # during the adding process, the minus discount factor is included
         table_k = random_choice(posibilities)
 
         self.tables[table_k] -= 1
