@@ -27,7 +27,7 @@ cdef class NHPYLMModel:
     
     def __init__(self, max_segment_size = 7, n_gram = 2,
                 init_d = 0.5, init_theta = 2.0,
-                init_a = 1, init_b = 1,
+                init_a = 6.0, init_b = 0.8333,
                 beta_stops = 0.57, beta_passes = 0.85,
                 d_a = 1, d_b = 1, theta_alpha = 1, theta_beta = 1):
         """
@@ -72,7 +72,7 @@ cdef class NHPYLMModel:
 
 
     cpdef void train(self, list train_data, list dev_data, list train_modes, list dev_modes, 
-                    int epochs, bint d_theta_learning, bint poisson_learning):
+                    int epochs, bint d_theta_learning, bint poisson_learning, int print_each_nth_iteration = 5):
         """
         Perform the training process of the NHPYLM model. Each iteration print current statistics.
         For those statistics, gold modes are used.
@@ -94,6 +94,8 @@ cdef class NHPYLMModel:
             whether we want to apply d theta learning after each epoch or not
         poisson_learning : boolean
             whether we want to apply poisson learning or not
+        print_each_nth_iteration : int
+            print only iterations modulo print_each_nth_iteration
         """
         cdef int i
         cdef str chant_str
@@ -129,17 +131,17 @@ cdef class NHPYLMModel:
         for i in range(epochs):
             blocked_gibbs_iteration(self.npylm, train_chants)
             apply_hyperparameters_learning(self.npylm, train_chants, d_theta_learning, poisson_learning)
-            
-            # Store and print iteration statistics
-            train_segments, train_perplexity = self.predict_segments(train_data)
-            dev_segments, dev_perplexity = self.predict_segments(dev_data)
-            statistics.add_new_iteration(i+1, train_segments, dev_segments, train_perplexity, dev_perplexity)
+
+            if (i+1)%print_each_nth_iteration:
+                train_segments, train_perplexity = self.predict_segments(train_data)
+                dev_segments, dev_perplexity = self.predict_segments(dev_data)
+                statistics.add_new_iteration(i+1, train_segments, dev_segments, train_perplexity, dev_perplexity)
 
         # plot iteration statistics charts and store the model
         statistics.plot_all_statistics()
 
     cpdef void train_with_init_segmentation(self, list train_segmentation, list dev_segmentation, list train_modes, list dev_modes, 
-                    int epochs, bint d_theta_learning, bint poisson_learning):
+                    int epochs, bint d_theta_learning, bint poisson_learning, int print_each_nth_iteration = 5):
         """
         Start with init segmentation, initialize NHPYLM model by them.
         Perform the training process of the NHPYLM model. Each iteration print current statistics.
@@ -162,6 +164,8 @@ cdef class NHPYLMModel:
             whether we want to apply d theta learning after each epoch or not
         poisson_learning : boolean
             whether we want to apply poisson learning or not
+        print_each_nth_iteration : int
+            print only iterations modulo print_each_nth_iteration
         """
         cdef int i
         cdef str chant_str
@@ -208,11 +212,12 @@ cdef class NHPYLMModel:
         for i in range(epochs):
             blocked_gibbs_iteration(self.npylm, train_chants)
             apply_hyperparameters_learning(self.npylm, train_chants, d_theta_learning, poisson_learning)
-            
+
             # Store and print iteration statistics
-            train_segments, train_perplexity = self.predict_segments(train_data)
-            dev_segments, dev_perplexity = self.predict_segments(dev_data)
-            statistics.add_new_iteration(i+1, train_segments, dev_segments, train_perplexity, dev_perplexity)
+            if (i+1)%print_each_nth_iteration:
+                train_segments, train_perplexity = self.predict_segments(train_data)
+                dev_segments, dev_perplexity = self.predict_segments(dev_data)
+                statistics.add_new_iteration(i+1, train_segments, dev_segments, train_perplexity, dev_perplexity)
 
         # plot iteration statistics charts and store the model
         statistics.plot_all_statistics()
