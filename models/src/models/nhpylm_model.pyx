@@ -132,96 +132,13 @@ cdef class NHPYLMModel:
             blocked_gibbs_iteration(self.npylm, train_chants)
             apply_hyperparameters_learning(self.npylm, train_chants, d_theta_learning, poisson_learning)
 
-            if (i+1)%print_each_nth_iteration:
+            if (i+1)%print_each_nth_iteration == 0:
                 train_segments, train_perplexity = self.predict_segments(train_data)
                 dev_segments, dev_perplexity = self.predict_segments(dev_data)
                 statistics.add_new_iteration(i+1, train_segments, dev_segments, train_perplexity, dev_perplexity)
 
         # plot iteration statistics charts and store the model
         statistics.plot_all_statistics()
-
-    cpdef void train_with_init_segmentation(self, list train_segmentation, list dev_segmentation, list train_modes, list dev_modes, 
-                    int epochs, bint d_theta_learning, bint poisson_learning, int print_each_nth_iteration = 5):
-        """
-        Start with init segmentation, initialize NHPYLM model by them.
-        Perform the training process of the NHPYLM model. Each iteration print current statistics.
-        For those statistics, gold modes are used.
-        Apply the hyperparameter learning after each iteration. Function parameters specify those learnings.
-
-        Parameters
-        ----------
-        train_segmentation : list of lists of strings
-            list of segmented training chants as an init segmentation
-        dev_segmentation : list of lists of strings
-            list of dev chants as an init segmentation
-        train_modes : list of strings
-            list of train modes used for statistics evaluation
-        dev_modes : list of strings
-            list of dev modes used for statistics evaluation
-        epochs : int
-            number of training epochs
-        d_theta_learning : boolean
-            whether we want to apply d theta learning after each epoch or not
-        poisson_learning : boolean
-            whether we want to apply poisson learning or not
-        print_each_nth_iteration : int
-            print only iterations modulo print_each_nth_iteration
-        """
-        cdef int i
-        cdef str chant_str
-        cdef list train_chants = []
-        cdef list dev_chants = []
-        cdef list train_data = []
-        cdef list dev_data = []
-        cdef set train_tone_vocabulary = set()
-        cdef str tone
-        cdef list train_segments, dev_segments
-        cdef float train_perplexity, dev_perplexity
-        cdef Chant chant
-        cdef list chant_segmnents
-        logging.info("NHPYLM train - {} train chants, {} dev chants.".format(len(train_data), len(dev_data)))
-        cdef object statistics = IterationStatistics(train_modes=train_modes, dev_modes=dev_modes)
-
-        # Prepare Chants
-        for chant_segmnents in train_segmentation:
-            chant_str = ''.join(chant_segmnents)
-            train_data.append(chant_str)
-            chant = Chant(chant_str)
-            chant.segmentation = chant_segmnents
-            train_chants.append(chant)
-            for tone in chant_str:
-                train_tone_vocabulary.add(tone)
-        for chant_segmnents in dev_segmentation:
-            chant_str = ''.join(chant_segmnents)
-            dev_data.append(chant_str)
-            chant = Chant(chant_str)
-            chant.segmentation = chant_segmnents
-            dev_chants.append(chant)
-
-        # Initialize NPYLM and load all training chants to it
-        self.npylm = NPYLM(self.max_segment_size, self.init_d, self.init_theta, 
-                            self.init_a, self.init_b,
-                            train_tone_vocabulary,
-                            self.beta_stops, self.beta_passes,
-                            self.d_a, self.d_b, self.theta_alpha, self.theta_beta)
-
-        for chant in train_chants:
-            self.npylm.add_chant(chant)
-
-        # Training
-        for i in range(epochs):
-            blocked_gibbs_iteration(self.npylm, train_chants)
-            apply_hyperparameters_learning(self.npylm, train_chants, d_theta_learning, poisson_learning)
-
-            # Store and print iteration statistics
-            if (i+1)%print_each_nth_iteration:
-                train_segments, train_perplexity = self.predict_segments(train_data)
-                dev_segments, dev_perplexity = self.predict_segments(dev_data)
-                statistics.add_new_iteration(i+1, train_segments, dev_segments, train_perplexity, dev_perplexity)
-
-        # plot iteration statistics charts and store the model
-        statistics.plot_all_statistics()
-
 
     cpdef tuple predict_segments(self, list chants):
         """

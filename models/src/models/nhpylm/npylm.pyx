@@ -233,7 +233,6 @@ cdef class NPYLM():
         """
         if segment == EOC:
             return 1.0/len(self.tone_vocabulary)
-
         # First, get prob from tone HPYLM
         cdef float prob = 1.0
         cdef list segment_tones = [BOS] + [*segment] + [EOS]

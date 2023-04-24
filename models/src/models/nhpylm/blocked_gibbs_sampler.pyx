@@ -166,6 +166,7 @@ cdef void __backward_sampling(NPYLM npylm, Chant chant, np.ndarray alpha, dict b
                 # first gram: (t-k+1):(k), second gram: w (by the "vector indexing")
                 prob = npylm.get_bigram_probability(chant.chant_string[t-k:t], w)
             probs.append(prob * alpha[t, k])
+
         k = k_candidates[random_choice(probs)]
         w = chant.chant_string[t-k:t]
         t -= k

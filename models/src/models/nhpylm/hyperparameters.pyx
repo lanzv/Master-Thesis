@@ -203,7 +203,7 @@ cdef void __recursive_shpylm_d_theta_preparation(SHPYLMNode node, np.ndarray sum
         child = node.children[context]
         # Update value arrays
         sum1_minus_y_ui[child.depth] += __get_shpylm_1_minus_y_ui(child)
-        sum1_minus_z_uwkj[child.depth] += __get_shpylm_1_minus_z_uwkj_sum(node)
+        sum1_minus_z_uwkj[child.depth] += __get_shpylm_1_minus_z_uwkj_sum(child)
         sumy_ui[child.depth] += __get_shpylm_y_ui_sum(child)
         sumlogx_u[child.depth] += __get_shpylm_logx_u(child)
         # Recursive call
@@ -231,7 +231,7 @@ cdef float __get_shpylm_1_minus_y_ui(SHPYLMNode node):
         for i in range(1,node.t_h):
             prob = npylm.shpylm_thetas[node.depth] / \
                     (npylm.shpylm_thetas[node.depth] + npylm.shpylm_ds[node.depth] * i)
-            final_sum += 1-bernoulli(prob)
+            final_sum += (1-bernoulli(prob))
     return final_sum
 
 cdef float __get_shpylm_1_minus_z_uwkj_sum(SHPYLMNode node):
@@ -261,7 +261,7 @@ cdef float __get_shpylm_1_minus_z_uwkj_sum(SHPYLMNode node):
             if c_whk >= 2:
                 for j in range(1,c_whk):
                     prob = (j - 1) / (j - npylm.shpylm_ds[node.depth])
-                    final_sum += 1 - bernoulli(prob)
+                    final_sum += (1 - bernoulli(prob))
     return final_sum
 
 cdef float __get_shpylm_y_ui_sum(SHPYLMNode node):
@@ -299,10 +299,10 @@ cdef float __get_shpylm_logx_u(SHPYLMNode node):
     Returns
     -------
     logx_u : float
-        log(Beta(theta+1,c_h-1)) for c_h >= 2, otherwise 0.0
+        log(Beta(theta+1,c_h-1)) for t_h >= 2, otherwise 0.0
     """
     cdef NPYLM npylm = node.npylm
-    if node.c_h >= 2:
+    if node.t_h >= 2:
         return log(np.random.beta(npylm.shpylm_thetas[node.depth] + 1, node.c_h - 1))
     else:
         return 0.0
@@ -413,7 +413,7 @@ cdef float __get_thpylm_1_minus_y_ui(THPYLMNode node):
         for i in range(1,node.t_h):
             prob = npylm.thpylm_thetas[node.depth] / \
                     (npylm.thpylm_thetas[node.depth] + npylm.thpylm_ds[node.depth] * i)
-            final_sum += 1-bernoulli(prob)
+            final_sum += (1-bernoulli(prob))
     return final_sum
 
 cdef float __get_thpylm_1_minus_z_uwkj_sum(THPYLMNode node):
@@ -443,7 +443,7 @@ cdef float __get_thpylm_1_minus_z_uwkj_sum(THPYLMNode node):
             if c_whk >= 2:
                 for j in range(1,c_whk):
                     prob = (j - 1) / (j - npylm.thpylm_ds[node.depth])
-                    final_sum += 1 - bernoulli(prob)
+                    final_sum += (1 - bernoulli(prob))
     return final_sum
 
 cdef float __get_thpylm_y_ui_sum(THPYLMNode node):
@@ -481,10 +481,10 @@ cdef float __get_thpylm_logx_u(THPYLMNode node):
     Returns
     -------
     logx_u : float
-        log(Beta(theta+1,c_h-1)) for c_h >= 2, otherwise 0.0
+        log(Beta(theta+1,c_h-1)) for t_h >= 2, otherwise 0.0
     """
     cdef NPYLM npylm = node.npylm
-    if node.c_h >= 2:
+    if node.t_h >= 2:
         return log(np.random.beta(npylm.thpylm_thetas[node.depth] + 1, node.c_h - 1))
     else:
         return 0.0
