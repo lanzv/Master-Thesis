@@ -1,6 +1,6 @@
 import numpy as np
 from pandas import DataFrame
-from src.utils.plotters import plot_mode_segment_statistics, plot_unique_segments_densities
+from src.utils.plotters import plot_mode_segment_statistics, plot_unique_segments_densities, plot_avg_seg_lengths_of_positions
 from decimal import Decimal, ROUND_HALF_UP
 
 def get_vocabulary_size(segmentation: list) -> int:
@@ -52,6 +52,8 @@ def show_mode_segment_statistics(segmentation, modes, mode_list = ["1", "2", "3"
          - number of distinct segments
          - number of vocabulary segments 
          - number of unqiue segments
+    Plot unique segment densities.
+    Plot average segment lengths.
 
     Parameters
     ----------
@@ -66,9 +68,11 @@ def show_mode_segment_statistics(segmentation, modes, mode_list = ["1", "2", "3"
     shared_dataframe, distinct_dataframe = get_2d_statistic_matrices(segmentation, modes, mode_list)
     unique_dataframe, vocabulary_sizes_dataframe = get_1d_statistic_matrices(segmentation, modes, mode_list)
     densities_dict = get_unique_segment_densities(segmentation, modes)
+    avg_seg_lengths_dict = get_average_segment_lengths_of_position(segmentation, modes)
     print("------------- Modes Vocabulary Statistics -------------")
     plot_mode_segment_statistics(shared_dataframe, distinct_dataframe, vocabulary_sizes_dataframe, unique_dataframe)
     plot_unique_segments_densities(densities_dict, mode_list)
+    plot_avg_seg_lengths_of_positions(avg_seg_lengths_dict, mode_list)
     print("-------------------------------------------------------")
 
 def get_2d_statistic_matrices(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
@@ -237,3 +241,56 @@ def get_unique_segment_densities(segmentation: list, modes: list, mode_list = ["
         densities[mode] /= num_chants[mode]
         densities[mode] *= 100
     return densities
+
+
+
+def get_average_segment_lengths_of_position(segmentation: list, modes: list, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    """
+    Collect data about average semgent lenghts for the specific
+    position of chant for each mode separatly.
+
+    Parameters
+    ----------
+    segmentation : list of list of strings
+        list of train chants represented as list of string segments
+        [["asda", "asdasd", "as", "ds"]]
+    modes : list of strings
+        list of train modes
+    mode_list : list of strings
+        list of all unique modes we have in dataset
+    Returns
+    -------
+    avg_seg_lenghts : dict
+        dict with keys of all modes, value is always a list of 400 elements, where 
+        each has a value of average length segment in that position over all chants 
+        of that mode. Index 399 stands for 100%, 199 stands for 50%, etc..
+    """
+    # Preprocess data
+    # Dictionary of all unique segments that occure in the specific mode
+    mode_unique_segments = {}
+    for mode in mode_list:
+        mode_unique_segments[mode] = set()
+
+    # Get Density Data
+    # Prepare Density
+    avg_seg_lenghts = {}
+    num_chants = {}
+    chant_scale = 400
+    for mode in mode_list:
+        num_chants[mode] = 0
+        avg_seg_lenghts[mode] = np.zeros((chant_scale)) # 100% in 400 cells -> 4 cells ~ 1%
+    # Get Percentage distribution of unique segments
+    for chant, mode in zip(segmentation, modes):
+        chant_len = len(''.join(chant))
+        actual_position = 0
+        tone_size = float(chant_scale)/float(chant_len)
+        segment_pointer = 0
+        num_chants[mode] += 1
+        for i in range(1, chant_scale+1):
+            while i > Decimal((actual_position + len(chant[segment_pointer]))*tone_size).quantize(0, ROUND_HALF_UP):
+                actual_position += len(chant[segment_pointer])
+                segment_pointer += 1
+            avg_seg_lenghts[mode][i-1] += len(chant[segment_pointer])
+    for mode in mode_list:
+        avg_seg_lenghts[mode] /= num_chants[mode]
+    return avg_seg_lenghts

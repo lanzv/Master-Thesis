@@ -77,7 +77,30 @@ def plot_mode_segment_statistics(
 
 
 
+def plot_avg_seg_lengths_of_positions(avg_seg_lengths: dict, labels = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+    """
+    Plot 8 avg seg length charts (x scale is measured in percentes).
+    Each chart is mapped to one mode. The chart shows us the statistics about average segment length
+    whether there are statistically longer segments at beggining or end or in the middle of chants.
 
+    Parameters
+    ----------
+    avg_seg_lengths : dict
+        dictionary of modes of numpy arrays - size of each array is 400, which corresponds to 100%
+        (index 0 corresponds to 0%, index 3 corresponds to 1% ... ), value at each index contains the
+        average semgnet length at the specific part (% of the whole chant of chant.
+    labels : list
+        list of modes
+    """
+    figure, axis = plt.subplots(1, len(labels))
+    for i, label in enumerate(labels):
+        axis[i].plot(np.arange(0.25, 100.25, 0.25), avg_seg_lengths[label])
+        axis[i].set_title("Average segment lengths for mode {}".format(label))
+        axis[i].set_xlabel("chant position (%)")
+        axis[i].set_ylabel("average segment length")
+    figure.set_size_inches(40, 5)
+    plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0.2, hspace=0.2)
+    plt.show()
 
 def plot_unique_segments_densities(densities: dict, labels = ["1", "2", "3", "4", "5", "6", "7", "8"]):
     """
