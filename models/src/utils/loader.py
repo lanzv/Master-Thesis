@@ -75,6 +75,38 @@ def prepare_dataset(liquescents:bool = False):
 
     return np.array(X), np.array(y)
 
+
+
+def load_ngram_segmentations(n: int, liquescents:bool = False):
+    """
+    The function will load ngram segmentations from cantus corpus using the bacor's prefiltered datasets.
+    The function rely on {train,test}-chants.csv files and {train,test}-representation-pitch.csv
+    files to be in working directory.
+
+    Parameters
+    ----------
+    n : int
+        n for ngram, in range of 1-16
+    liquescents : bool
+        true for include liquescents (the original form)
+        false for throw out all liquescents (basically lowercasing)
+    Returns
+    -------
+    ngram_segmentation : list of lists of strings
+        ngram segmentation of each chant, e.g. [["asda", "ddd", "a", "aaa"], ["dddg", "khk"]]
+    """
+    _, pitch_repr = load_chants()
+    ngram_segmentation = []
+    for segments in pitch_repr["{}-mer".format(n)]:
+        if liquescents:
+            ngram_segmentation.append(segments.split(' '))
+        else:
+            chant = segments.lower()
+            chant = chant.replace(")", "9")
+            ngram_segmentation.append(chant.split(' '))
+    return ngram_segmentation
+
+
 def load_word_segmentations(liquescents:bool = False):
     """
     The function will load word segmentations from cantus corpus using the bacor's prefiltered datasets.
