@@ -37,12 +37,17 @@ def load_chants(test_chants_file = "test-chants.csv",
 
     return chants, pitch_representations
 
-def prepare_dataset():
+def prepare_dataset(liquescents:bool = False):
     """
     Load {train,test}-chants.csv files and {train,test}-representation-pitch.csv files.
     Return processed chant melodies and its modes.
     The function rely on those csv files to be in working directory.
 
+    Parameters
+    ----------
+    liquescents : bool
+        true for include liquescents (the original form)
+        false for throw out all liquescents (basically lowercasing)
     Returns
     -------
     X : numpy array
@@ -59,17 +64,28 @@ def prepare_dataset():
                                                 chants.index):
         if not id_pitches == id_chant:
             raise ValueError("IDs of features and modes are not equal!")
-        X.append(segments.replace(' ', ''))
+        chant = segments.replace(' ', '')
+        if liquescents:
+            X.append(chant)
+        else:
+            chant = chant.lower()
+            chant = chant.replace(")", "9")
+            X.append(chant)
         y.append(str(mode))
 
     return np.array(X), np.array(y)
 
-def load_word_segmentations():
+def load_word_segmentations(liquescents:bool = False):
     """
     The function will load word segmentations from cantus corpus using the bacor's prefiltered datasets.
     The function rely on {train,test}-chants.csv files and {train,test}-representation-pitch.csv
     files to be in working directory.
 
+    Parameters
+    ----------
+    liquescents : bool
+        true for include liquescents (the original form)
+        false for throw out all liquescents (basically lowercasing)
     Returns
     -------
     word_segmentation : list of lists of strings
@@ -78,16 +94,26 @@ def load_word_segmentations():
     _, pitch_repr = load_chants()
     word_segmentation = []
     for segments in pitch_repr["words"]:
-        word_segmentation.append(segments.split(' '))
+        if liquescents:
+            word_segmentation.append(segments.split(' '))
+        else:
+            chant = segments.lower()
+            chant = chant.replace(")", "9")
+            word_segmentation.append(chant.split(' '))
     return word_segmentation
 
 
-def load_syllable_segmentations():
+def load_syllable_segmentations(liquescents:bool = False):
     """
     The function will load syllable segmentations from cantus corpus using the bacor's prefiltered datasets.
     The function rely on {train,test}-chants.csv files and {train,test}-representation-pitch.csv
     files to be in working directory.
 
+    Parameters
+    ----------
+    liquescents : bool
+        true for include liquescents (the original form)
+        false for throw out all liquescents (basically lowercasing)
     Returns
     -------
     syllable_segmentation : list of lists of strings
@@ -96,11 +122,16 @@ def load_syllable_segmentations():
     _, pitch_repr = load_chants()
     syllable_segmentation = []
     for segments in pitch_repr["syllables"]:
-        syllable_segmentation.append(segments.split(' '))
+        if liquescents:
+            syllable_segmentation.append(segments.split(' '))
+        else:
+            chant = segments.lower()
+            chant = chant.replace(")", "9")
+            syllable_segmentation.append(chant.split(' '))
     return syllable_segmentation
 
 
-def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings.csv"):
+def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings.csv", liquescents:bool = False):
     """
     The function will load phrase segmentation from preprocessed gregobase dataset.
     Chants have to be converted from gabc format into melody string, where '|' means the end of phrase.
@@ -109,6 +140,9 @@ def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings.
     ----------
     gregobase_phrases_csv : str
         path to preprocessed gregobase chant melodies file with '|' char symbolizes end of phrase
+    liquescents : bool
+        true for include liquescents (the original form)
+        false for throw out all liquescents (basically lowercasing)
     Returns
     -------
     phrase_segments : list of lists of strings
@@ -117,5 +151,10 @@ def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings.
     chants = pd.read_csv(gregobase_phrases_csv)
     phrase_segments = []
     for segments in chants["chant_strings"]:
-        phrase_segments.append(segments.split('|'))
+        if liquescents:
+            phrase_segments.append(segments.split('|'))
+        else:
+            chant = segments.lower()
+            chant = chant.replace(")", "9")
+            phrase_segments.append(chant.split('|'))
     return phrase_segments
