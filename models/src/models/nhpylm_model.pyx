@@ -123,7 +123,6 @@ cdef class NHPYLMModel:
                             train_tone_vocabulary,
                             self.beta_stops, self.beta_passes,
                             self.d_a, self.d_b, self.theta_alpha, self.theta_beta)
-
         for chant in train_chants:
             self.npylm.add_chant(chant)
 

@@ -117,8 +117,8 @@ cdef tuple __forward_filtering(NPYLM npylm, str chant_str):
                         bigram_cache_p[chant_str[t-k:t]][chant_str[t-k-j:t-k]] = prob
                     sum_prob += (prob * alpha[t-k, j])
 
-            alpha[t, k] = sum_prob
-            sum_alpha_t += sum_prob
+            alpha[t, k] = sum_prob*prod_scaling
+            sum_alpha_t += sum_prob*prod_scaling
 
         # Perform scaling to avoid underflowing
         for k in range(1, min(max_segment_size, t)+1):

@@ -124,7 +124,7 @@ cdef void update_poisson_k_probs(NPYLM npylm, int segment_samples = 20000):
     for i in range(npylm.max_segment_size):
         # Apply Laplace smoothing
         npylm.poisson_k_probs[i] = (length_occurences[i] + 1)/(segment_samples + npylm.max_segment_size)
-
+       
 
 
 
