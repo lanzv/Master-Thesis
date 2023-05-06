@@ -68,8 +68,7 @@ def prepare_dataset(liquescents:bool = False):
         if liquescents:
             X.append(chant)
         else:
-            chant = chant.lower()
-            chant = chant.replace(")", "9")
+            chant = ignore_liquescents(chant)
             X.append(chant)
         y.append(str(mode))
 
@@ -101,8 +100,7 @@ def load_ngram_segmentations(n: int, liquescents:bool = False):
         if liquescents:
             ngram_segmentation.append(segments.split(' '))
         else:
-            chant = segments.lower()
-            chant = chant.replace(")", "9")
+            chant = ignore_liquescents(segments)
             ngram_segmentation.append(chant.split(' '))
     return ngram_segmentation
 
@@ -129,8 +127,7 @@ def load_word_segmentations(liquescents:bool = False):
         if liquescents:
             word_segmentation.append(segments.split(' '))
         else:
-            chant = segments.lower()
-            chant = chant.replace(")", "9")
+            chant = ignore_liquescents(segments)
             word_segmentation.append(chant.split(' '))
     return word_segmentation
 
@@ -157,8 +154,7 @@ def load_syllable_segmentations(liquescents:bool = False):
         if liquescents:
             syllable_segmentation.append(segments.split(' '))
         else:
-            chant = segments.lower()
-            chant = chant.replace(")", "9")
+            chant = ignore_liquescents(segments)
             syllable_segmentation.append(chant.split(' '))
     return syllable_segmentation
 
@@ -186,7 +182,26 @@ def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings.
         if liquescents:
             phrase_segments.append(segments.split('|'))
         else:
-            chant = segments.lower()
-            chant = chant.replace(")", "9")
+            chant = ignore_liquescents(segments)
             phrase_segments.append(chant.split('|'))
     return phrase_segments
+
+
+
+def ignore_liquescents(chant: str):
+    """
+    Convert chant with liquescents to the basic form.
+
+    Parameters
+    ----------
+    chant : str
+        string of chant notes, spaces for segmenations allowed
+    Returns
+    -------
+    basic_chant : str
+        string of chant notes without liquescents
+    """
+    basic_chant = chant.lower()
+    basic_chant = basic_chant.replace(")", "9")
+    basic_chant = basic_chant.replace("(", "8")
+    return basic_chant
