@@ -3,7 +3,7 @@ import pandas as pd
 import csv
 
 
-def gabc2chantstrings(gabc_chants):
+def gabc2chantstrings(gabc_chants, no_differentia):
     """
     Convert all chants from gabc to volpiano format using gabc2volpiano project.
     If the project gabc2volpiano is not installed, use the function src.utils.importers.download_gabc2volpiano.
@@ -22,30 +22,46 @@ def gabc2chantstrings(gabc_chants):
     converter = VolpianoConverter()
     chants = []
     for gabc in gabc_chants:
-      try:
-          _, volpiano = converter.convert(gabc)
-          if '~' in volpiano:
-              print("~")
-          chant_string = volpiano.replace("-", "")
-          chant_string = chant_string.replace(".", "")
-          chant_string = chant_string.replace(" ", "")
-          chant_string = chant_string.replace("1", "")
-          chant_string = chant_string.replace("3", "") # Barline
-          chant_string = chant_string.replace("4", "") # Double barline
-          chant_string = chant_string.replace("6", "") # Middle barline
-          chant_string = chant_string.replace("7", "|") # Commas
-          if len(chant_string) > 0:
-              chants.append(chant_string)
-          else:
-              raise Exception("Chant has no melody..")
-      except Exception as e:
-        print("There was a converter error.", e)
+        try:
+            _, volpiano = converter.convert(gabc)
+            if '~' in volpiano:
+                print("~")
+            chant_string = volpiano.replace("-", "")
+            chant_string = chant_string.replace(".", "")
+            chant_string = chant_string.replace(" ", "")
+            chant_string = chant_string.replace("1", "")
+            chant_string = chant_string.replace("3", "") # Barline
+            #chant_string = chant_string.replace("4", "") # Double barline
+            chant_string = chant_string.replace("6", "") # Middle barline
+            chant_string = chant_string.replace("7", "|") # Commas
+
+            if no_differentia:
+                chant_string_no4 = ""
+                for note in chant_string:
+                    if not note == "4":
+                        chant_string_no4 += note
+                    else:
+                        break
+                chant_string = chant_string_no4
+            else:
+                chant_string = chant_string.replace("4", "")
+
+            if len(chant_string) > 0:  
+                if chant_string[-1] == "|":
+                    print(chant_string)
+                    print("WTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTFWTF")        
+                chants.append(chant_string)
+            else:
+                raise Exception("Chant has no melody..")
+        except Exception as e:
+            print("There was a converter error.", e)
 
     return chants
 
 def convert_gabc_to_chantstring_csv(gabc_csv_file = "gabc-chants.csv", 
                                     chant_strings_file = "gregobase-chantstrings-an.csv", 
-                                    genre = "an"):
+                                    genre = "an",
+                                    no_differentia = False):
     """
     Load gregobase chants.csv file, process all chant melodies in gabc format and store results into 
     gregobase-chantstrings csv file for the specific genre. The new csv file contains melodies with
@@ -65,7 +81,7 @@ def convert_gabc_to_chantstring_csv(gabc_csv_file = "gabc-chants.csv",
     for gabc, office_part in zip(pd_gabc["gabc"], pd_gabc["office_part"]):
         if genre == office_part:
             gabc_chants.append(gabc)
-    chant_strings = gabc2chantstrings(gabc_chants=gabc_chants)
+    chant_strings = gabc2chantstrings(gabc_chants=gabc_chants, no_differentia=no_differentia)
     rows = []
     for chant in chant_strings:
         rows.append([chant])
