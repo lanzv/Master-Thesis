@@ -329,7 +329,6 @@ cdef class NHPYLMModesModel:
                 blocked_gibbs_iteration(self.npylm_modes[mode], train_chants_modes[mode])
                 apply_hyperparameters_learning(self.npylm_modes[mode], train_chants_modes[mode], d_theta_learning, poisson_learning)
 
-            # ToDo
             if (i+1)%print_each_nth_iteration == 0:
                 train_segments, train_perplexity = self.predict_segments(train_data)
                 dev_segments, dev_perplexity = self.predict_segments(dev_data)
