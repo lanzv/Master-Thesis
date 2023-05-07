@@ -3,7 +3,9 @@ from nhpylm.blocked_gibbs_sampler cimport blocked_gibbs_iteration
 from nhpylm.hyperparameters cimport apply_hyperparameters_learning
 from nhpylm.npylm cimport NPYLM
 from nhpylm.chant cimport Chant
-from libc.math cimport exp, log
+from libc.math cimport exp
+import numpy as np
+cimport numpy as np
 import logging
 from src.utils.statistics import IterationStatistics
 from src.eval.mjww_score import mjwp_score
@@ -329,8 +331,8 @@ cdef class NHPYLMModesModel:
 
             # ToDo
             if (i+1)%print_each_nth_iteration == 0:
-                train_segments, train_perplexity, _ = self.predict_segments(train_data)
-                dev_segments, dev_perplexity, _ = self.predict_segments(dev_data)
+                train_segments, train_perplexity = self.predict_segments(train_data)
+                dev_segments, dev_perplexity = self.predict_segments(dev_data)
                 statistics.add_new_iteration(i+1, train_segments, dev_segments, train_perplexity, dev_perplexity)
 
         # plot iteration statistics charts and store the model
@@ -360,11 +362,9 @@ cdef class NHPYLMModesModel:
         cdef list segmentation
         cdef float log_prob
         cdef float perplexity
-        cdef float prob_sum
-        cdef float neg_inf = -float('inf')
+        cdef float prob_sum = 0.0
         for segmentation, log_prob in zip(segmentations, segmentation_log_probs):
-            if log_prob > neg_inf:
-                prob_sum += (log_prob/len(segmentation))
+            prob_sum += (log_prob/len(segmentation))
         perplexity = exp(-prob_sum/len(chants))
 
         return segmentations, perplexity, modes
@@ -391,11 +391,9 @@ cdef class NHPYLMModesModel:
         cdef list segmentation
         cdef float log_prob
         cdef float perplexity
-        cdef float prob_sum
-        cdef float neg_inf = -float('inf')
+        cdef float prob_sum = 0.0
         for segmentation, log_prob in zip(segmentations, segmentation_log_probs):
-            if log_prob > neg_inf:
-                prob_sum += (log_prob/len(segmentation))
+            prob_sum += (log_prob/len(segmentation))
         perplexity = exp(-prob_sum/len(chants))
 
         return segmentations, perplexity
@@ -438,11 +436,11 @@ cdef class NHPYLMModesModel:
         cdef NPYLM npylm
         for i in range(len(chants)):
             best_mode = ""
-            best_prob = -1
+            best_prob = -float('inf')
             for mode in mode_list:
                 chant_segmentation = segmented_chants_modes[mode][i]
                 npylm = self.npylm_modes[mode]
-                prob = exp(npylm.get_segmentation_log_probability(chant_segmentation))
+                prob = npylm.get_segmentation_log_probability(chant_segmentation)
                 if prob > best_prob:
                     best_mode = mode
                     best_prob = prob
@@ -455,10 +453,10 @@ cdef class NHPYLMModesModel:
         for i, best_mode in enumerate(best_modes):
             chant_segmentation = segmented_chants_modes[best_mode][i]
             new_best_mode = ""
-            best_prob = -1
+            best_prob = -float('inf')
             for mode in mode_list:
                 npylm = self.npylm_modes[mode]
-                prob = exp(npylm.get_segmentation_log_probability(chant_segmentation))
+                prob = npylm.get_segmentation_log_probability(chant_segmentation)
                 if prob > best_prob:
                     new_best_mode = mode
                     best_prob = prob
@@ -473,11 +471,11 @@ cdef class NHPYLMModesModel:
             modes.append(best_mode)
             chant_segmentation = segmented_chants_modes[best_mode][i]
             segmentations.append(chant_segmentation)
-            prob_sum = 0.0
+            prob_sum = -float('inf')
             for mode in mode_list:
                 npylm = self.npylm_modes[mode]
-                prob_sum += exp(npylm.get_segmentation_log_probability(chant_segmentation))
-            segmentation_log_probs.append(log(prob_sum))
+                prob_sum = np.logaddexp(prob_sum, npylm.get_segmentation_log_probability(chant_segmentation))
+            segmentation_log_probs.append(prob_sum)
 
         return modes, segmentations, segmentation_log_probs
         
