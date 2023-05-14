@@ -39,3 +39,41 @@ def analyze_chants(chants: list, modes: list):
         mode_statistics[mode] += 1
     print("\t Mode distribution", mode_statistics)
     print("----------------------------------------------------------------------------------")
+
+
+
+def analyze_phrases(chants: list):
+    """
+    Analyze gregobase dataset and print basic statistics
+        - number of chants
+        - average+minimal+maximal phrase length
+        - number of phrases
+
+    Parameters
+    ----------
+    chants : list of lists of strings
+        phrase segmentation of each chant, e.g. [["asda", "ddd", "a", "aaa"], ["dddg", "khk"]]
+    """
+    print("-------------------------------- Dataset Analyzis --------------------------------")
+    
+    # Analyze chants
+    print("\t Number of chants: {}".format(len(chants)))
+    min_phrase_length = sys.maxsize
+    max_phrase_length = 0
+    phrase_length_sum = 0
+    phrase_count = 0
+    for chant in chants:
+        for phrase in chant:
+            phrase_count += 1
+            phrase_length_sum += len(phrase)
+            if len(phrase) < min_phrase_length:
+                min_phrase_length = len(phrase)
+            if len(phrase) > max_phrase_length:
+                max_phrase_length = len(phrase)
+    print("\t Number of phrases: {}".format(phrase_count))
+    print("\t Average phrase length: {}".format(float(phrase_length_sum)/float(phrase_count)))
+    print("\t Maximal phrase length: {}".format(max_phrase_length))
+    print("\t Minimal phrase length: {}".format(min_phrase_length))
+    
+    
+    print("----------------------------------------------------------------------------------")

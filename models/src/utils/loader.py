@@ -180,10 +180,10 @@ def load_phrase_segmentations(gregobase_phrases_csv = "./gregobase-chantstrings.
     phrase_segments = []
     for segments in chants["chant_strings"]:
         if liquescents:
-            phrase_segments.append(segments.split('|'))
+            phrase_segments.append(list(filter(None, segments.split('|'))))
         else:
             chant = ignore_liquescents(segments)
-            phrase_segments.append(chant.split('|'))
+            phrase_segments.append(list(filter(None, chant.split('|'))))
     return phrase_segments
 
 
