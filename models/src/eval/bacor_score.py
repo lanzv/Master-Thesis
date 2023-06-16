@@ -271,26 +271,36 @@ def bacor_score(train_segmented_chants, train_modes,
             train_data, train_modes, test_data, test_modes, max_features = max_features_additative)
 
     # get melody-mode frequencies
-    melody_mode_frequencies_from_model = get_topsegments_frequency(
-        train_segmented_chants, train_modes, test_segmented_chants, test_modes,
+    melody_mode_frequencies_from_model_train = get_topsegments_frequency(
+        train_segmented_chants, train_modes,
+        top_melodies_from_model
+    )
+    melody_mode_frequencies_from_model_test = get_topsegments_frequency(
+        test_segmented_chants, test_modes,
         top_melodies_from_model
     )
     if include_additative:
-        melody_mode_frequencies_additative = get_topsegments_frequency(
-            train_segmented_chants, train_modes, test_segmented_chants, test_modes,
+        melody_mode_frequencies_additative_train = get_topsegments_frequency(
+            train_segmented_chants, train_modes,
+            top_melodies_additative
+        )
+        melody_mode_frequencies_additative_test = get_topsegments_frequency(
+            test_segmented_chants, test_modes,
             top_melodies_additative
         )
 
     selected_features = {
         "from_model": {
             "top_melodies": top_melodies_from_model,
-            "melody_mode_frequencies": melody_mode_frequencies_from_model
+            "melody_mode_frequencies_train": melody_mode_frequencies_from_model_train,
+            "melody_mode_frequencies_test": melody_mode_frequencies_from_model_test
         }
     }
     if include_additative:
         selected_features["additative"] = {
             "top_melodies": top_melodies_additative,
-            "melody_mode_frequencies": melody_mode_frequencies_additative
+            "melody_mode_frequencies_train": melody_mode_frequencies_additative_train,
+            "melody_mode_frequencies_test": melody_mode_frequencies_additative_test
         }
         
 
