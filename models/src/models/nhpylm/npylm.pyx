@@ -562,7 +562,7 @@ cdef class STables():
         cdef float theta = self.hpylmnode.npylm.shpylm_thetas[self.hpylmnode.depth]
 
         for c_hwk in self.tables:
-            posibilities.append(c_hwk - d)
+            posibilities.append(max(0, c_hwk - d))
         if len(posibilities) > 0:
             posibilities.append((theta+(d*t_h))*pwhcomma)
             table_k = random_choice(posibilities)
@@ -1052,7 +1052,7 @@ cdef class TTables():
         cdef float theta = self.hpylmnode.npylm.thpylm_thetas[self.hpylmnode.depth]
 
         for c_hwk in self.tables:
-            posibilities.append(c_hwk - d)
+            posibilities.append(max(0, c_hwk - d))
         if len(posibilities) > 0:
             posibilities.append((theta+(d*t_h))*pwhcomma)
             table_k = random_choice(posibilities)
