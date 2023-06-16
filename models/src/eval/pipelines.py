@@ -1,5 +1,5 @@
 from src.eval.bacor_score import bacor_score
-from src.eval.mjww_score import mjww_score
+from src.eval.maww_score import maww_score
 from src.eval.wufpc_score import wufpc_score
 from src.eval.wtmf_score import wtmf_score, show_mode_segment_frequencies
 from src.eval.naive_bayes_score import nb_score
@@ -8,7 +8,7 @@ from src.eval.feature_extractions import show_topsegments_densities
 from src.utils.plotters import plot_segment_mode_frequencies, plot_umm_confusion_matries, plot_trimmed_segments
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
-from src.utils.eval_helpers import list2string, get_bacor_model, get_bacor_nottuned_scores, get_random_reduced_list
+from src.utils.eval_helpers import list2string, get_bacor_model, get_bacor_nottuned_scores, get_random_reduced_list, get_nb_model
 from src.eval.segment_statistics import get_average_segment_length, get_vocabulary_size, show_mode_segment_statistics
 
 def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation, dev_modes):
@@ -29,8 +29,8 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     -------
     tuple
         several train and dev scores:
-        train_accuracy, train_f1, train_mjww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len, train_vocab_levenhstein,
-        dev_accuracy, dev_f1, dev_mjww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len, dev_vocab_levenhstein
+        train_accuracy, train_f1, train_maww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len, train_vocab_levenhstein,
+        dev_accuracy, dev_f1, dev_maww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len, dev_vocab_levenhstein
     """
     X_train, y_train = train_segmentation, train_modes
     X_test, y_test = dev_segmentation, dev_modes
@@ -48,8 +48,8 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     train_f1 = f1_score(y_train, train_predictions, average='weighted')
     dev_f1 = f1_score(y_test, dev_predictions, average='weighted')
     # Melody Justified With Words score
-    train_mjww, _, _ = mjww_score(train_segmentation)
-    dev_mjww, _, _ = mjww_score(dev_segmentation, len(train_segmentation))
+    train_maww, _, _ = maww_score(train_segmentation)
+    dev_maww, _, _ = maww_score(dev_segmentation, len(train_segmentation))
     # Weighted Top Mode Frequency score
     train_wtmf = wtmf_score(train_segmentation, train_modes)
     dev_wtmf = wtmf_score(dev_segmentation, dev_modes)
@@ -66,16 +66,16 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     train_vocab_levenhstein = vocab_levenshtein_score(train_segmentation)
     dev_vocab_levenhstein = vocab_levenshtein_score(dev_segmentation)
 
-    return train_accuracy, train_f1, train_mjww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len, train_vocab_levenhstein,\
-        dev_accuracy, dev_f1, dev_mjww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len, dev_vocab_levenhstein
+    return train_accuracy, train_f1, train_maww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len, train_vocab_levenhstein,\
+        dev_accuracy, dev_f1, dev_maww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len, dev_vocab_levenhstein
 
 
-def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, test_perplexity=-1, mjwp_score=-1,
+def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, test_perplexity=-1, mawp_score=-1,
         max_features_from_model = 100, max_features_additative = 100, include_additative = True, fe_occurence_coef=1):
     """
     The general evaluation pipeline of the final segmentations.
     Compute and visualize all scores we provide.
-    Model's scores as perplexities or MJWP score have to be passed in as function parameters.
+    Model's scores as perplexities or mawp score have to be passed in as function parameters.
 
     Parameters
     ----------
@@ -93,9 +93,9 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     test_perplexity : float
         perplexity of test segmentations from the model
         -1 for missing perplexity
-    mjwp_score : float
-        MJWP score of the model
-        -1 for missing mjwp
+    mawp_score : float
+        mawp score of the model
+        -1 for missing mawp
     max_features_from_model : int
         maximum number of features to get from feature exttraction from model
     max_features_additative : int
@@ -130,7 +130,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
         fe_occurence_coef = fe_occurence_coef
     )
     # Melody Justified With Words score
-    mjww_words, mjww_segments, mjww_average = mjww_score(X_train)
+    maww_words, maww_segments, maww_average = maww_score(X_train)
     # Weighted Top Mode Frequency score
     wtmf = wtmf_score(X_train, y_train)
     # Weighted Unique Final Pitch Count score
@@ -164,9 +164,9 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
     print()
     print("\t\t Melody Justified With Words")
-    print("\t\t\t words justification: {:.2f}% of segments".format(mjww_words*100))
-    print("\t\t\t segments justification: {:.2f}% of segments".format(mjww_segments*100))
-    print("\t\t\t average justification: {:.2f}% of segments".format(mjww_average*100))
+    print("\t\t\t words justification: {:.2f}% of segments".format(maww_words*100))
+    print("\t\t\t segments justification: {:.2f}% of segments".format(maww_segments*100))
+    print("\t\t\t average justification: {:.2f}% of segments".format(maww_average*100))
     print()
     print("\t\t Weighted Top Mode Frequency")
     print("\t\t\t wtmf: {:.2f}% of melodies".format(wtmf*100))
@@ -194,7 +194,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     )
 
     # Melody Justified With Words score
-    mjww_words, mjww_segments, mjww_average = mjww_score(X_test, len(X_train))
+    maww_words, maww_segments, maww_average = maww_score(X_test, len(X_train))
     # Weighted Top Mode Frequency score
     wtmf = wtmf_score(X_test, y_test)
     # Weighted Unique Final Pitch Count score
@@ -228,12 +228,12 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
     print()
     print("\t\t Melody Justified With Phrases")
-    print("\t\t\t mjww: {:.2f}% of segments".format(mjwp_score*100))
+    print("\t\t\t maww: {:.2f}% of segments".format(mawp_score*100))
     print()
     print("\t\t Melody Justified With Words")
-    print("\t\t\t words justification: {:.2f}% of segments".format(mjww_words*100))
-    print("\t\t\t segments justification: {:.2f}% of segments".format(mjww_segments*100))
-    print("\t\t\t average justification: {:.2f}% of segments".format(mjww_average*100))
+    print("\t\t\t words justification: {:.2f}% of segments".format(maww_words*100))
+    print("\t\t\t segments justification: {:.2f}% of segments".format(maww_segments*100))
+    print("\t\t\t average justification: {:.2f}% of segments".format(maww_average*100))
     print()
     print("\t\t Weighted Top Mode Frequency")
     print("\t\t\t wtmf: {:.2f}% of melodies".format(wtmf*100))
@@ -252,12 +252,20 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print()
 
     print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
-    plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
-    show_topsegments_densities(X_train+X_test, y_train+y_test, set(selected_features["from_model"]["top_melodies"]))
+    print("\tTraining statistics:")
+    plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies_train"])
+    show_topsegments_densities(X_train, y_train, set(selected_features["from_model"]["top_melodies"]))
+    print("\tTesting statistics:")
+    plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies_test"])
+    show_topsegments_densities(X_test, y_test, set(selected_features["from_model"]["top_melodies"]))
     if include_additative:
         print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
-        plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
-        show_topsegments_densities(X_train+X_test, y_train+y_test, set(selected_features["additative"]["top_melodies"]))
+        print("\tTraining statistics:")
+        plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies_train"])
+        show_topsegments_densities(X_train, y_train, set(selected_features["additative"]["top_melodies"]))
+        print("\tTesting statistics:")
+        plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies_test"])
+        show_topsegments_densities(X_test, y_test, set(selected_features["additative"]["top_melodies"]))
 
     print()
     print()
@@ -272,7 +280,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
 
 def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: int = 4159,
         max_features_from_model = 100, max_features_additative = 100, include_additative = True,
-        fe_occurence_coef = 1):
+        fe_occurence_coef = 10, all_features_vectorizer = False):
     """
     Assert that train_len+test_len=len(final_segmentation)
     Split final_segmentation into train and test.
@@ -299,6 +307,9 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
         in case of feature extraction from model - find the fe_occurence_coef times more 
         best features from model then max_features_from_model says, after that pick only 
         max_features_from_model features with the most occurences
+    all_features_vectorizer : boolean
+        true to not limit number of features considered by vectorizer
+        false when using 5000 as max features
     Returns
     -------
     scores : dict
@@ -324,7 +335,8 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
         max_features_from_model = max_features_from_model,
         max_features_additative = max_features_additative,
         include_additative = include_additative,
-        fe_occurence_coef = fe_occurence_coef
+        fe_occurence_coef = fe_occurence_coef,
+        all_features_vectorizer = all_features_vectorizer
     )
 
     # print scores
@@ -344,6 +356,18 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
                 scores["test"]["recall"]*100,
                 scores["test"]["f1"]*100,
                 scores["test"]["accuracy"]*100))
+    
+    # Compute NB accuracy and f1
+    nb_model = get_nb_model(all_features_vectorizer)
+    nb_model.fit(X_train, y_train)
+    nb_train_predictions = nb_model.predict(X_train)
+    nb_predictions = nb_model.predict(X_test)
+    print("TRAIN: NB accuracy: {:.2f}%, NB f1: {:.2f}%".format(
+        accuracy_score(y_test, nb_train_predictions)*100, f1_score(y_test, nb_train_predictions, average='weighted')*100
+    ))
+    print("TEST: NB accuracy: {:.2f}%, NB f1: {:.2f}%".format(
+        accuracy_score(y_test, nb_predictions)*100, f1_score(y_test, nb_predictions, average='weighted')*100
+    ))
 
 
     return scores, selected_features, trained_model

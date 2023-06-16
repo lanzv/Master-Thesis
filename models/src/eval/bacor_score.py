@@ -17,7 +17,7 @@ SVCLinear model to predict modes based on chant segmentation.
 """
 class _BacorModel:
     def run(self, X_train, y_train, X_test, y_test,
-            n_iter=100, n_splits=5):
+            n_iter=100, n_splits=5, all_features_vectorizer=False):
         """
         Run method that initialize model and train it by calling
         other functions. Inspired by Bacor.
@@ -35,7 +35,10 @@ class _BacorModel:
         n_iter : int
             number of SVC iterations
         n_splits : int
-            splists for cross validation for Stratified K Fold
+            splists for cross validation for Stratified K Fold     
+        all_features_vectorizer : boolean
+            true to not limit number of features considered by vectorizer
+            false when using 5000 as max features
         Returns
         -------
         train_pred : list of strings
@@ -51,7 +54,7 @@ class _BacorModel:
             'clf__C': loguniform(1e-3, 1e4),
             'clf__dual': [True, False]
         }
-        self.model = get_bacor_model()
+        self.model = get_bacor_model(all_features_vectorizer)
 
         # Train the model
         return self.__train_model(
@@ -203,7 +206,8 @@ def bacor_score(train_segmented_chants, train_modes,
                max_features_from_model = 100,
                max_features_additative = 100,
                include_additative = True,
-               fe_occurence_coef = 1):
+               fe_occurence_coef = 1,
+               all_features_vectorizer = False):
     """
     Compute bacor scores - accuracy and f1 - of SVC Linear model to predict
     modes the most accurate based on the given chant segmentation.
@@ -231,6 +235,9 @@ def bacor_score(train_segmented_chants, train_modes,
         in case of feature extraction from model - find the fe_occurence_coef times more 
         best features from model then max_features_from_model says, after that pick only 
         max_features_from_model features with the most occurences
+    all_features_vectorizer : boolean
+        true to not limit number of features considered by vectorizer
+        false when using 5000 as max features
     Returns
     -------
     scores : dict
@@ -256,7 +263,8 @@ def bacor_score(train_segmented_chants, train_modes,
 
     # train
     train_pred, test_pred = model.run(X_train = train_data, y_train = train_modes,
-                                       X_test = test_data, y_test = test_modes)
+                                       X_test = test_data, y_test = test_modes,
+                                       all_features_vectorizer = all_features_vectorizer)
     logging.info("The SVC model was trained with {} training data and {} testing data."
         .format(len(train_modes), len(test_modes)))
 
@@ -265,7 +273,7 @@ def bacor_score(train_segmented_chants, train_modes,
 
     # feature selection
     top_melodies_from_model = features_from_model(
-        train_data, train_modes, test_data, test_modes, max_features = max_features_from_model, occurence_coef=fe_occurence_coef)
+        train_data, train_modes, test_data, test_modes, max_features = max_features_from_model, occurence_coef=fe_occurence_coef, all_features_vectorizer=all_features_vectorizer)
     if include_additative:
         top_melodies_additative = features_by_additativ_approach(
             train_data, train_modes, test_data, test_modes, max_features = max_features_additative)

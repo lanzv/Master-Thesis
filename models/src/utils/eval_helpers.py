@@ -31,31 +31,51 @@ def list2string(segmented_chants):
 
 
 
-def get_bacor_model():
+def get_bacor_model(all_features_vectorizer=False):
     """
     Get the BACOR Linear SVC model with their hyperparameters and TfidfVectorizer.
     Hyperparameters are not tuned. We use this model only for fast iteraion evaluation.
     For the final evlauation score is used the BACOR model version which is tuned.
-
+    
+    Parameters
+    ----------
+    all_features_vectorizer : boolean
+        true to not limit number of features considered by vectorizer
+        false when using 5000 as max features
     Returns
     -------
     pipeline : Pipeline
         sklearn pipeline of TfidfVectorizer and LinearSVC, basically pipeline of BACOR model
     """
-    tfidf_params = dict(
-        # Defaults
-        strip_accents=None,
-        stop_words=None,
-        ngram_range=(1,1),
-        max_df=1.0,
-        min_df=1,
-        max_features=5000,
-        use_idf=True,
-        smooth_idf=True,
-        sublinear_tf=False,
-        lowercase=False,
-        analyzer='word',
-        token_pattern=r'[^ ]+')
+    if all_features_vectorizer:
+        tfidf_params = dict(
+            # Defaults
+            strip_accents=None,
+            stop_words=None,
+            ngram_range=(1,1),
+            max_df=1.0,
+            min_df=1,
+            use_idf=True,
+            smooth_idf=True,
+            sublinear_tf=False,
+            lowercase=False,
+            analyzer='word',
+            token_pattern=r'[^ ]+')
+    else:
+        tfidf_params = dict(
+            # Defaults
+            strip_accents=None,
+            stop_words=None,
+            ngram_range=(1,1),
+            max_df=1.0,
+            min_df=1,
+            max_features=5000,
+            use_idf=True,
+            smooth_idf=True,
+            sublinear_tf=False,
+            lowercase=False,
+            analyzer='word',
+            token_pattern=r'[^ ]+')
     svc_params = {
         'penalty': 'l2',
         'loss': 'squared_hinge',
@@ -67,28 +87,47 @@ def get_bacor_model():
         ('clf', LinearSVC(**svc_params)),
     ])
 
-def get_nb_model():
+def get_nb_model(all_features_vectorizer = False):
     """
     Get Multinomial Naive Bayes model with the Tfidf Vectorizer as part of the pipeline.
 
+    Parameters
+    ----------
+    all_features_vectorizer : boolean
+        true to not limit number of features considered by vectorizer
+        false when using 5000 as max features
     Returns
     -------
     pipeline : Pipeline
         sklearn pipeline of TfidfVectorizer and Multinomial Naive Bayes
     """
-    pipeline = Pipeline([('tfidf', TfidfVectorizer(strip_accents=None,
-                stop_words=None,
-                ngram_range=(1,1),
-                max_df=1.0,
-                min_df=1,
-                max_features=5000,
-                use_idf=True,
-                smooth_idf=True,
-                sublinear_tf=False,
-                lowercase=False,
-                analyzer='word',
-                token_pattern=r'[^ ]+')),
-                ('clf', MultinomialNB(alpha=0))])
+    if all_features_vectorizer:
+        pipeline = Pipeline([('tfidf', TfidfVectorizer(strip_accents=None,
+                    stop_words=None,
+                    ngram_range=(1,1),
+                    max_df=1.0,
+                    min_df=1,
+                    use_idf=True,
+                    smooth_idf=True,
+                    sublinear_tf=False,
+                    lowercase=False,
+                    analyzer='word',
+                    token_pattern=r'[^ ]+')),
+                    ('clf', MultinomialNB(alpha=0))])
+    else:
+        pipeline = Pipeline([('tfidf', TfidfVectorizer(strip_accents=None,
+            stop_words=None,
+            ngram_range=(1,1),
+            max_df=1.0,
+            min_df=1,
+            max_features=5000,
+            use_idf=True,
+            smooth_idf=True,
+            sublinear_tf=False,
+            lowercase=False,
+            analyzer='word',
+            token_pattern=r'[^ ]+')),
+            ('clf', MultinomialNB(alpha=0))])
     return pipeline
 
 def get_bacor_nottuned_scores(train_chants, train_modes, test_chants, test_modes):
@@ -123,8 +162,7 @@ def get_bacor_nottuned_scores(train_chants, train_modes, test_chants, test_modes
 
 
 
-def get_topsegments_frequency(train_segmented_chants, train_modes,
-                            test_segmented_chants, test_modes,
+def get_topsegments_frequency(segmented_chants, modes,
                             top_segments: list, ignore_segments: bool = False):
     """
     Get frequency dataframe of top segments (that could be get from feature extraction methods)
@@ -133,14 +171,10 @@ def get_topsegments_frequency(train_segmented_chants, train_modes,
 
     Parameters
     ----------
-    train_segmented_chants : list of lists of strings
-        list of segmented training chants represented as list of segments
-    train_modes : list of lists of chars
-        list of training chant modes
-    test_segmented_chants : list of lists of strings
-        list of segmented testing chants represented as list of segments
-    test_modes : list of lists of chars
-        list of testing chant modes
+    segmented_chants : list of lists of strings
+        list of segmented chants represented as list of segments
+    modes : list of lists of chars
+        list of chant modes
     top_segments : list of strings
         list of segments that are chosen from feature selection pipeline
     ignore_segments : bool
@@ -156,42 +190,20 @@ def get_topsegments_frequency(train_segmented_chants, train_modes,
     """
     top_segment_set = set(top_segments)
     melody_frequencies = {}
-    # collect training data
-    for segments, mode in zip(train_segmented_chants, train_modes):
+    for segment in top_segment_set:
+        melody_frequencies[segment] = {}
+    # collect data
+    for segments, mode in zip(segmented_chants, modes):
         if ignore_segments:
             chant = ''.join(segments)
             for melody in top_segment_set:
                 if melody in chant:
-                    if not melody in melody_frequencies:
-                        melody_frequencies[melody] = {}
                     if not mode in melody_frequencies[melody]:
                         melody_frequencies[melody][mode] = 0
                     melody_frequencies[melody][mode] += 1
         else:
             for segment in segments:
                 if segment in top_segment_set:
-                    if not segment in melody_frequencies:
-                        melody_frequencies[segment] = {}
-                    if not mode in melody_frequencies[segment]:
-                        melody_frequencies[segment][mode] = 0
-                    melody_frequencies[segment][mode] += 1
-
-    # collect test data
-    for segments, mode in zip(test_segmented_chants, test_modes):
-        if ignore_segments:
-            chant = ''.join(segments)
-            for melody in top_segment_set:
-                if melody in chant:
-                    if not melody in melody_frequencies:
-                        melody_frequencies[melody] = {}
-                    if not mode in melody_frequencies[melody]:
-                        melody_frequencies[melody][mode] = 0
-                    melody_frequencies[melody][mode] += 1
-        else:
-            for segment in segments:
-                if segment in top_segment_set:
-                    if not segment in melody_frequencies:
-                        melody_frequencies[segment] = {}
                     if not mode in melody_frequencies[segment]:
                         melody_frequencies[segment][mode] = 0
                     melody_frequencies[segment][mode] += 1

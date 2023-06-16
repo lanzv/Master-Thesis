@@ -12,7 +12,7 @@ from decimal import Decimal, ROUND_HALF_UP
 # BACOR feature selection functions
 # model is a pipeline of TFIDF vectorizer and SVC linear classifier)
 
-def features_from_model(X_train, y_train, X_test, y_test, max_features = None, occurence_coef=1):
+def features_from_model(X_train, y_train, X_test, y_test, max_features = None, occurence_coef=10, all_features_vectorizer = False):
     """
     Fit the SVC model, with no tuning, find the top max_features*occurence_coef features with highest coeficients.
     Take the top max_features of them with the higher occurence number in trainin dataset.
@@ -33,12 +33,15 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None, o
     occurence_coef :  int
         find the fe_occurence_coef times more best features from model then max_features_from_model says, 
         after that pick only max_features_from_model features with the most occurences
+    all_features_vectorizer : boolean
+        true to not limit number of features considered by vectorizer
+        false when using 5000 as max features
     Returns
     -------
     top_melodies : list of strings
         list of top max_features or len(vocabulary) melodies selected by this method
     """
-    bacor_model = get_bacor_model()
+    bacor_model = get_bacor_model(all_features_vectorizer)
 
     if max_features != None:
         max_features *= occurence_coef
@@ -84,10 +87,10 @@ def features_from_model(X_train, y_train, X_test, y_test, max_features = None, o
 
     # Evaluate bacor_model on reduced features
     train_data, test_data = list2string(X_train_new), list2string(X_test_new)
-    bacor_model = get_bacor_model()
+    bacor_model = get_bacor_model(all_features_vectorizer)
     bacor_model.fit(train_data, y_train)
     bacor_predictions = bacor_model.predict(test_data)
-    nb_model = get_nb_model()
+    nb_model = get_nb_model(all_features_vectorizer)
     nb_model.fit(train_data, y_train)
     nb_predictions = nb_model.predict(test_data)
     logging.info("From model approach - reduced bacor accuracy: {:.2f}%, reduced bacor f1: {:.2f}% - reduced NB accuracy: {:.2f}%, reduced NB f1: {:.2f}%".format(
