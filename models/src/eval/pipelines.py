@@ -358,10 +358,12 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
                 scores["test"]["accuracy"]*100))
     
     # Compute NB accuracy and f1
+    train_data = list2string(X_train)
+    test_data = list2string(X_test)
     nb_model = get_nb_model(all_features_vectorizer)
     nb_model.fit(X_train, y_train)
-    nb_train_predictions = nb_model.predict(X_train)
-    nb_predictions = nb_model.predict(X_test)
+    nb_train_predictions = nb_model.predict(train_data)
+    nb_predictions = nb_model.predict(test_data)
     print("TRAIN: NB accuracy: {:.2f}%, NB f1: {:.2f}%".format(
         accuracy_score(y_test, nb_train_predictions)*100, f1_score(y_test, nb_train_predictions, average='weighted')*100
     ))
