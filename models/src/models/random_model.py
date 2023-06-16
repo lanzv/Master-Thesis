@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from src.eval.mjww_score import mjwp_score
+from src.eval.maww_score import mawp_score
 
 class RandomModel():
     def __init__(self, min_size, max_size):
@@ -54,11 +54,11 @@ class RandomModel():
 
     def get_mjwp_score(self):
         """
-        Compute Melody Justified With Phrases score of this model.
+        Compute Melody Aligned With Phrases score of this model.
 
         Returns
         -------
-        mjwp_score : float
-            mjwp score of this model
+        mawp_score : float
+            mawp score of this model
         """
-        return mjwp_score(self)
+        return mawp_score(self)

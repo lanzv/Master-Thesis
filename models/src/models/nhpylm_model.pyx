@@ -8,7 +8,7 @@ import numpy as np
 cimport numpy as np
 import logging
 from src.utils.statistics import IterationStatistics
-from src.eval.mjww_score import mjwp_score
+from src.eval.maww_score import mawp_score
 
 cdef class NHPYLMModel:
     cdef int max_segment_size
@@ -175,16 +175,16 @@ cdef class NHPYLMModel:
         perplexity = exp(-prob_sum/len(segmented_chants))
         return segmented_chants, perplexity
 
-    cpdef float get_mjwp_score(self):
+    cpdef float get_mawp_score(self):
         """
-        Use mjwp_score function to compute mjwp score of this model.
+        Use mawp_score function to compute mawp score of this model.
 
         Returns
         -------
-        mjwp_score : float
-            melody justified with phrase score
+        mawp_score : float
+            melody aligned with phrase score
         """
-        return mjwp_score(self)
+        return mawp_score(self)
 
 cdef class NHPYLMModesModel:
     cdef int max_segment_size
@@ -480,13 +480,13 @@ cdef class NHPYLMModesModel:
         
 
 
-    cpdef float get_mjwp_score(self):
+    cpdef float get_mawp_score(self):
         """
-        Use mjwp_score function to compute mjwp score of this model.
+        Use mawp_score function to compute mawp score of this model.
 
         Returns
         -------
-        mjwp_score : float
-            melody justified with phrase score
+        mawp_score : float
+            melody aligned with phrase score
         """
-        return mjwp_score(self)
+        return mawp_score(self)

@@ -118,7 +118,7 @@ class IterationStatistics():
             "Train Perplexity": (self.train_statistics["iterations"], self.train_statistics["perplexity"]),
             "Train Vocabulary Size": (self.train_statistics["iterations"], self.train_statistics["vocab_size"]),
             "Train Average Segment Length": (self.train_statistics["iterations"], self.train_statistics["avg_segment_len"]),
-            "Train Melody Justified With Words (%)": (self.train_statistics["iterations"], self.train_statistics["mjww"]),
+            "Train Melody Aligned With Words (%)": (self.train_statistics["iterations"], self.train_statistics["mjww"]),
             "Train Weighted Top Mode Frequency (%)": (self.train_statistics["iterations"], self.train_statistics["wtmf"]),
             "Train Weighted Unique Final Pitch Count": (self.train_statistics["iterations"], self.train_statistics["wufpc"]),
             "Train Vocabulary Levenhstein Score": (self.train_statistics["iterations"], self.train_statistics["vocab_levenhstein"])
@@ -131,7 +131,7 @@ class IterationStatistics():
             "Dev Perplexity": (self.dev_statistics["iterations"], self.dev_statistics["perplexity"]),
             "Dev Vocabulary Size": (self.dev_statistics["iterations"], self.dev_statistics["vocab_size"]),
             "Dev Average Segment Length": (self.dev_statistics["iterations"], self.dev_statistics["avg_segment_len"]),
-            "Dev Melody Justified With Words (%)": (self.dev_statistics["iterations"], self.dev_statistics["mjww"]),
+            "Dev Melody Aligned With Words (%)": (self.dev_statistics["iterations"], self.dev_statistics["mjww"]),
             "Dev Weighted Top Mode Frequency (%)": (self.dev_statistics["iterations"], self.dev_statistics["wtmf"]),
             "Dev Weighted Unique Final Pitch Count": (self.dev_statistics["iterations"], self.dev_statistics["wufpc"]),
             "Dev Vocabulary Levenhstein Score": (self.dev_statistics["iterations"], self.dev_statistics["vocab_levenhstein"])

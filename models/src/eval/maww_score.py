@@ -1,8 +1,8 @@
 from src.utils.loader import load_word_segmentations, load_phrase_segmentations
 
-def mjww_score(segmented_chants, chant_offset = 0):
+def maww_score(segmented_chants, chant_offset = 0):
     """
-    Melody Justified With Words score
+    Melody Aligned With Words score
     Frequency of words that end with end of any segment.
     mjww_words = (1/word_segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
     mjww_segments = (1/segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
@@ -17,9 +17,9 @@ def mjww_score(segmented_chants, chant_offset = 0):
     Returns
     -------
     mjww_words : float
-        mjww score - how many words are justified correctly with segments
+        mjww score - how many words are aligned correctly with segments
     mjww_segments : float
-        mjww score - how many segments are justified correctly with words
+        mjww score - how many segments are aligned correctly with words
     mjww_average : float
         mjww score - average of both mjww_words and mjww_segments
     """
@@ -49,9 +49,9 @@ def mjww_score(segmented_chants, chant_offset = 0):
     return mjww_words, mjww_segments, mjww_average
 
 
-def mjwp_score(model):
+def mawp_score(model):
     """
-    Melody Justified With Phrase score
+    Melody Aligned With Phrase score
     Frequency of phrases that end with end of any segment.
     mjwp = (1/phrase_segment_num)* Sum_phrase_segment_p_ends_at_same_index_as_any_segment(1)
 
