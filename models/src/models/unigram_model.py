@@ -4,8 +4,9 @@ from collections import defaultdict
 import logging
 from src.utils.loader import load_word_segmentations
 from src.models.final_range_classifier import FinalRangeClassifier
-from src.eval.mjww_score import mjwp_score
+from src.eval.maww_score import mawp_score
 from src.utils.statistics import IterationStatistics
+from math import log, exp
 
 class UnigramModel:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
@@ -17,7 +18,7 @@ class UnigramModel:
 
 
     def train(self, train_chants, dev_chants, train_modes, dev_modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
-                         alpha = 1, k_best = 15, print_each = 1):
+                         alpha=0.00000000000001, k_best = 15, print_each = 1):
         # Init model
         self.__init_model()
         self.__generate_vocabulary(train_chants)
@@ -34,13 +35,13 @@ class UnigramModel:
         chant_segmentation = init_segmentation
         for i in range(iterations):
             if i%print_each == 0:
-                self.__show_iteration_statistics(statistics, i, train_chants, dev_chants)
+                self.__show_iteration_statistics(statistics, i, train_chants, dev_chants, alpha=alpha, k_best=k_best)
             chant_segmentation = self.__train_iteration(chant_segmentation, k_best = k_best, alpha = alpha)
         
-        self.__show_iteration_statistics(statistics, i+1, train_chants, dev_chants)
+        self.__show_iteration_statistics(statistics, iterations, train_chants, dev_chants, alpha=alpha, k_best=k_best)
         statistics.plot_all_statistics()
 
-    def predict_segments(self, chants, k_best=15, alpha=1):
+    def predict_segments(self, chants, k_best=15, alpha=0.00000000000001):
         final_segmentation = []
         log_prob_sum = 0
         for chant_string in chants:
@@ -48,18 +49,17 @@ class UnigramModel:
             new_segments, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string],
                                                       k_best=k_best, alpha=alpha, argmax=True)
             final_segmentation.append(new_segments)
-            if chant_prob > 0:
-                log_prob_sum += np.log(chant_prob)
-        perplexity = np.exp(-log_prob_sum/len(chants))
+            log_prob_sum += (chant_prob/len(new_segments))
+        perplexity = exp(-log_prob_sum/len(chants))
         return final_segmentation, perplexity
 
-    def get_mjwp_score(self):
-        return mjwp_score(self)
+    def get_mawp_score(self):
+        return mawp_score(self)
 
     # ------------------------------- Statistics ----------------------------------
-    def __show_iteration_statistics(self, statistics: IterationStatistics, iteration, train_data, dev_data):
-        train_segments, train_perplexity = self.predict_segments(train_data)
-        dev_segments, dev_perplexity = self.predict_segments(dev_data)
+    def __show_iteration_statistics(self, statistics: IterationStatistics, iteration, train_data, dev_data, alpha, k_best):
+        train_segments, train_perplexity = self.predict_segments(train_data, k_best=k_best, alpha=alpha)
+        dev_segments, dev_perplexity = self.predict_segments(dev_data, k_best=k_best, alpha=alpha)
         statistics.add_new_iteration(iteration, train_segments, dev_segments, train_perplexity, dev_perplexity)
 
     # ------------------------------- data structures updates -------------------------
@@ -195,7 +195,7 @@ class UnigramModel:
         chant = ''.join(chant_segments)
         # for each melody pitch, store the list of k_best nodes (prob, position, prev_node)
         trellis = [[] for _ in range((len(chant)+1))]
-        trellis[0] = [Node(0, 1, None)] # position = 0, prob = 1, prev_node = None
+        trellis[0] = [Node(0, log(1), None)] # position = 0, prob = 1, prev_node = None
         self.__chant_viterbi_optimization(chant_str=chant, trellis=trellis,
                                           k_best=k_best, alpha=alpha)
         return self.__decode_trellis(trellis, chant, argmax=argmax)
@@ -222,10 +222,10 @@ class UnigramModel:
                             /(self.total_segments + alpha*V)
         potential_candidates = graph[id]
         for i in range(len(graph[prev_id])):
-            new_prob = graph[prev_id][i].prob*new_segment_prob
-            potential_candidates.append(Node(id, new_prob, graph[prev_id][i]))
+            new_log_prob = graph[prev_id][i].log_prob + log(new_segment_prob)
+            potential_candidates.append(Node(id, new_log_prob, graph[prev_id][i]))
         potential_candidates_sorted = sorted(potential_candidates,
-                                             reverse=True, key=lambda x: x.prob)
+                                             reverse=True, key=lambda x: x.log_prob)
 
         graph[id] = potential_candidates_sorted[:k_best]
 
@@ -236,21 +236,22 @@ class UnigramModel:
 
 
         # Choose the final path
-        probs = np.array([path.prob for path in graph[-1]])
-        if len(probs) == 0:
+        log_probs = np.array([path.log_prob for path in graph[-1]])
+        if len(log_probs) == 0:
         # too small chant that is not segmentable into self.min_size,..,self.max_size segments
-            return [chant_str], 0
+            return [chant_str], -float('inf')
         if not argmax:
+            probs = np.array([exp(log_prob) for log_prob in log_probs])
             if probs.sum() == 0:
             # when probs.sum is too small, face it as a uniform distribution
                 probs = np.full((len(probs)), 1/len(probs))
             prob_ind = np.random.choice(
                 np.arange(0, len(probs)), p=probs/probs.sum())
             final_node = graph[-1][prob_ind]
-            final_prob = None # We don't need probability during training
+            final_log_prob = log_probs[prob_ind]
         else:
-            final_node = graph[-1][probs.argmax()]
-            final_prob = probs.max()
+            final_node = graph[-1][log_probs.argmax()]
+            final_log_prob = log_probs.max()
         final_segmentation_ids.append(final_node.position)
 
 
@@ -264,7 +265,7 @@ class UnigramModel:
         for i, j in zip(final_segmentation_ids[:-1], final_segmentation_ids[1:]):
             final_segmentation.append(chant_str[j:i])
         final_segmentation.reverse()
-        return final_segmentation, final_prob
+        return final_segmentation, final_log_prob
 
 
 class UnigramModelModes:
@@ -276,7 +277,7 @@ class UnigramModelModes:
         self.__init_model()
 
     def train(self, train_chants, dev_chants, train_modes, dev_modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
-                         alpha = 1, k_best = 15, print_each = 1,
+                         alpha=0.00000000000001, k_best = 15, print_each = 1,
                          final_range_classifier = False, mode_priors_uniform = True):
         # Init model
         self.__init_model()
@@ -292,28 +293,26 @@ class UnigramModelModes:
         chant_segmentation = init_segmentation
         for i in range(iterations):
             if i%print_each == 0:
-                self.__show_iteration_statistics(statistics, i, train_chants, dev_chants, final_range_classifier, mode_priors_uniform)
+                self.__show_iteration_statistics(statistics, i, train_chants, dev_chants, final_range_classifier, mode_priors_uniform, k_best = k_best, alpha = alpha)
             chant_segmentation = self.__train_iteration(chant_segmentation, train_modes, k_best = k_best, alpha = alpha)
 
-        self.__show_iteration_statistics(statistics, i+1, train_chants, dev_chants, final_range_classifier, mode_priors_uniform)
+        self.__show_iteration_statistics(statistics, iterations, train_chants, dev_chants, final_range_classifier, mode_priors_uniform, alpha=alpha, k_best=k_best)
         statistics.plot_all_statistics()
 
-    def predict_segments(self, chants, k_best=15, alpha=1, final_range_classifier = False,
+    def predict_segments(self, chants, k_best=15, alpha=0.00000000000001, final_range_classifier = False,
                          mode_priors_uniform = True, modes = None):
-        mode_probs = [1 for _ in range(len(chants))]
         if modes == None:
-            modes, mode_probs = self.predict_modes(chants, final_range_classifier = final_range_classifier,
+            modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
                                         mode_priors_uniform = mode_priors_uniform)
         final_segmentation = []
         log_prob_sum = 0
-        for chant_string, mode, mode_prob in zip(chants, modes, mode_probs):
+        for chant_string, mode in zip(chants, modes):
             assert type(chant_string) is str or type(chant_string) is np.str_
             new_segments, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
                                                       k_best=k_best, alpha=alpha, argmax=True)
             final_segmentation.append(new_segments)
-            if chant_prob > 0:
-                log_prob_sum += np.log(mode_prob*chant_prob)
-        perplexity = np.exp(-log_prob_sum/len(chants))
+            log_prob_sum += (chant_prob/len(new_segments))
+        perplexity = exp(-log_prob_sum/len(chants))
         return final_segmentation, perplexity
 
     def predict_modes(self, chants, k_best=15, alpha=1, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"], 
@@ -328,42 +327,34 @@ class UnigramModelModes:
             return FinalRangeClassifier.predict(chants=chants), [1 for _ in range(len(chants))]
         else:
             final_modes = []
-            mode_probs = []
             training_chants_num = 0
             for mode in self.chant_count:
                 training_chants_num += self.chant_count[mode]
             for chant_string in chants:
                 chosen_mode = None
-                best_prob = -1
-                pc = 0.0
+                best_prob = -float('inf')
                 assert type(chant_string) is str or type(chant_string) is np.str_
                 for mode in mode_list:
-                    _, chant_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
+                    _, chant_log_prob = self.__get_optimized_chant(chant_segments=[chant_string], mode=mode,
                                                             k_best=k_best, alpha=alpha, argmax=True)
-                    pc += chant_prob
                     if mode_priors_uniform:
                         pm = 1.0/float(len(mode_list))
                     else:
                         pm = float(self.chant_count[mode])/float(training_chants_num)
-                    if chant_prob*pm > best_prob:
+                    if chant_log_prob+log(pm) >= best_prob:
                         chosen_mode = mode
-                        best_prob = chant_prob*pm
+                        best_prob = chant_log_prob+log(pm)
                 final_modes.append(chosen_mode)
-                if pc != 0:
-                    mode_probs.append(best_prob/pc) # (chant_prob*pm)/pc ~ (p(c'|m)*p(m))/(p(c'))
-                else:
-                    assert best_prob == 0
-                    mode_probs.append(0.0)
-            return final_modes, mode_probs
+            return final_modes
 
-    def get_mjwp_score(self):
-        return mjwp_score(self)
+    def get_mawp_score(self):
+        return mawp_score(self)
 
     # --------------------------------- printers, plotters ----------------------------
     def __show_iteration_statistics(self, statistics: IterationStatistics, iteration, train_data, dev_data,
-                                    final_range_classifier, mode_priors_uniform):
-        train_segments, train_perplexity = self.predict_segments(train_data, final_range_classifier=final_range_classifier, mode_priors_uniform=mode_priors_uniform)
-        dev_segments, dev_perplexity = self.predict_segments(dev_data, final_range_classifier=final_range_classifier, mode_priors_uniform=mode_priors_uniform)
+                                    final_range_classifier, mode_priors_uniform, k_best, alpha):
+        train_segments, train_perplexity = self.predict_segments(train_data, final_range_classifier=final_range_classifier, mode_priors_uniform=mode_priors_uniform, k_best = k_best, alpha = alpha)
+        dev_segments, dev_perplexity = self.predict_segments(dev_data, final_range_classifier=final_range_classifier, mode_priors_uniform=mode_priors_uniform, k_best = k_best, alpha = alpha)
         statistics.add_new_iteration(iteration, train_segments, dev_segments, train_perplexity, dev_perplexity)
 
     # ------------------------------- data structures updates -------------------------
@@ -513,10 +504,10 @@ class UnigramModelModes:
         chant = ''.join(chant_segments)
         # for each melody pitch, store the list of k_best nodes (prob, position, prev_node)
         trellis = [[] for _ in range((len(chant)+1))]
-        trellis[0] = [Node(0, 1, None)] # position = 0, prob = 1, prev_node = None
+        trellis[0] = [Node(0, log(1), None)] # position = 0, prob = 1, prev_node = None
         self.__chant_viterbi_optimization(chant_str=chant, mode=mode, trellis=trellis,
                                           k_best=k_best, alpha=alpha)
-        return self.__decode_trellis(trellis, chant, argmax = argmax)
+        return self.__decode_trellis(trellis, chant, argmax = argmax, alpha = alpha)
 
 
 
@@ -540,34 +531,33 @@ class UnigramModelModes:
                             /(self.total_segments[mode] + alpha*V)
         potential_candidates = graph[id]
         for i in range(len(graph[prev_id])):
-            new_prob = graph[prev_id][i].prob*new_segment_prob
+            new_prob = graph[prev_id][i].log_prob + log(new_segment_prob)
             potential_candidates.append(Node(id, new_prob, graph[prev_id][i]))
         potential_candidates_sorted = sorted(potential_candidates,
-                                             reverse=True, key=lambda x: x.prob)
+                                             reverse=True, key=lambda x: x.log_prob)
 
         graph[id] = potential_candidates_sorted[:k_best]
 
 
 
-    def __decode_trellis(self, graph: list, chant_str: str, argmax: bool = False):
+    def __decode_trellis(self, graph: list, chant_str: str, argmax: bool = False, alpha = 1):
         final_segmentation_ids = []
 
 
         # Choose the final path
-        probs = np.array([path.prob for path in graph[-1]])
-        if len(probs) == 0:
+        log_probs = np.array([path.log_prob for path in graph[-1]])
+        if len(log_probs) == 0:
         # too small chant that is not segmentable into self.min_size,..,self.max_size segments
-            return [chant_str], 0
+            return [chant_str], -float('inf')
         if not argmax:
+            probs = np.array([exp(log_prob) for log_prob in log_probs])
             if probs.sum() == 0:
             # when probs.sum is too small, face it as a uniform distribution
                 probs = np.full((len(probs)), 1/len(probs))
             final_node = graph[-1][np.random.choice(
                 np.arange(0, len(probs)), p=probs/probs.sum())]
-            final_prob = None
         else:
-            final_node = graph[-1][probs.argmax()]
-            final_prob = probs.max()
+            final_node = graph[-1][log_probs.argmax()]
         final_segmentation_ids.append(final_node.position)
 
 
@@ -581,12 +571,22 @@ class UnigramModelModes:
         for i, j in zip(final_segmentation_ids[:-1], final_segmentation_ids[1:]):
             final_segmentation.append(chant_str[j:i])
         final_segmentation.reverse()
-        return final_segmentation, final_prob
+        final_log_prob = -float('inf')
+        for mode in self.vocabulary:
+            V = len(self.vocabulary[mode])
+            mode_log_prob = log(1)
+            for segment in final_segmentation:
+                mode_log_prob += log((self.segment_unigrams[mode][segment] + alpha*1)\
+                                /(self.total_segments[mode] + alpha*V))
+            final_log_prob = np.logaddexp(final_log_prob, mode_log_prob)
+            
+
+        return final_segmentation, final_log_prob
 
 
 
 class Node:
-    def __init__(self, position:int, prob:float, prev_node: "Node"):
+    def __init__(self, position:int, log_prob:float, prev_node: "Node"):
         self.position = position
-        self.prob = prob
+        self.log_prob = log_prob
         self.prev_node = prev_node
