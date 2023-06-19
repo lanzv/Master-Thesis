@@ -52,7 +52,7 @@ class RandomModel():
             rand_segments.append(new_chant_segments)
         return rand_segments, -1
 
-    def get_mjwp_score(self):
+    def get_mawp_score(self):
         """
         Compute Melody Aligned With Phrases score of this model.
 

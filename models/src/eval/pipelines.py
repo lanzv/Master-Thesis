@@ -47,7 +47,7 @@ def single_iteration_pipeline(train_segmentation, train_modes, dev_segmentation,
     # Bacor F1
     train_f1 = f1_score(y_train, train_predictions, average='weighted')
     dev_f1 = f1_score(y_test, dev_predictions, average='weighted')
-    # Melody Justified With Words score
+    # Melody Aligned With Words score
     train_maww, _, _ = maww_score(train_segmentation)
     dev_maww, _, _ = maww_score(dev_segmentation, len(train_segmentation))
     # Weighted Top Mode Frequency score
@@ -129,7 +129,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
         include_additative = include_additative,
         fe_occurence_coef = fe_occurence_coef
     )
-    # Melody Justified With Words score
+    # Melody Aligned With Words score
     maww_words, maww_segments, maww_average = maww_score(X_train)
     # Weighted Top Mode Frequency score
     wtmf = wtmf_score(X_train, y_train)
@@ -163,10 +163,10 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t Average Segment Length")
     print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
     print()
-    print("\t\t Melody Justified With Words")
-    print("\t\t\t words justification: {:.2f}% of segments".format(maww_words*100))
-    print("\t\t\t segments justification: {:.2f}% of segments".format(maww_segments*100))
-    print("\t\t\t average justification: {:.2f}% of segments".format(maww_average*100))
+    print("\t\t Melody Aligned With Words")
+    print("\t\t\t words alignment: {:.2f}% of segments".format(maww_words*100))
+    print("\t\t\t segments alignment: {:.2f}% of segments".format(maww_segments*100))
+    print("\t\t\t average alignment: {:.2f}% of segments".format(maww_average*100))
     print()
     print("\t\t Weighted Top Mode Frequency")
     print("\t\t\t wtmf: {:.2f}% of melodies".format(wtmf*100))
@@ -193,7 +193,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
         fe_occurence_coef = fe_occurence_coef
     )
 
-    # Melody Justified With Words score
+    # Melody Aligned With Words score
     maww_words, maww_segments, maww_average = maww_score(X_test, len(X_train))
     # Weighted Top Mode Frequency score
     wtmf = wtmf_score(X_test, y_test)
@@ -227,13 +227,13 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t Average Segment Length")
     print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
     print()
-    print("\t\t Melody Justified With Phrases")
+    print("\t\t Melody Aligned With Phrases")
     print("\t\t\t maww: {:.2f}% of segments".format(mawp_score*100))
     print()
-    print("\t\t Melody Justified With Words")
-    print("\t\t\t words justification: {:.2f}% of segments".format(maww_words*100))
-    print("\t\t\t segments justification: {:.2f}% of segments".format(maww_segments*100))
-    print("\t\t\t average justification: {:.2f}% of segments".format(maww_average*100))
+    print("\t\t Melody Aligned With Words")
+    print("\t\t\t words alignment: {:.2f}% of segments".format(maww_words*100))
+    print("\t\t\t segments alignment: {:.2f}% of segments".format(maww_segments*100))
+    print("\t\t\t average alignment: {:.2f}% of segments".format(maww_average*100))
     print()
     print("\t\t Weighted Top Mode Frequency")
     print("\t\t\t wtmf: {:.2f}% of melodies".format(wtmf*100))
@@ -251,7 +251,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print()
     print()
 
-    print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
+    print("Top selected melodic units - from model: {}".format(selected_features["from_model"]["top_melodies"]))
     print("\tTraining statistics:")
     plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies_train"])
     show_topsegments_densities(X_train, y_train, set(selected_features["from_model"]["top_melodies"]))
@@ -259,7 +259,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies_test"])
     show_topsegments_densities(X_test, y_test, set(selected_features["from_model"]["top_melodies"]))
     if include_additative:
-        print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
+        print("Top selected melodic units - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
         print("\tTraining statistics:")
         plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies_train"])
         show_topsegments_densities(X_train, y_train, set(selected_features["additative"]["top_melodies"]))
@@ -340,11 +340,17 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
     )
 
     # print scores
-    print("Top selected melodies - from model: {}".format(selected_features["from_model"]["top_melodies"]))
-    plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies"])
+    print("Top selected melodic units - from model: {}".format(selected_features["from_model"]["top_melodies"]))
+    print("\tTraining statistics:")
+    plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies_train"])
+    print("\tTesting statistics:")
+    plot_segment_mode_frequencies(selected_features["from_model"]["melody_mode_frequencies_test"])
     if include_additative:
-        print("Top selected melodies - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
-        plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies"])
+        print("Top selected melodic units - additative approach: {}".format(selected_features["additative"]["top_melodies"]))
+        print("\tTraining statistics:")
+        plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies_train"])
+        print("\tTesting statistics:")
+        plot_segment_mode_frequencies(selected_features["additative"]["melody_mode_frequencies_test"])
 
     print("Train scores \n\t Precision: {:.2f}% \n\t Recall: {:.2f}% \n\t F1: {:.2f}% \n\t Accuracy: {:.2f}%"
         .format(scores["train"]["precision"]*100,
@@ -361,11 +367,11 @@ def bacor_pipeline(final_segmentation, modes, train_len: int = 9706, test_len: i
     train_data = list2string(X_train)
     test_data = list2string(X_test)
     nb_model = get_nb_model(all_features_vectorizer)
-    nb_model.fit(X_train, y_train)
+    nb_model.fit(train_data, y_train)
     nb_train_predictions = nb_model.predict(train_data)
     nb_predictions = nb_model.predict(test_data)
     print("TRAIN: NB accuracy: {:.2f}%, NB f1: {:.2f}%".format(
-        accuracy_score(y_test, nb_train_predictions)*100, f1_score(y_test, nb_train_predictions, average='weighted')*100
+        accuracy_score(y_train, nb_train_predictions)*100, f1_score(y_train, nb_train_predictions, average='weighted')*100
     ))
     print("TEST: NB accuracy: {:.2f}%, NB f1: {:.2f}%".format(
         accuracy_score(y_test, nb_predictions)*100, f1_score(y_test, nb_predictions, average='weighted')*100

@@ -152,7 +152,7 @@ def plot_topsegments_densities(densities: dict, labels = ["1", "2", "3", "4", "5
         axis[i].plot(np.arange(0.25, 100.25, 0.25), densities[label])
         axis[i].set_title("Density of top segments for mode {}".format(label))
         axis[i].set_xlabel("chant position (%)")
-        axis[i].set_ylabel("unique occurences (%)")
+        axis[i].set_ylabel("top segments occurences (%)")
     figure.set_size_inches(40, 5)
     plt.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0.2, hspace=0.2)
     plt.show()
@@ -315,7 +315,7 @@ def plot_mode_frequencies(frequencies_data: dict, mode_labels = ["1", "2", "3", 
     """
     figure, axis = plt.subplots(len(mode_labels), 1)
     figure.set_figwidth(35)
-    figure.set_figheight(25)
+    figure.set_figheight(40)
     figure.tight_layout(pad=5.0)
     x = np.arange(len(frequencies_data["all"]["groups"]))
     for i, mode in enumerate(mode_labels):
@@ -323,5 +323,5 @@ def plot_mode_frequencies(frequencies_data: dict, mode_labels = ["1", "2", "3", 
         axis[i].plot(x, frequencies_data[mode]["frequencies"], label = mode, lw = 1)
         axis[i].set_title("mode {} occurences".format(mode))
         axis[i].set_xlabel("vocabulary segments")
-        axis[i].set_ylabel("segment occurences")
+        axis[i].set_ylabel("segment occurence counts")
     plt.show()
