@@ -4,9 +4,9 @@ def maww_score(segmented_chants, chant_offset = 0):
     """
     Melody Aligned With Words score
     Frequency of words that end with end of any segment.
-    mjww_words = (1/word_segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
-    mjww_segments = (1/segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
-    mjww_average = (mjww_words+mjww_segments)/2
+    maww_words = (1/word_segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
+    maww_segments = (1/segment_num)* Sum_word_segment_w_ends_at_same_index_as_any_segment(1)
+    maww_average = (maww_words+maww_segments)/2
 
     Parameters
     ----------
@@ -16,12 +16,12 @@ def maww_score(segmented_chants, chant_offset = 0):
         offset of word segmented chants, to map the same chants of both, segmented_chants and word segmentations
     Returns
     -------
-    mjww_words : float
-        mjww score - how many words are aligned correctly with segments
-    mjww_segments : float
-        mjww score - how many segments are aligned correctly with words
-    mjww_average : float
-        mjww score - average of both mjww_words and mjww_segments
+    maww_words : float
+        maww score - how many words are aligned correctly with segments
+    maww_segments : float
+        maww score - how many segments are aligned correctly with words
+    maww_average : float
+        maww score - average of both maww_words and maww_segments
     """
     total_words = 0
     total_segments = 0
@@ -42,11 +42,11 @@ def maww_score(segmented_chants, chant_offset = 0):
         total_segments += len(chant_segments)
 
     # Compute all scores
-    mjww_words = float(correct_segments)/float(total_segments)
-    mjww_segments = float(correct_segments)/float(total_words)
-    mjww_average = (mjww_words + mjww_segments)/2.0
+    maww_words = float(correct_segments)/float(total_words)
+    maww_segments = float(correct_segments)/float(total_segments)
+    maww_average = (maww_words + maww_segments)/2.0
 
-    return mjww_words, mjww_segments, mjww_average
+    return maww_words, maww_segments, maww_average
 
 
 def mawp_score(model):

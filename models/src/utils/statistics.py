@@ -18,7 +18,7 @@ class IterationStatistics():
         self.train_statistics = {
             "accuracy": [],
             "f1": [],
-            "mjww": [],
+            "maww": [],
             "wtmf": [],
             "wufpc": [],
             "vocab_size": [],
@@ -30,7 +30,7 @@ class IterationStatistics():
         self.dev_statistics = {
             "accuracy": [],
             "f1": [],
-            "mjww": [],
+            "maww": [],
             "wtmf": [],
             "wufpc": [],
             "vocab_size": [],
@@ -42,7 +42,7 @@ class IterationStatistics():
         self.train_modes = train_modes
         self.dev_modes = dev_modes
         # Print head of statistics table
-        print("Iteration (train / dev) |  bacor accuracy   |      bacor f1     |   vocab size  | avg segment len |       mjww        |        wtmf       |              wufpc            | vocab levenshtein |           perplexity          |")
+        print("Iteration (train / dev) |  bacor accuracy   |      bacor f1     |   vocab size  | avg segment len |       maww        |        wtmf       |              wufpc            | vocab levenshtein |           perplexity          |")
 
     def add_new_iteration(self, iteration: int, 
                           train_segments: list, dev_segments: list,
@@ -67,15 +67,15 @@ class IterationStatistics():
         """
         
         # Get Train and Dev results
-        train_accuracy, train_f1, train_mjww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len, train_vocab_levenhstein, \
-        dev_accuracy, dev_f1, dev_mjww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len, dev_vocab_levenhstein \
+        train_accuracy, train_f1, train_maww, train_wtmf, train_wufpc, train_vocab_size, train_avg_segment_len, train_vocab_levenhstein, \
+        dev_accuracy, dev_f1, dev_maww, dev_wtmf, dev_wufpc, dev_vocab_size, dev_avg_segment_len, dev_vocab_levenhstein \
             = single_iteration_pipeline(train_segments, self.train_modes, dev_segments, self.dev_modes)
     
         
         # Store data
         self.train_statistics["accuracy"].append(train_accuracy*100)
         self.train_statistics["f1"].append(train_f1*100)
-        self.train_statistics["mjww"].append(train_mjww*100)
+        self.train_statistics["maww"].append(train_maww*100)
         self.train_statistics["wtmf"].append(train_wtmf*100)
         self.train_statistics["wufpc"].append(train_wufpc)
         self.train_statistics["vocab_size"].append(train_vocab_size)
@@ -86,7 +86,7 @@ class IterationStatistics():
 
         self.dev_statistics["accuracy"].append(dev_accuracy*100)
         self.dev_statistics["f1"].append(dev_f1*100)
-        self.dev_statistics["mjww"].append(dev_mjww*100)
+        self.dev_statistics["maww"].append(dev_maww*100)
         self.dev_statistics["wtmf"].append(dev_wtmf*100)
         self.dev_statistics["wufpc"].append(dev_wufpc)
         self.dev_statistics["vocab_size"].append(dev_vocab_size)
@@ -101,7 +101,7 @@ class IterationStatistics():
                     train_f1*100, dev_f1*100,
                     train_vocab_size, dev_vocab_size,
                     train_avg_segment_len, dev_avg_segment_len,
-                    train_mjww*100, dev_mjww*100,
+                    train_maww*100, dev_maww*100,
                     train_wtmf*100, dev_wtmf*100,
                     train_wufpc, dev_wufpc,
                     train_vocab_levenhstein, dev_vocab_levenhstein,
@@ -118,7 +118,7 @@ class IterationStatistics():
             "Train Perplexity": (self.train_statistics["iterations"], self.train_statistics["perplexity"]),
             "Train Vocabulary Size": (self.train_statistics["iterations"], self.train_statistics["vocab_size"]),
             "Train Average Segment Length": (self.train_statistics["iterations"], self.train_statistics["avg_segment_len"]),
-            "Train Melody Aligned With Words (%)": (self.train_statistics["iterations"], self.train_statistics["mjww"]),
+            "Train Melody Aligned With Words (%)": (self.train_statistics["iterations"], self.train_statistics["maww"]),
             "Train Weighted Top Mode Frequency (%)": (self.train_statistics["iterations"], self.train_statistics["wtmf"]),
             "Train Weighted Unique Final Pitch Count": (self.train_statistics["iterations"], self.train_statistics["wufpc"]),
             "Train Vocabulary Levenhstein Score": (self.train_statistics["iterations"], self.train_statistics["vocab_levenhstein"])
@@ -131,7 +131,7 @@ class IterationStatistics():
             "Dev Perplexity": (self.dev_statistics["iterations"], self.dev_statistics["perplexity"]),
             "Dev Vocabulary Size": (self.dev_statistics["iterations"], self.dev_statistics["vocab_size"]),
             "Dev Average Segment Length": (self.dev_statistics["iterations"], self.dev_statistics["avg_segment_len"]),
-            "Dev Melody Aligned With Words (%)": (self.dev_statistics["iterations"], self.dev_statistics["mjww"]),
+            "Dev Melody Aligned With Words (%)": (self.dev_statistics["iterations"], self.dev_statistics["maww"]),
             "Dev Weighted Top Mode Frequency (%)": (self.dev_statistics["iterations"], self.dev_statistics["wtmf"]),
             "Dev Weighted Unique Final Pitch Count": (self.dev_statistics["iterations"], self.dev_statistics["wufpc"]),
             "Dev Vocabulary Levenhstein Score": (self.dev_statistics["iterations"], self.dev_statistics["vocab_levenhstein"])
