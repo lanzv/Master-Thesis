@@ -1,18 +1,14 @@
-from transformers import BertTokenizer, LineByLineTextDataset
-from transformers import BertConfig, BertForMaskedLM, DataCollatorForLanguageModeling
-from transformers import Trainer, TrainingArguments
+
 import wandb
 import os
 import torch
-from transformers import BertTokenizer, BertConfig, AdamW
-from transformers import get_linear_schedule_with_warmup, get_constant_schedule_with_warmup
+
 from src.models.bert.util import converter
 from src.models.bert.SegmentBERT import SegmentBERT
 from src.models.bert.trainer import distcriminative_train, generative_train
 from src.models.bert.segmentor import seg
 import os
 import torch
-from transformers import BertTokenizer, BertConfig
 from src.eval.maww_score import mawp_score
 
 
@@ -30,6 +26,9 @@ class BERT_Model:
     
     def pretrain(self, epochs = 40, key="4ab08e6414f3948952d1d8bb5cce3be222d8ffd9"):
         wandb.login(key=key)
+        from transformers import BertTokenizer, LineByLineTextDataset
+        from transformers import BertConfig, BertForMaskedLM, DataCollatorForLanguageModeling
+        from transformers import Trainer, TrainingArguments
         # Load the tokenizer
         tokenizer = BertTokenizer.from_pretrained(self.working_dir+"/"+self.vocab_file)
         bert_config = BertConfig.from_json_file(self.working_dir+"/"+self.config_file)
@@ -76,6 +75,8 @@ class BERT_Model:
 
 
     def train(self, num_epochs = 4, learning_epoch = 3200, border_I = 11.5, border_B = 8.6, prob_I_conf = -0.5, prob_B_conf = 0.5):
+        from transformers import BertTokenizer, BertConfig, AdamW
+        from transformers import get_linear_schedule_with_warmup, get_constant_schedule_with_warmup
         #dataset = args.dataset # 'pku' or 'msr'
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -134,6 +135,7 @@ class BERT_Model:
             distcriminative_train(model, optimizer, num_sample, texts, tokenizer, scheduler, start=i * learning_epoch + learning_epoch // 2, end=(i + 1) * learning_epoch, border_I = border_I, border_B = border_B)
 
     def predict_segments(self, chants):
+        from transformers import BertTokenizer, BertConfig
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = "0"
         model_dir = self.working_dir
@@ -157,7 +159,7 @@ class BERT_Model:
             final_result += result
             segmented_chants.append(final_result.split(" "))
 
-        return segmented_chants
+        return segmented_chants, -1 #-1 for unknown perplexity
 
-    def get_mawp(self):
+    def get_mawp_score(self):
         return mawp_score(self)
