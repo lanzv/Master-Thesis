@@ -228,7 +228,7 @@ def evaluation_pipeline(X_train, y_train, X_test, y_test, train_perplexity=-1, t
     print("\t\t\t avgerage: {:.2f} tones in one segment".format(avg_segment_len))
     print()
     print("\t\t Melody Aligned With Phrases")
-    print("\t\t\t maww: {:.2f}% of segments".format(mawp_score*100))
+    print("\t\t\t mawp: {:.2f}% of segments".format(mawp_score*100))
     print()
     print("\t\t Melody Aligned With Words")
     print("\t\t\t words alignment: {:.2f}% of segments".format(maww_words*100))
