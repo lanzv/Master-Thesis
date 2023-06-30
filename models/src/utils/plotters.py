@@ -278,6 +278,8 @@ def plot_trimmed_segments(trimmed_scores):
     plt.plot(x, y_both, label = "both side trimmed")
     plt.plot(x, y_rand, label = "baseline - random trimmed", color='gray', linestyle='dashed')
     plt.xticks(x)
+    plt.xlabel("number of removed segments")
+    plt.ylabel("bacor_accuracy (%)")
     plt.legend()
     plt.show()
 
@@ -295,6 +297,8 @@ def plot_trimmed_segments(trimmed_scores):
     plt.plot(x, y_both, label = "both side trimmed")
     plt.plot(x, y_rand, label = "baseline - random trimmed", color='gray', linestyle='dashed')
     plt.xticks(x)
+    plt.xlabel("number of removed segments")
+    plt.ylabel("bacor_f1 (%)")
     plt.legend()
     plt.show()
 
