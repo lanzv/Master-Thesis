@@ -2,11 +2,6 @@
 import wandb
 import os
 import torch
-
-from src.models.bert.util import converter
-from src.models.bert.SegmentBERT import SegmentBERT
-from src.models.bert.trainer import distcriminative_train, generative_train
-from src.models.bert.segmentor import seg
 import os
 import torch
 from src.eval.maww_score import mawp_score
@@ -75,6 +70,8 @@ class BERT_Model:
 
 
     def train(self, num_epochs = 4, learning_epoch = 3200, border_I = 11.5, border_B = 8.6, prob_I_conf = -0.5, prob_B_conf = 0.5):
+        from src.models.bert.SegmentBERT import SegmentBERT
+        from src.models.bert.trainer import distcriminative_train, generative_train
         from transformers import BertTokenizer, BertConfig, AdamW
         from transformers import get_linear_schedule_with_warmup, get_constant_schedule_with_warmup
         #dataset = args.dataset # 'pku' or 'msr'
@@ -111,7 +108,7 @@ class BERT_Model:
         scheduler_class = get_constant_schedule_with_warmup
         scheduler_args = {'num_warmup_steps':int(0.5*num_training_steps)}
         scheduler = scheduler_class(**{'optimizer':optimizer}, **scheduler_args)
-        distcriminative_train(model, optimizer, num_sample, texts, tokenizer, -1, scheduler, start=0, end=num_training_steps, save_model=False, border_I = border_I, border_B = border_B)
+        distcriminative_train(model, optimizer, num_sample, texts, tokenizer, scheduler, start=0, end=num_training_steps, save_model=False, border_I = border_I, border_B = border_B)
         # save model
         coreModel = model.module if hasattr(model, "module") else model
         state_dict = coreModel.state_dict()
@@ -135,6 +132,9 @@ class BERT_Model:
             distcriminative_train(model, optimizer, num_sample, texts, tokenizer, scheduler, start=i * learning_epoch + learning_epoch // 2, end=(i + 1) * learning_epoch, border_I = border_I, border_B = border_B)
 
     def predict_segments(self, chants):
+        from src.models.bert.util import converter
+        from src.models.bert.SegmentBERT import SegmentBERT
+        from src.models.bert.segmentor import seg
         from transformers import BertTokenizer, BertConfig
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = "0"
