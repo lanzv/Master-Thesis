@@ -2,9 +2,9 @@
 
 This repository contains the data and code for the Master Thesis 'Unsupervised segmentation of Gregorian chant melodies for exploring chant modality' created at Charles University. The goal is to explore the Gregorian chant as an oral tradition where singers had to memorize thousands of melodies. We are looking for a system that would explain the memorization phenomenon. Several hypotheses, such as centonization, etc., suggest the melodic system of compounding melodic units together. We know that there are melodic motifs that are often repeated in melodies. Furthermore, the Gregorian chant is based on the modal system, so each melody belongs to one of eight modes. The memorization process could be related to the modal system since it affects many other Gregorian chant aspects, such as repertoire. 
 
-As we mentioned, some of the melody motifs are often repeated. The question arises as to what is the cause of this. Therefore, we are solving the issue by statistical unsupervised segmentation. Musicologists have tried to explain and discuss repeated melodic motifs, but no one has tried to use statistical methods that can work with large amounts of data.
+As we mentioned, some of the melody motifs are often repeated. The question arises as to what is the cause of this. Therefore, we are solving the issue by statistical unsupervised segmentation methods and we are analyzing the segmentation behaviour from several perspectives. Musicologists have tried to explain and discuss repeated melodic motifs, but no one has tried to use statistical methods that can work with large amount of data.
 
-The work doesn't aim to find the answer to the memorization problem. We want to provide a different perspective - the statistical one -  of solving the phenomenon. We hope to get some observations about melodies in the context of modality and to show the direction that musicologists should work on further. 
+The work doesn't aim to find the answer to the memorization problem. We want to provide a different perspective - the statistical one - of solving the phenomenon. We hope to get some observations about melodies in the context of modality and to show the direction that musicologists should work on further. 
 
 
 ## Repository structure
