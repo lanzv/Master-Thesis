@@ -2,7 +2,7 @@
 
 We propose several unsupervised segmentation methods and several evaluation metrics and visualizations ([docs.md](docs.md)). We also consider some baselines and upper bounds to have something we can compare our models with. We measure some additional experiments to support our hypotheses. But also we analyze both datasets (Cantus and GregoBase) and their properties. The outcomes of these experiments and analyses are stored in the ```notebooks/``` folder as outputs of jupyter notebook's cells. Furthermore, we provide the best practices for using our models and evaluation functions. 
 
-**Note that the in the case we would want to run cells of the particular jupyter notebook, we have to place the notebook into the root directory (with the extracted dataset files as described in [datasets.md](datasets.md)). The jupyter notebook needs to be in the same directory as the ```src/``` folder**
+**Note that the in the case we would want to run cells of the particular jupyter notebook, we have to place the notebook into the root directory (with the extracted dataset files as described in [datasets.md](datasets.md)). The jupyter notebook needs to be in the same directory as the ```src/``` folder.**
 
 ## Notebooks
 
@@ -48,7 +48,7 @@ As part of this section, we list the baseline results compared with our proposal
 | BERT | 89.52 | 89.39 | 81.80 | 82.26 |
 | NgramOverlap | *96.13* | *96.11* | *92.74* | *92.59* |
 
-| 	 | perply | vocab_size | avg_seg_len | vocab_levenshtein |
+| 	 | perplexity | vocab_size | avg_seg_len | vocab_levenshtein |
 |---|---|---|---|---|
 | Rand | - | 14986 | 4.28 | 0.91 |
 | Words_liq | - | 11087 | 3.77 | 0.91 |
