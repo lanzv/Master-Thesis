@@ -16,7 +16,7 @@ Note that gregobase-chantstrings.csv is the same file for both antiphon and no4a
 
 
 
-## How to use these datasets for our experiments?  
+## How to Use These Datasets for Our Experiments?
 
 1. choose the dataset (antiphons, no4antiphons, responsories)
 2. extract the corresponding zip file into the root directory of the repository

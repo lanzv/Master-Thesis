@@ -20,14 +20,14 @@ We propose several unsupervised segmentation models and evaluation functions tha
     - gregobase preparation
 
 
-## Models - usage
+## Models - Usage
 
 First of all, install all necessary packages:
 ```sh
 pip install -r requirements.txt
 ```
 
-### UM (unigram model)
+### UM (Unigram Model)
 
 Suppose we have list of string melodies ```X_train```, ```X_dev```, and ```X_test``` and their corresponding modes ```y_train```, ```y_dev```. Then we can get the test segmentation, perplexity, and mawp score this way:
 ```Python
@@ -43,7 +43,7 @@ test_segmentation, test_perplexity = model.predict_segments(X_test)
 ```
 
 
-### UMM (unigram model modes)
+### UMM (Unigram Modes Model)
 
 Suppose we have list of string melodies ```X_train```, ```X_dev```, and ```X_test``` and their corresponding modes ```y_train```, ```y_dev```. Then we can get the test segmentation, perplexity, and mawp score this way:
 ```Python
@@ -156,7 +156,7 @@ mawp_score = model.get_mawp_score()
 test_segmentation, _ = model.predict_segments(X_test)
 ```
 
-### Random baseline
+### Random Baseline
 
 The RandomModel generates random segmentation.
 ```Python
@@ -169,7 +169,7 @@ mawp_score = model.get_mawp_score()
 test_segmentation, test_perplexity = model.predict_segments(X_test)
 ```
 
-### Overlapping N-grams upper bound
+### Overlapping N-grams Upper Bound
 The Overlapping N-grams is not a segmentation since all segments overlap with others. Furthermore, we can combine more Overlapping N-grams. However, we can measure only the mode classification score. The code sample using the OverlappingNgram class is shown below. 
 
 ```Python
@@ -207,7 +207,7 @@ scores, selected_features, trained_model = bacor_pipeline(
 ```
 
 
-## Evaluation scores - usage
+## Evaluation Scores - Usage
 Once we have the segmentation (of both training and testing datasets), mawp function, and perplexities, we can evaluate all score functions and visualizations we proposed by a single command.
 
 ```Python
