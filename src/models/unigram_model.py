@@ -10,6 +10,18 @@ from math import log, exp
 
 class UnigramModel:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
+        """
+        Constructor of the unigram model
+
+        Parameters
+        ----------
+        min_size: int
+            minimal allowed size of segment
+        max_size: int
+            maximal allowed size of segment
+        seed: int
+            random seed
+        """
         random.seed(seed)
         np.random.seed(seed)
         self.min_size = min_size
@@ -19,6 +31,37 @@ class UnigramModel:
 
     def train(self, train_chants, dev_chants, train_modes, dev_modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
                          alpha=0.00000000000001, k_best = 15, print_each = 1):
+        """
+        The function that trains the mode's variables via Gibbs sampling.
+        1. get the init segmentation
+        2. iterate the blocked gibbs sampling steps
+        3. print training statistics
+
+        Parameters
+        ----------
+        train_chants: list of strings
+            list of string melodies (training chants)
+        dev_chants: list of strings
+            list of string melodies (dev chants)
+        train_modes: list of strings
+            list of training modes for evaluations and debugging
+        dev_modes: list of strings
+            list of dev modes for evaluations and debugging
+        init_mode: string
+            {words, guassian} inital segmentation
+        iterations: int
+            number of iterartion steps
+        mu: float
+            in case of guassian init mode, mu for the Guassian distribution predicting the random init segmentation
+        sigma: float
+            in case of guassian init mode, sigma for the Guassian distribution predicting the random init segmentation
+        alpha: float
+            laplace smoothing alpha
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        print_each: int
+            interval of printed iterations (evaluated scores)
+        """
         # Init model
         self.__init_model()
         self.__generate_vocabulary(train_chants)
@@ -42,6 +85,24 @@ class UnigramModel:
         statistics.plot_all_statistics()
 
     def predict_segments(self, chants, k_best=15, alpha=0.00000000000001):
+        """
+        Predict chants segmentation.
+
+        Parameters
+        ----------
+        chants: list of strings
+            list of test melodies represented as strings
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        Returns
+        -------
+        final_segmentation: list of list of strings
+            list of segmented chants
+        perplexity: float
+            perplexity of the prediction
+        """
         final_segmentation = []
         log_prob_sum = 0
         for chant_string in chants:
@@ -54,16 +115,45 @@ class UnigramModel:
         return final_segmentation, perplexity
 
     def get_mawp_score(self):
+        """
+        Get the mawp score funcion
+
+        Returns
+        -------
+        mawp_score: float
+            mawp score of the model
+        """
         return mawp_score(self)
 
     # ------------------------------- Statistics ----------------------------------
     def __show_iteration_statistics(self, statistics: IterationStatistics, iteration, train_data, dev_data, alpha, k_best):
+        """
+        Print results of all evaluation functions on train and dev datasets to the given iteration
+
+        Parameters
+        ----------
+        statistics: IterationStatistics
+            IterationStatistics object keeping all statistics and evaluating+printing final string
+        iteration: int
+            number of iteration
+        train_data: list of lists of strings
+            list segmented training chants
+        dev_data: list of lists of strings
+            list of segmented dev chants
+        alpha: float
+            laplace smoothing alpha
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        """
         train_segments, train_perplexity = self.predict_segments(train_data, k_best=k_best, alpha=alpha)
         dev_segments, dev_perplexity = self.predict_segments(dev_data, k_best=k_best, alpha=alpha)
         statistics.add_new_iteration(iteration, train_segments, dev_segments, train_perplexity, dev_perplexity)
 
     # ------------------------------- data structures updates -------------------------
     def __init_model(self):
+        """
+        Initialize model's data structures
+        """
         # dictionary of melody string and its counts over all documents (as integer)
         self.segment_unigrams = defaultdict(int)
         # number of all segments, the sum over all counts
@@ -79,6 +169,14 @@ class UnigramModel:
 
 
     def __generate_vocabulary(self, chants):
+        """
+        Generate init vocabulary of all possible segments considering the dataset and allowed segment range
+
+        Parameters
+        ----------
+        chants: list of strings
+            list of string melodies
+        """
         self.vocabulary = set()
         for chant_str in chants:
             self.recursion = 0
@@ -86,6 +184,14 @@ class UnigramModel:
         logging.info("Vocabulary was generated with size of {}".format(len(self.vocabulary)))
 
     def __update_vocab(self,chant_str: str, char_id: int):
+        """
+        Generate all possible segments of the given chant_str chant and add them into the vocabulary set
+
+        Parameters
+        ----------
+        chant_str: string
+            melody string
+        """
         for char_id, c in enumerate(chant_str):
             for segment_boundary_r in range(char_id + self.min_size, 
                                 min((char_id+self.max_size+1), len(chant_str)+1)):
@@ -93,6 +199,16 @@ class UnigramModel:
                 self.vocabulary.add(new_segment)
                 
     def __ignore_chant(self, chant_segments, chant_id):
+        """
+        Remove the segmented chant from model's datastructures
+
+        Parameters
+        ----------
+        chant_segments: list of strings
+            list of segments, segmented chant
+        chant_id:
+            id of the chant in the dataset
+        """
         for segment in chant_segments:
             # segment unigrams
             self.segment_unigrams[segment] = self.segment_unigrams[segment] - 1
@@ -111,6 +227,16 @@ class UnigramModel:
 
 
     def __add_chant(self, chant_segments, chant_id):
+        """
+        Add the segmented chant to model's datastructures
+
+        Parameters
+        ----------
+        chant_segments: list of strings
+            list of segments, segmented chant
+        chant_id:
+            id of the chant in the dataset
+        """
         for segment in chant_segments:
             # segment unigrams
             if segment in self.segment_unigrams:
@@ -129,6 +255,22 @@ class UnigramModel:
 
     # ------------------------------- init segmentations -----------------------------
     def __gaus_rand_segments(self, chants, mu, sigma):
+        """
+        Randomly segment chants to get initial gaussian segmentation
+
+        Parameters
+        ----------
+        chants: list of strings
+            list of string melodies
+        mu: float
+            mu for the Guassian distribution predicting the random init segmentation
+        sigma: float
+            sigma for the Guassian distribution predicting the random init segmentation
+        Returns
+        -------
+        rand_segmets: list of lists of strings
+            list of segmented chants randomly
+        """
         rand_segments = []
         for chant_id, chant in enumerate(chants):
             new_chant_segments = []
@@ -158,6 +300,14 @@ class UnigramModel:
         return rand_segments
 
     def __word_segments(self):
+        """
+        Segment chants by words as initial segmentation
+
+        Returns
+        -------
+        word_segments: list of lists of strings
+            list of segmented chants by words
+        """
         word_segments = load_word_segmentations()
         for chant_id, chant in enumerate(word_segments):
             for segment in chant:
@@ -177,6 +327,27 @@ class UnigramModel:
 
     # -------------------------------- training ------------------------------
     def __train_iteration(self, segmented_chants, k_best: int, alpha: float):
+        """
+        Perform the single Gibbs sampling iteration
+        1. randomly shuffle dataset indices
+        2. iterate over all chants
+            - remove segmented chant from model
+            - sample chant segmentation
+            - add segmented chant to the model
+
+        Parameters
+        ----------
+        segmented_chants: list of lists of strings
+            segmented chants
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        Returns
+        -------
+        new_segmented_chants: list of lists of strings
+            newly segmented chants
+        """
         # Gibbs Sampling
         new_segmented_chants = [None for _ in range(len(segmented_chants))]
         rand_indices = np.arange(len(segmented_chants))
@@ -192,6 +363,26 @@ class UnigramModel:
 
 
     def __get_optimized_chant(self, chant_segments, k_best: int, alpha: float, argmax: bool = False):
+        """
+        Sample the single chant to get new segmentation
+
+        Parameters
+        ----------
+        chant_segments: list of strings
+            list of chant segments
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        argmax: bool
+            true for optimizing, false for sampling
+        Returns
+        -------
+        new_segmented_chant: list of strings
+            newly segmented chant
+        log_prob: float
+            log probability of chant segmentation being predicted by the model
+        """
         chant = ''.join(chant_segments)
         # for each melody pitch, store the list of k_best nodes (prob, position, prev_node)
         trellis = [[] for _ in range((len(chant)+1))]
@@ -203,6 +394,20 @@ class UnigramModel:
 
 
     def __chant_viterbi_optimization(self, chant_str: str, trellis, k_best: int, alpha: float):
+        """
+        Perform the Viterbi algorithm to build the graph of probabilities
+
+        Parameters
+        ----------
+        chant_str: string
+            chant melody as string
+        trellis: list of Nodes
+            graph of probabilities
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        """
         for char_id in range(len(chant_str)):
             for segment_boundary_r in range(char_id + self.min_size, 
                                         min((char_id+self.max_size+1), len(chant_str)+1)):
@@ -215,6 +420,22 @@ class UnigramModel:
 
 
     def __update_trellis(self, graph, id: int, new_segment: str, k_best: int, alpha: float):
+        """
+        Dynamically update probabilities in the trellis graph, always keep the top k paths
+
+        Parameters
+        ----------
+        graph: list of Nodes
+            probability graph of segmentations
+        id: int
+            node id, or also note id, position of the note
+        new_segment: string
+            possible segment we are looking on in this update iteration
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        """
         assert len(new_segment) != 0
         prev_id = id - len(new_segment)
         V = len(self.vocabulary)
@@ -232,6 +453,24 @@ class UnigramModel:
 
 
     def __decode_trellis(self, graph: list, chant_str: str, argmax: bool = False):
+        """
+        Choose the final chant segmentation, compute its log probability
+
+        Parameters
+        ----------
+        graph: list of Nodes
+            list segmentations probabilities
+        chant_str: string
+            string of melody
+        argmax: bool
+            true for optimizing, false for sampling
+        Returns
+        -------
+        final_segmentation: list of strings
+            newly segmented chant
+        log_prob: float
+            log probability of chant segmentation being predicted by the model
+        """
         final_segmentation_ids = []
 
 
@@ -270,6 +509,18 @@ class UnigramModel:
 
 class UnigramModelModes:
     def __init__(self, min_size = 3, max_size = 8, seed = 0):
+        """
+        Constructor of the unigram modes model
+
+        Parameters
+        ----------
+        min_size: int
+            minimal allowed size of segment
+        max_size: int
+            maximal allowed size of segment
+        seed: int
+            random seed
+        """
         random.seed(seed)
         np.random.seed(seed)
         self.min_size = min_size
@@ -279,6 +530,44 @@ class UnigramModelModes:
     def train(self, train_chants, dev_chants, train_modes, dev_modes, init_mode = 'words', iterations = 5, mu = 5, sigma = 2,
                          alpha=0.00000000000001, k_best = 15, print_each = 1,
                          final_range_classifier = False, mode_priors_uniform = True):
+        """
+        The function that trains the mode's variables via Gibbs sampling.
+        1. get the init segmentation
+        2. iterate the blocked gibbs sampling steps
+        3. print training statistics
+
+        Parameters
+        ----------
+        train_chants: list of strings
+            list of string melodies (training chants)
+        dev_chants: list of strings
+            list of string melodies (dev chants)
+        train_modes: list of strings
+            list of training modes for evaluations and debugging
+        dev_modes: list of strings
+            list of dev modes for evaluations and debugging
+        init_mode: string
+            {words, guassian} inital segmentation
+        iterations: int
+            number of iterartion steps
+        mu: float
+            in case of guassian init mode, mu for the Guassian distribution predicting the random init segmentation
+        sigma: float
+            in case of guassian init mode, sigma for the Guassian distribution predicting the random init segmentation
+        alpha: float
+            laplace smoothing alpha
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        print_each: int
+            interval of printed iterations (evaluated scores)
+        final_range_classifier: bool
+            true for using the iternal mode classifier being based on the final tone and the range
+            false to predict the mode using bayes rule
+        mode_priors_uniform: bool
+            when final_range_classifier is false:
+            true -> mode priors is uniform distribution 1/8
+            false -> mode priors is distribution by the training data
+        """
         # Init model
         self.__init_model()
         self.__generate_vocabulary(train_chants, train_modes)
@@ -301,9 +590,35 @@ class UnigramModelModes:
 
     def predict_segments(self, chants, k_best=15, alpha=0.00000000000001, final_range_classifier = False,
                          mode_priors_uniform = True, modes = None):
+        """
+        Predict modes and find the chants segmentation
+
+        Parameters
+        ----------
+        chants: list of strings
+            list of test melodies represented as strings
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        final_range_classifier: bool
+            true for using the iternal mode classifier being based on the final tone and the range
+            false to predict the mode using bayes rule
+        mode_priors_uniform: bool
+            when final_range_classifier is false:
+            true -> mode priors is uniform distribution 1/8
+            false -> mode priors is distribution by the training data
+        Returns
+        -------
+        final_segmentation: list of list of strings
+            list of segmented chants
+        perplexity: float
+            perplexity of the prediction
+        """
         if modes == None:
             modes = self.predict_modes(chants, final_range_classifier = final_range_classifier,
-                                        mode_priors_uniform = mode_priors_uniform)
+                                        mode_priors_uniform = mode_priors_uniform, alpha=alpha,
+                                        k_best=k_best)
         final_segmentation = []
         log_prob_sum = 0
         for chant_string, mode in zip(chants, modes):
@@ -315,13 +630,35 @@ class UnigramModelModes:
         perplexity = exp(-log_prob_sum/len(chants))
         return final_segmentation, perplexity
 
-    def predict_modes(self, chants, k_best=15, alpha=1, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"], 
+    def predict_modes(self, chants, k_best=15, alpha=0.00000000000001, mode_list = ["1", "2", "3", "4", "5", "6", "7", "8"], 
                       final_range_classifier = False, mode_priors_uniform = True):
         """
         Using the Bayes Rule
         p(m|c') = (p(c'|m)*p(m))/(p(c')) ~ p(c'|m)*p(m)  ~ p(c'|m) for constant p(m) and p(c')
         m = argmax p(m|c') ... only when p(m) = 1/8 for all m
         needs to be tested whether p(m) = priors
+
+        Parameters
+        ----------
+        chants: list of strings
+            list of test melodies represented as strings
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        mode_list: list of strings
+            list of all mode lables
+        final_range_classifier: bool
+            true for using the iternal mode classifier being based on the final tone and the range
+            false to predict the mode using bayes rule
+        mode_priors_uniform: bool
+            when final_range_classifier is false:
+            true -> mode priors is uniform distribution 1/8
+            false -> mode priors is distribution by the training data
+        Returns
+        -------
+        final_modes: list of strings
+            list of chants mode prediction
         """
         if final_range_classifier:
             return FinalRangeClassifier.predict(chants=chants), [1 for _ in range(len(chants))]
@@ -348,17 +685,58 @@ class UnigramModelModes:
             return final_modes
 
     def get_mawp_score(self):
+        """
+        Get the mawp score funcion
+
+        Returns
+        -------
+        mawp_score: float
+            mawp score of the model
+        """
         return mawp_score(self)
 
     # --------------------------------- printers, plotters ----------------------------
     def __show_iteration_statistics(self, statistics: IterationStatistics, iteration, train_data, dev_data,
                                     final_range_classifier, mode_priors_uniform, k_best, alpha):
+        """
+        Print results of all evaluation functions on train and dev datasets to the given iteration
+
+        Parameters
+        ----------
+        statistics: IterationStatistics
+            IterationStatistics object keeping all statistics and evaluating+printing final string
+        iteration: int
+            number of iteration
+        train_data: list of lists of strings
+            list segmented training chants
+        dev_data: list of lists of strings
+            list of segmented dev chants
+        final_range_classifier: bool
+            true for using the iternal mode classifier being based on the final tone and the range
+            false to predict the mode using bayes rule
+        mode_priors_uniform: bool
+            when final_range_classifier is false:
+            true -> mode priors is uniform distribution 1/8
+            false -> mode priors is distribution by the training data
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        """
         train_segments, train_perplexity = self.predict_segments(train_data, final_range_classifier=final_range_classifier, mode_priors_uniform=mode_priors_uniform, k_best = k_best, alpha = alpha)
         dev_segments, dev_perplexity = self.predict_segments(dev_data, final_range_classifier=final_range_classifier, mode_priors_uniform=mode_priors_uniform, k_best = k_best, alpha = alpha)
         statistics.add_new_iteration(iteration, train_segments, dev_segments, train_perplexity, dev_perplexity)
 
     # ------------------------------- data structures updates -------------------------
     def __init_model(self, all_modes = ["1", "2", "3", "4", "5", "6", "7", "8"]):
+        """
+        Initialize model's data structures
+
+        Parameters
+        ----------
+        all_modes: list of strings
+            list of all mode lables
+        """
         # dictionary of melody string and its counts over all documents (as integer)
         self.segment_unigrams = {}
         # number of all segments, the sum over all counts
@@ -378,6 +756,16 @@ class UnigramModelModes:
             self.vocabulary[mode] = set()
 
     def __generate_vocabulary(self, chants, modes):
+        """
+        Generate init vocabulary of all possible segments considering the dataset and allowed segment range
+
+        Parameters
+        ----------
+        chants: list of strings
+            list of string melodies
+        modes: list of strings
+            list of chants modes
+        """
         for chant_str, mode in zip(chants, modes):
             self.__update_vocab(chant_str=chant_str, mode=mode, char_id = 0)
 
@@ -391,6 +779,16 @@ class UnigramModelModes:
         logging.info("Vocabulary of 8 mode was generated with size of {}".format(len(self.vocabulary["8"])))
 
     def __update_vocab(self,chant_str: str, mode, char_id: int):
+        """
+        Generate all possible segments of the given chant_str chant and add them into the vocabulary set
+
+        Parameters
+        ----------
+        chant_str: string
+            melody string
+        mode: string
+            chant's mode
+        """
         for char_id, c in enumerate(chant_str):
             for segment_boundary_r in range(char_id + self.min_size, 
                                 min((char_id+self.max_size+1), len(chant_str)+1)):
@@ -398,6 +796,18 @@ class UnigramModelModes:
                 self.vocabulary[mode].add(new_segment)
                 
     def __ignore_chant(self, chant_segments, mode, chant_id):
+        """
+        Remove the segmented chant from model's datastructures
+
+        Parameters
+        ----------
+        chant_segments: list of strings
+            list of segments, segmented chant
+        chant_id:
+            id of the chant in the dataset
+        mode: string
+            chant's mode
+        """
         for segment in chant_segments:
             # segment unigrams
             self.segment_unigrams[mode][segment] = self.segment_unigrams[mode][segment] - 1
@@ -416,6 +826,18 @@ class UnigramModelModes:
 
 
     def __add_chant(self, chant_segments, mode, chant_id):
+        """
+        Add the segmented chant to model's datastructures
+
+        Parameters
+        ----------
+        chant_segments: list of strings
+            list of segments, segmented chant
+        mode: string
+            chant's mode
+        chant_id:
+            id of the chant in the dataset
+        """
         for segment in chant_segments:
             # segment unigrams
             if segment in self.segment_unigrams[mode]:
@@ -434,6 +856,24 @@ class UnigramModelModes:
 
     # ------------------------------- init segmentations -----------------------------
     def __gaus_rand_segments(self, chants, modes, mu, sigma):
+        """
+        Randomly segment chants to get initial gaussian segmentation
+
+        Parameters
+        ----------
+        chants: list of strings
+            list of string melodies
+        modes: list of strings
+            list of chants modes
+        mu: float
+            mu for the Guassian distribution predicting the random init segmentation
+        sigma: float
+            sigma for the Guassian distribution predicting the random init segmentation
+        Returns
+        -------
+        rand_segmets: list of lists of strings
+            list of segmented chants randomly
+        """
         rand_segments = []
         for chant_id, (chant, mode) in enumerate(zip(chants, modes)):
             new_chant_segments = []
@@ -464,6 +904,18 @@ class UnigramModelModes:
         return rand_segments
 
     def __word_segments(self, modes):
+        """
+        Segment chants by words as initial segmentation
+
+        Parameters
+        ----------
+        modes: list of strings
+            list of chants modes
+        Returns
+        -------
+        word_segments: list of lists of strings
+            list of segmented chants by words
+        """
         word_segments = load_word_segmentations()[:len(modes)]
         for chant_id, (chant, mode) in enumerate(zip(word_segments, modes)):
             self.chant_count[mode] += 1
@@ -484,6 +936,29 @@ class UnigramModelModes:
 
     # -------------------------------- training ------------------------------
     def __train_iteration(self, segmented_chants, modes, k_best: int, alpha: float):
+        """
+        Perform the single Gibbs sampling iteration
+        1. randomly shuffle dataset indices
+        2. iterate over all chants
+            - remove segmented chant from submodel corresponding to the chant's mode
+            - sample chant segmentation by the submodel corresponding to the chant's mode
+            - add segmented chant to the model to the submodel corresponding to the chant's mode
+
+        Parameters
+        ----------
+        segmented_chants: list of lists of strings
+            segmented chants
+        modes: list of strings
+            list of chants modes
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        Returns
+        -------
+        new_segmented_chants: list of lists of strings
+            newly segmented chants
+        """
         # Gibbs Sampling
         new_segmented_chants = [None for _ in range(len(segmented_chants))]
         rand_indices = np.arange(len(segmented_chants))
@@ -501,6 +976,28 @@ class UnigramModelModes:
 
 
     def __get_optimized_chant(self, chant_segments, mode, k_best: int, alpha: float, argmax: bool = False):
+        """
+        Sample the single chant to get new segmentation
+
+        Parameters
+        ----------
+        chant_segments: list of strings
+            list of chant segments
+        mode: string
+            chant's mode
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        argmax: bool
+            true for optimizing, false for sampling
+        Returns
+        -------
+        new_segmented_chant: list of strings
+            newly segmented chant
+        log_prob: float
+            log probability of chant segmentation being predicted by the model
+        """
         chant = ''.join(chant_segments)
         # for each melody pitch, store the list of k_best nodes (prob, position, prev_node)
         trellis = [[] for _ in range((len(chant)+1))]
@@ -512,6 +1009,22 @@ class UnigramModelModes:
 
 
     def __chant_viterbi_optimization(self, chant_str: str, mode, trellis, k_best: int, alpha: float):
+        """
+        Perform the Viterbi algorithm to build the graph of probabilities
+
+        Parameters
+        ----------
+        chant_str: string
+            chant melody as string
+        mode: string
+            chant's mode
+        trellis: list of Nodes
+            graph of probabilities
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        """
         for char_id in range(len(chant_str)):
             for segment_boundary_r in range(char_id + self.min_size, 
                                         min((char_id+self.max_size+1), len(chant_str)+1)):
@@ -524,6 +1037,24 @@ class UnigramModelModes:
 
 
     def __update_trellis(self, mode, graph, id: int, new_segment: str, k_best: int, alpha: float):
+        """
+        Dynamically update probabilities in the trellis graph, always keep the top k paths
+
+        Parameters
+        ----------
+        mode: string
+            chants' moe
+        graph: list of Nodes
+            probability graph of segmentations
+        id: int
+            node id, or also note id, position of the note
+        new_segment: string
+            possible segment we are looking on in this update iteration
+        k_best: int
+            number of potentional paths when sampling segmented chants in trainign
+        alpha: float
+            laplace smoothing alpha
+        """
         assert len(new_segment) != 0
         prev_id = id - len(new_segment)
         V = len(self.vocabulary[mode])
@@ -541,6 +1072,24 @@ class UnigramModelModes:
 
 
     def __decode_trellis(self, graph: list, chant_str: str, argmax: bool = False, alpha = 1):
+        """
+        Choose the final chant segmentation, compute its log probability
+
+        Parameters
+        ----------
+        graph: list of Nodes
+            list segmentations probabilities
+        chant_str: string
+            string of melody
+        argmax: bool
+            true for optimizing, false for sampling
+        Returns
+        -------
+        final_segmentation: list of strings
+            newly segmented chant
+        log_prob: float
+            log probability of chant segmentation being predicted by the model
+        """
         final_segmentation_ids = []
 
 

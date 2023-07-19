@@ -1,4 +1,3 @@
-
 import wandb
 import os
 import torch
@@ -8,9 +7,29 @@ from src.eval.maww_score import mawp_score
 
 
 class BERT_Model:
-    def __init__(self, working_dir = "/kaggle/working", vocab_file = "vocab.txt", config_file = "config.json",
+    def __init__(self, working_dir = ".", vocab_file = "vocab.txt", config_file = "config.json",
                  train_chants_file="train_chants.txt", dev_chants_file="dev_chants.txt", all_chants="chants.txt",
                  pretrained_dir="PretrainedBERT_chant/"):
+        """
+        Initialize the BERT model
+
+        Parameters
+        ----------
+        working_dir: string
+            working directory path, "." for the root, "/kaggle/working" for the kaggle workspace
+        vocab_file: string
+            path to the vocab.txt file, by default it is placed in root
+        config_file: string
+            path to the config.json file, by default it is placed in root
+        train_chants_file: string
+            chants training dataset of melodies as string in text file, each line consists of one string melody (one chant)
+        dev_chants_file: string
+            chants dev dataset of melodies as string in text file, each line consists of one string melody (one chant)
+        all_chants: string
+            chants (train+dev+test) dataset of melodies as string in text file, each line consists of one string melody (one chant)
+        pretrained_dir: string
+            path to the directory that the pretrained BERT model is/will be saved in
+        """
         self.working_dir = working_dir
         self.vocab_file = vocab_file
         self.config_file = config_file
@@ -20,6 +39,18 @@ class BERT_Model:
         self.pretrained_dir = pretrained_dir
     
     def pretrain(self, epochs = 40, key="4ab08e6414f3948952d1d8bb5cce3be222d8ffd9"):
+        """
+        Pretrain the BERT model for the chant segmentation task
+        The pretrained model will be stored into folder of self.pretrained_dir
+        We need the pytorch_model.bin file that the BERT training uses as the initial state values
+
+        Parameters
+        ----------
+        epochs: int
+            number of training epochs
+        key: string
+            wandb token to see the model training statistics
+        """
         wandb.login(key=key)
         from transformers import BertTokenizer, LineByLineTextDataset
         from transformers import BertConfig, BertForMaskedLM, DataCollatorForLanguageModeling
@@ -70,6 +101,26 @@ class BERT_Model:
 
 
     def train(self, num_epochs = 4, learning_epoch = 3200, border_I = 11.5, border_B = 8.6, prob_I_conf = -0.5, prob_B_conf = 0.5):
+        """
+        Parametrized training procedure of BERT designed by QbethQ (https://github.com/QbethQ/Unsupervised_CWS_BOPT)
+        The pretrained BERT has to be done first
+        The trained BERT model is saved to SegmentBERT_chants.pkl file in the self.working_dir
+        
+        Parameters
+        ----------
+        num_epochs: int
+            number of generative-discriminative stage epochs
+        learning_epoch: int
+            number of chants being part of one generative-discriminative iteration
+        border_I: float
+            threshold of tone being inside the segment
+        border_B: float
+            threshold of tone being beginning of the segment
+        prob_I_conf: float
+            threshold of the softmax I prediction confidential
+        prob_B_conf: float
+            threshold of the softmax B prediction confidential
+        """
         from src.models.bert.SegmentBERT import SegmentBERT
         from src.models.bert.trainer import distcriminative_train, generative_train
         from transformers import BertTokenizer, BertConfig, AdamW
@@ -132,6 +183,24 @@ class BERT_Model:
             distcriminative_train(model, optimizer, num_sample, texts, tokenizer, scheduler, start=i * learning_epoch + learning_epoch // 2, end=(i + 1) * learning_epoch, border_I = border_I, border_B = border_B)
 
     def predict_segments(self, chants):
+        """
+        Predicting procedure of BERT designed by QbethQ (https://github.com/QbethQ/Unsupervised_CWS_BOPT)
+        The BERT has to be trained first, stored in file SegmentBERT_chants.pkl in the self.working_dir directory
+
+        
+        Parameters
+        ----------
+        chants: list of strings
+            list of melody strings
+        Returns
+        -------
+        segmented_chants: list of lists of strings
+            list of segmented chants
+        perplexity: int, -1
+            perplexity cannot be computed, -1 for the model generality that the
+            predict_segments() function could be run generally from other scripts
+        """
+        
         from src.models.bert.util import converter
         from src.models.bert.SegmentBERT import SegmentBERT
         from src.models.bert.segmentor import seg
@@ -162,4 +231,12 @@ class BERT_Model:
         return segmented_chants, -1 #-1 for unknown perplexity
 
     def get_mawp_score(self):
+        """
+        Get the mawp score of the BERT model
+
+        Returns
+        -------
+        mawp: float
+            mawp score
+        """
         return mawp_score(self)

@@ -1,3 +1,7 @@
+"""
+original author: QbethQ
+https://github.com/QbethQ/Unsupervised_CWS_BOPT
+"""
 import re
 from transformers import BertTokenizer
 

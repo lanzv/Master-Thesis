@@ -1,3 +1,7 @@
+"""
+original author: QbethQ
+https://github.com/QbethQ/Unsupervised_CWS_BOPT
+"""
 import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
